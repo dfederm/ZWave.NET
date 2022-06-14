@@ -303,7 +303,7 @@ public sealed class Driver : IAsyncDisposable
             {
                 nextSessionId++;
             }
-            while (nextSessionId == 0 || !IsSessionIdInUse(nextSessionId));
+            while (nextSessionId == 0 || IsSessionIdInUse(nextSessionId));
 
             _lastSessionId = nextSessionId;
             return nextSessionId;
