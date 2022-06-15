@@ -10,31 +10,32 @@ builder.Logging.AddSimpleConsole(
         options.TimestampFormat = "hh:mm:ss ";
     });
 
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddRazorPages();
+builder.Services.AddServerSideBlazor();
 
 builder.Services.AddSingleton<Driver>(serviceProvider =>
 {
     var logger = serviceProvider.GetRequiredService<ILogger<Driver>>();
-    string portName = "COM3"; // TODO: Configure
+    string portName = "COM3"; // TODO: Configure or make an argument
     return Driver.CreateAsync(logger, portName, CancellationToken.None).GetAwaiter().GetResult();
 });
 
 var app = builder.Build();
 
+// Initialize the driver at startup to ensure the server doesn't start without a working one.
+_ = app.Services.GetRequiredService<Driver>();
+
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseExceptionHandler("/Error");
 }
 
-app.UseHttpsRedirection();
+app.UseStaticFiles();
 
-app.UseAuthorization();
+app.UseRouting();
 
-app.MapControllers();
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
 
 app.Run();

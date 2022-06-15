@@ -1,0 +1,106 @@
+﻿@page "/controller"
+
+<PageTitle>Controller</PageTitle>
+
+@using ZWave.Serial.Commands
+
+@inject Driver Driver
+
+<h1>Controller</h1>
+
+<table class="table table-striped">
+    <tbody>
+        <tr>
+          <th scope="row">Home Id</th>
+          <td>@Driver.Controller.HomeId</td>
+        </tr>
+        <tr>
+          <th scope="row">Node Id</th>
+          <td>
+            <NavLink href="@($"/nodes/{Driver.Controller.NodeId}")">
+                @Driver.Controller.NodeId
+            </NavLink>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Is Primary</th>
+          <td>@Driver.Controller.IsPrimary</td>
+        </tr>
+        <tr>
+          <th scope="row">SUC Node Id</th>
+          <td>
+            <NavLink href="@($"/nodes/{Driver.Controller.SucNodeId}")">
+                @Driver.Controller.SucNodeId
+            </NavLink>
+          </td>
+        </tr>
+        <tr>
+          <th scope="row">Firmware Version</th>
+          <td>@Driver.Controller.FirmwareVersion</td>
+        </tr>
+        <tr>
+          <th scope="row">Manufacturer Id</th>
+          <td>@Driver.Controller.ManufacturerId</td>
+        </tr>
+        <tr>
+          <th scope="row">Product Type</th>
+          <td>@Driver.Controller.ProductType</td>
+        </tr>
+        <tr>
+          <th scope="row">Product Id</th>
+          <td>@Driver.Controller.ProductId</td>
+        </tr>
+        <tr>
+          <th scope="row">Library Version</th>
+          <td>@Driver.Controller.LibraryVersion</td>
+        </tr>
+        <tr>
+          <th scope="row">Library Type</th>
+          <td>@Driver.Controller.LibraryType</td>
+        </tr>
+        <tr>
+          <th scope="row">API Version</th>
+          <td>@Driver.Controller.ApiVersion</td>
+        </tr>
+        <tr>
+          <th scope="row">Chip Type</th>
+          <td>@Driver.Controller.ChipType</td>
+        </tr>
+        <tr>
+          <th scope="row">Chip Version</th>
+          <td>@Driver.Controller.ChipVersion</td>
+        </tr>
+        <tr>
+          <th scope="row">Supported Commands</th>
+          <td>
+            @if(Driver.Controller.SupportedCommandIds != null)
+            {
+              foreach (CommandId commandId in Driver.Controller.SupportedCommandIds)
+              {
+                <p>@commandId</p>
+              }
+            }
+            else
+            {
+              <text>None</text>
+            }
+            </td>
+        </tr>
+        <tr>
+          <th scope="row">Supported Serial Api Setup Subcommands</th>
+          <td>
+            @if (Driver.Controller.SupportedSerialApiSetupSubcommands != null)
+            {
+              foreach (SerialApiSetupSubcommand subcommand in Driver.Controller.SupportedSerialApiSetupSubcommands)
+              {
+                <p>@subcommand</p>
+              }
+            }
+            else
+            {
+              <text>None</text>
+            }
+          </td>
+        </tr>
+    </tbody>
+</table>

@@ -1,0 +1,114 @@
+﻿@page "/nodes/{nodeId:int}"
+
+@using ZWave.CommandClasses
+@using ZWave.Serial.Commands
+
+@inject NavigationManager NavigationManager
+@inject Driver Driver
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="nodes">Nodes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Node @NodeId</li>
+    </ol>
+</nav>
+
+<PageTitle>Node @NodeId</PageTitle>
+<h1>Node @NodeId</h1>
+
+@if (Node != null)
+{
+    <table class="table table-striped">
+        <tbody>
+            <tr>
+              <th scope="row">Id</th>
+              <td>@Node.Id</td>
+            </tr>
+            <tr>
+              <th scope="row">Is Listening</th>
+              <td>@Node.IsListening</td>
+            </tr>
+            <tr>
+              <th scope="row">Is Routing</th>
+              <td>@Node.IsRouting</td>
+            </tr>
+            <tr>
+              <th scope="row">Supported Speeds</th>
+              <td>
+                @foreach (int speed in Node.SupportedSpeeds)
+                {
+                  <p>@speed</p>
+                }
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Protocol Version</th>
+              <td>@Node.ProtocolVersion</td>
+            </tr>
+            <tr>
+              <th scope="row">Node Type</th>
+              <td>@Node.NodeType</td>
+            </tr>
+            <tr>
+              <th scope="row">Frequent Listening Mode</th>
+              <td>@Node.FrequentListeningMode</td>
+            </tr>
+            <tr>
+              <th scope="row">Supports Beaming</th>
+              <td>@Node.SupportsBeaming</td>
+            </tr>
+            <tr>
+              <th scope="row">Supports Security</th>
+              <td>@Node.SupportsSecurity</td>
+            </tr>
+            <tr>
+              <th scope="row">Command Classes</th>
+              <td>
+                @foreach (KeyValuePair<CommandClassId, CommandClassInfo> kvp in Node.CommandClasses)
+                {
+                  <p>
+                    @kvp.Value.CommandClass
+                    @if (kvp.Value.IsSupported || kvp.Value.IsControlled)
+                    {
+                        List<string> info = new(2);
+                        if (kvp.Value.IsSupported)
+                        {
+                            info.Add("Supported");
+                        }
+
+                        if (kvp.Value.IsControlled)
+                        {
+                            info.Add("Controlled");
+                        }
+
+                        <text> (@(string.Join(", ", info)))</text>
+                    }
+                  </p>
+                }
+              </td>
+            </tr>
+        </tbody>
+    </table>
+}
+
+@code
+{
+    [Parameter]
+    public int NodeId { get; set; }
+
+    public Node? Node { get; private set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        if (NodeId < byte.MinValue
+            || NodeId > byte.MaxValue
+            || !Driver.Controller.Nodes.TryGetValue((byte)NodeId, out Node? node))
+        {
+            NavigationManager.NavigateTo(string.Empty);
+            return Task.CompletedTask;
+        }
+
+        Node = node;
+        return Task.CompletedTask;
+    }
+}

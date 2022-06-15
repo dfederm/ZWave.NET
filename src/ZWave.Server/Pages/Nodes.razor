@@ -1,0 +1,25 @@
+﻿@page "/nodes"
+
+@using ZWave.Serial.Commands
+
+@inject Driver Driver
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active" aria-current="page">Nodes</li>
+    </ol>
+</nav>
+
+<PageTitle>Nodes</PageTitle>
+<h1>Nodes</h1>
+
+<ul>
+@foreach (KeyValuePair<byte, Node> kvp in Driver.Controller.Nodes)
+{
+    <li>
+        <NavLink href="@($"/nodes/{@kvp.Key}")">
+            @kvp.Key
+        </NavLink>
+    </li>
+}
+</ul>
