@@ -227,7 +227,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
             VersionCommand.Get => true,
             VersionCommand.CommandClassGet => true,
             VersionCommand.CapabilitiesGet => Version.HasValue ? Version >= 3 : null,
-            VersionCommand.ZWaveSoftwareGet => (Capabilities & VersionCapabilities.ZWaveSoftware) != 0,
+            VersionCommand.ZWaveSoftwareGet => Capabilities.HasValue ? (Capabilities & VersionCapabilities.ZWaveSoftware) != 0 : null,
             _ => false,
         };
 
