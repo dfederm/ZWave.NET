@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Threading;
 
 namespace ZWave.CommandClasses;
 
@@ -63,6 +62,8 @@ public readonly struct ManufacturerInformation
 [CommandClass(CommandClassId.ManufacturerSpecific)]
 public sealed class ManufacturerSpecificCommandClass : CommandClass<ManufacturerSpecificCommand>
 {
+    private readonly Dictionary<ManufacturerSpecificDeviceIdType, string> _deviceIds = new();
+
     public ManufacturerSpecificCommandClass(CommandClassInfo info, Driver driver, Node node)
         : base(info, driver, node)
     {
@@ -70,9 +71,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
 
     public ManufacturerInformation? ManufacturerInformation { get; private set; }
 
-    public string? FactoryDefaultDeviceId { get; private set; }
-
-    public string? SerialNumber { get; private set; }
+    public IReadOnlyDictionary<ManufacturerSpecificDeviceIdType, string> DeviceIds => _deviceIds;
 
     public override bool? IsCommandSupported(ManufacturerSpecificCommand command)
         => command switch
@@ -95,21 +94,12 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         var command = ManufacturerSpecificDeviceSpecificGetCommand.Create(deviceIdType);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
 
-        var reportFrame = await AwaitNextReportAsync<ManufacturerSpecificDeviceSpecificReportCommand>(
-            predicate: frame =>
-            {
-                // Ensure the sensor type matches.
-                // From the spec:
-                //      In case the Device ID Type specified in a Device Specific Get command is not supported by the 
-                //      responding node, the responding node MAY return the factory default Device ID Type (as if receiving 
-                //      the value 0 in the Device Specific Get command).
-                // So we also return with the FactoryDefault device type, although we can't be sure it is the response to this
-                // command.
-                var command = new ManufacturerSpecificDeviceSpecificReportCommand(frame);
-                return command.DeviceIdType == ManufacturerSpecificDeviceIdType.FactoryDefault
-                    || command.DeviceIdType == deviceIdType;
-            },
-            cancellationToken).ConfigureAwait(false);
+        // From the spec:
+        //      In case the Device ID Type specified in a Device Specific Get command is not supported by the 
+        //      responding node, the responding node MAY return the factory default Device ID Type (as if receiving 
+        //      the value 0 in the Device Specific Get command).
+        // So we can't check the device id type from the report with the one provided, nor can we use the provided device id type as a key to lookup in _deviceIds.
+        var reportFrame = await AwaitNextReportAsync<ManufacturerSpecificDeviceSpecificReportCommand>(cancellationToken).ConfigureAwait(false);
         var reportCommand = new ManufacturerSpecificDeviceSpecificReportCommand(reportFrame);
         return reportCommand.DeviceId;
     }
@@ -122,8 +112,8 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         //       If so, we can't really make this call.
         if (IsCommandSupported(ManufacturerSpecificCommand.DeviceSpecificGet).GetValueOrDefault())
         {
+            // Spec: A sending node SHOULD specify a value of zero when issuing the Device Specific Get command since the responding node may only be able to return one Device ID Type.
             _ = await GetDeviceIdAsync(ManufacturerSpecificDeviceIdType.FactoryDefault, cancellationToken).ConfigureAwait(false);
-            _ = await GetDeviceIdAsync(ManufacturerSpecificDeviceIdType.SerialNumber, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -149,25 +139,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
             case ManufacturerSpecificCommand.DeviceSpecificReport:
             {
                 var command = new ManufacturerSpecificDeviceSpecificReportCommand(frame);
-                switch (command.DeviceIdType)
-                {
-                    case ManufacturerSpecificDeviceIdType.FactoryDefault:
-                    {
-                        FactoryDefaultDeviceId = command.DeviceId;
-                        break;
-                    }
-                    case ManufacturerSpecificDeviceIdType.SerialNumber:
-                    {
-                        SerialNumber = command.DeviceId;
-                        break;
-                    }
-                    case ManufacturerSpecificDeviceIdType.PseudoRandom:
-                    {
-                        // Intentionally don't store this value
-                        break;
-                    }
-                }
-
+                _deviceIds[command.DeviceIdType] = command.DeviceId;
                 break;
             }
         }
