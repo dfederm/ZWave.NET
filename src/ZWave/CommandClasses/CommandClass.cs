@@ -10,7 +10,7 @@ public abstract class CommandClass<TCommand> : CommandClass
     {
         if (Unsafe.SizeOf<TCommand>() != Unsafe.SizeOf<byte>())
         {
-            throw new ArgumentException($"The generic type '{typeof(TCommand).Name}' must be an enum with backing type byte.", nameof(TCommand));
+            throw new ArgumentException($"The generic type '{typeof(TCommand).Name}' must be an enum with backing type byte.");
         }
     }
 
@@ -111,6 +111,8 @@ public abstract class CommandClass
             throw new ArgumentException($"Frame is for the wrong command class. Expected {Info.CommandClass} but found {frame.CommandClassId}.", nameof(frame));
         }
 
+        ProcessCommandCore(frame);
+
         lock (_awaitedReports)
         {
             int i = 0;
@@ -129,8 +131,6 @@ public abstract class CommandClass
                 }
             }
         }
-
-        ProcessCommandCore(frame);
     }
 
     protected abstract void ProcessCommandCore(CommandClassFrame frame);
