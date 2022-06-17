@@ -14,6 +14,8 @@ public sealed class Node
 
     private readonly Dictionary<CommandClassId, CommandClass> _commandClasses = new Dictionary<CommandClassId, CommandClass>();
 
+    private readonly object _interviewStateLock = new object();
+
     private Task? _interviewTask;
 
     private CancellationTokenSource? _interviewCancellationTokenSource;
@@ -90,24 +92,23 @@ public sealed class Node
     /// </remarks>
     internal async Task InterviewAsync(CancellationToken cancellationToken)
     {
-        // Cancel any previous interview
-        if (_interviewCancellationTokenSource != null)
+        Task interviewTask;
+        lock (_interviewStateLock)
         {
-            _interviewCancellationTokenSource.Cancel();
-        }
+            // Cancel any previous interview
+            _interviewCancellationTokenSource?.Cancel();
+            Task? previousInterviewTask = _interviewTask;
 
-        // Wait for any previous interview to stop
-        if (_interviewTask != null)
-        {
-            await _interviewTask;
-        }
-
-        _interviewCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        _interviewTask = Task.Run(async () =>
-        {
-            try
+            _interviewCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _interviewTask = interviewTask = Task.Run(async () =>
             {
                 CancellationToken cancellationToken = _interviewCancellationTokenSource.Token;
+
+                // Wait for any previous interview to stop
+                if (previousInterviewTask != null)
+                {
+                    await previousInterviewTask.ConfigureAwait(false);
+                }
 
                 var getNodeProtocolInfoRequest = GetNodeProtocolInfoRequest.Create(Id);
                 GetNodeProtocolInfoResponse getNodeProtocolInfoResponse = await _driver.SendCommandAsync<GetNodeProtocolInfoRequest, GetNodeProtocolInfoResponse>(
@@ -129,17 +130,15 @@ public sealed class Node
                     return;
                 }
 
-                // This request causes unsolicited requests from the controller (kind of like a callback)
-                // with command id ApplicationControllerUpdate
+                // This request causes unsolicited requests from the controller (kind of like a callback) with command id ApplicationControllerUpdate
                 var requestNodeInfoRequest = RequestNodeInfoRequest.Create(Id);
-                ResponseStatusResponse response = await _driver.SendCommandAsync<RequestNodeInfoRequest, ResponseStatusResponse>(requestNodeInfoRequest, cancellationToken)
-                    .ConfigureAwait(false);
-                if (!response.WasRequestAccepted)
+                ResponseStatusResponse requestNodeInfoResponse;
+                do
                 {
-                    // TODO: Log
-                    // TODO: Retry
-                    return;
+                    requestNodeInfoResponse = await _driver.SendCommandAsync<RequestNodeInfoRequest, ResponseStatusResponse>(requestNodeInfoRequest, cancellationToken)
+                        .ConfigureAwait(false);
                 }
+                while (!requestNodeInfoResponse.WasRequestAccepted); // If the command is rejected, retry.
 
                 await _nodeInfoRecievedEvent.WaitAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
 
@@ -157,12 +156,11 @@ public sealed class Node
                 }
 
                 await Task.WhenAll(commandClassInitializationTasks).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        },
-        cancellationToken);
+            },
+            cancellationToken);
+        }
+
+        await interviewTask.ConfigureAwait(false);
     }
 
     internal void NotifyNodeInfoReceived(ApplicationUpdateRequest nodeInfoReceived)
