@@ -89,7 +89,13 @@ public enum CommandClassId : byte
     CentralScene = 0x5b,
     IpAssociation = 0x5c,
     AntiTheft = 0x5d,
+
+    /// <summary>
+    /// The Z-Wave Plus Info Command Class is used to differentiate between Z-Wave Plus, Z-Wave for IP and Z-Wave devices.
+    /// Furthermore this command class provides additional information about the Z-Wave Plus device in question.
+    /// </summary>
     ZWavePlusInfo = 0x5e,
+
     ZIpGateway = 0x5f,
     MultiChannel = 0x60,
     ZIpPortal = 0x61,
