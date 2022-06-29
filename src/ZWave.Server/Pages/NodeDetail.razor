@@ -1,7 +1,6 @@
 ﻿@page "/nodes/{nodeId:int}"
 
 @using ZWave.CommandClasses
-@using ZWave.Serial.Commands
 
 @inject NavigationManager NavigationManager
 @inject Driver Driver
@@ -61,54 +60,96 @@
               <th scope="row">Supports Security</th>
               <td>@Node.SupportsSecurity</td>
             </tr>
-            <tr>
-              <th scope="row">Command Classes</th>
-              <td>
-                @foreach (KeyValuePair<CommandClassId, CommandClassInfo> kvp in Node.CommandClasses)
-                {
-                  <p>
-                    @kvp.Value.CommandClass
-                    @if (kvp.Value.IsSupported || kvp.Value.IsControlled)
-                    {
-                        List<string> info = new(2);
-                        if (kvp.Value.IsSupported)
-                        {
-                            info.Add("Supported");
-                        }
-
-                        if (kvp.Value.IsControlled)
-                        {
-                            info.Add("Controlled");
-                        }
-
-                        <text> (@(string.Join(", ", info)))</text>
-                    }
-                  </p>
-                }
-              </td>
-            </tr>
         </tbody>
     </table>
+
+    if (_commandClassViewModels != null)
+    {
+        <h2>Command Classes</h2>
+        <div class="accordion" id="commandClasses">
+            @foreach (CommandClassViewModel commandClassViewModel in _commandClassViewModels)
+            {
+                CommandClass commandClass = commandClassViewModel.CommandClass;
+                CommandClassId commandClassId = commandClass.Info.CommandClass;
+
+                <div class="accordion-item">
+                <h2 class="accordion-header" id="@commandClassId">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="@($"#collapse{@commandClassId}")" aria-expanded="true" aria-controls="@($"collapse{@commandClassId}")">
+                    @commandClassId
+
+                    @if (@commandClass.Version.HasValue)
+                    {
+                        <span class="badge rounded-pill bg-primary" title="Supported">Version @commandClass.Version.Value</span>
+                    }
+
+                    @if (commandClass.Info.IsSupported)
+                    {
+                        <span class="badge rounded-pill bg-secondary" title="Supported">S</span>
+                    }
+
+                    @if (commandClass.Info.IsControlled)
+                    {
+                        <span class="badge rounded-pill bg-secondary" title="Controlled">C</span>
+                    }
+                    </button>
+                </h2>
+                <div id="@($"collapse{@commandClassId}")" class="accordion-collapse collapse" aria-labelledby="@commandClassId">
+                    <div class="accordion-body">
+                        @if (commandClass is NotImplementedCommandClass)
+                        {
+                            <text>This command is not implemented yet by ZWave.NET</text>
+                        }
+                        else if(commandClassViewModel.ComponentType == null)
+                        {
+                            <text>This command is implemented yet by ZWave.NET but does not currently have UI</text>
+                        }
+                        else
+                        {
+                            <DynamicComponent Type="commandClassViewModel.ComponentType" Parameters="commandClassViewModel.ComponentParameters" />
+                        }
+                    </div>
+                </div>
+                </div>
+            }
+        </div>
+    }
 }
 
 @code
 {
+    private List<CommandClassViewModel>? _commandClassViewModels;
+
     [Parameter]
     public int NodeId { get; set; }
 
     public Node? Node { get; private set; }
 
-    protected override Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         if (NodeId < byte.MinValue
             || NodeId > byte.MaxValue
             || !Driver.Controller.Nodes.TryGetValue((byte)NodeId, out Node? node))
         {
             NavigationManager.NavigateTo(string.Empty);
-            return Task.CompletedTask;
+            return;
         }
 
         Node = node;
-        return Task.CompletedTask;
+
+        IReadOnlyDictionary<CommandClassId, CommandClassInfo> commandClasses = node.CommandClasses;
+        _commandClassViewModels = new List<CommandClassViewModel>(commandClasses.Count);
+        foreach (KeyValuePair<CommandClassId, CommandClassInfo> pair in commandClasses)
+        {
+            CommandClassId commandClassId = pair.Key;
+            CommandClass commandClass = Node.GetCommandClass(commandClassId);
+            Type? componentType = Type.GetType("ZWave.Server.CommandClasses." + commandClassId);
+            Dictionary<string, object>? componentParameters = componentType == null
+                ? null
+                : new Dictionary<string, object>(1) { { "CommandClass", commandClass } };
+
+            _commandClassViewModels.Add(new CommandClassViewModel(commandClass, componentType, componentParameters));
+        }
     }
+
+    private record class CommandClassViewModel(CommandClass CommandClass, Type? ComponentType, Dictionary<string, object>? ComponentParameters);
 }

@@ -1,15 +1,15 @@
 ﻿namespace ZWave.CommandClasses;
 
-internal enum NotImplementedCommand : byte
+public enum NotImplementedCommand : byte
 {
 }
 
 /// <summary>
 /// Represents a command class which hasn't been implemented by this library yet.
 /// </summary>
-internal sealed class NotImplementedCommandClass : CommandClass<NotImplementedCommand>
+public sealed class NotImplementedCommandClass : CommandClass<NotImplementedCommand>
 {
-    public NotImplementedCommandClass(CommandClassInfo info, Driver driver, Node node) : base(info, driver, node)
+    internal NotImplementedCommandClass(CommandClassInfo info, Driver driver, Node node) : base(info, driver, node)
     {
     }
 

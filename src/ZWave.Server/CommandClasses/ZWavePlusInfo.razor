@@ -1,0 +1,39 @@
+﻿@using ZWave.CommandClasses
+
+@if (CommandClass != null)
+{
+    if (CommandClass.ZWavePlusInfo.HasValue)
+    {
+        var info = CommandClass.ZWavePlusInfo.Value;
+
+        <table class="table table-striped">
+            <tbody>
+                <tr>
+                    <th scope="row">ZWave Plus Version</th>
+                    <td>@info.ZWavePlusVersion</td>
+                </tr>
+                <tr>
+                    <th scope="row">Role Type</th>
+                    <td>@info.RoleType</td>
+                </tr>
+                <tr>
+                    <th scope="row">Node Type</th>
+                    <td>@info.NodeType</td>
+                </tr>
+                <tr>
+                    <th scope="row">Installer Icon Type</th>
+                    <td>@info.InstallerIconType</td>
+                </tr>
+                <tr>
+                    <th scope="row">User Icon Type</th>
+                    <td>@info.UserIconType</td>
+                </tr>
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    [Parameter]
+    public ZWavePlusInfoCommandClass? CommandClass { get; set; }
+}

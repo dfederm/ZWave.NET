@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Logging;
 using ZWave.CommandClasses;
 using ZWave.Serial.Commands;
 
@@ -65,23 +66,34 @@ public sealed class Node
 
     public TCommandClass GetCommandClass<TCommandClass>()
         where TCommandClass : CommandClass
+        => (TCommandClass)GetCommandClass(CommandClassFactory.GetCommandClassId<TCommandClass>());
+
+    public bool TryGetCommandClass<TCommandClass>([NotNullWhen(true)]out TCommandClass? commandClass)
+        where TCommandClass : CommandClass
     {
-        CommandClassId commandClassId = CommandClassFactory.GetCommandClassId<TCommandClass>();
-        return (TCommandClass)GetCommandClass(commandClassId);
+        if (TryGetCommandClass(CommandClassFactory.GetCommandClassId<TCommandClass>(), out CommandClass? commandClassBase))
+        {
+            commandClass = (TCommandClass)commandClassBase;
+            return true;
+    }
+        else
+        {
+            commandClass = null;
+            return false;
+        }
     }
 
     public CommandClass GetCommandClass(CommandClassId commandClassId)
+        => !TryGetCommandClass(commandClassId, out CommandClass? commandClass)
+            ? throw new ZWaveException(ZWaveErrorCode.CommandClassNotImplemented, $"The command class {commandClassId} is not implemented by this node.")
+            : commandClass;
+
+    public bool TryGetCommandClass(CommandClassId commandClassId, [NotNullWhen(true)] out CommandClass? commandClass)
     {
-        CommandClass? commandClass;
         lock (_commandClasses)
         {
-            if (!_commandClasses.TryGetValue(commandClassId, out commandClass))
-            {
-                throw new ZWaveException(ZWaveErrorCode.CommandClassNotImplemented, $"The command class {commandClassId} is not implemented by this node.");
-            }
+            return _commandClasses.TryGetValue(commandClassId, out commandClass);
         }
-
-        return commandClass;
     }
 
     /// <summary>
