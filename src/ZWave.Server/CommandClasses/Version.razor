@@ -1,0 +1,134 @@
+﻿@using ZWave.CommandClasses
+
+@if (CommandClass != null)
+{
+    <table class="table table-striped">
+        @if (CommandClass.Capabilities.HasValue)
+        {
+            <tbody>
+                <tr>
+                    <th scope="row">Capabilities</th>
+                    <td>@CommandClass.Capabilities.Value</td>
+                </tr>
+            </tbody>
+        }
+
+        @if (CommandClass.HardwareInfo.HasValue)
+        {
+            VersionHardwareInfo hardwareInfo = CommandClass.HardwareInfo.Value;
+
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Hardware</th>
+                </tr>
+                <tr>
+                    <th scope="row">Library Type</th>
+                    <td>@hardwareInfo.LibraryType</td>
+                </tr>
+                <tr>
+                    <th scope="row">Protocol Version</th>
+                    <td>@hardwareInfo.ProtocolVersion</td>
+                </tr>
+                <tr>
+                    <th scope="row">Firmware Versions</th>
+                    <td>@string.Join(", ", hardwareInfo.FirmwareVersions)</td>
+                </tr>
+                @if (hardwareInfo.HardwareVersion.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Hardware version</th>
+                        <td>@hardwareInfo.HardwareVersion.Value</td>
+                    </tr>
+                }
+            </tbody>
+        }
+
+        @if (CommandClass.SoftwareInfo.HasValue)
+        {
+            VersionSoftwareInfo softwareInfo = CommandClass.SoftwareInfo.Value;
+
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Software</th>
+                </tr>
+
+                @if (softwareInfo.SdkVersion != null)
+                {
+                    <tr>
+                        <th scope="row">Sdk Version</th>
+                        <td>@softwareInfo.SdkVersion</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.ApplicationFrameworkApiVersion != null)
+                {
+                    <tr>
+                        <th scope="row">Application Framework Api Version</th>
+                        <td>@softwareInfo.ApplicationFrameworkApiVersion</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.ApplicationFramworkBuildNumber != null)
+                {
+                    <tr>
+                        <th scope="row">Application Framwork Build Number</th>
+                        <td>@softwareInfo.ApplicationFramworkBuildNumber</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.HostInterfaceVersion != null)
+                {
+                    <tr>
+                        <th scope="row">Host Interface Version</th>
+                        <td>@softwareInfo.HostInterfaceVersion</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.HostInterfaceBuildNumber != null)
+                {
+                    <tr>
+                        <th scope="row">Host Interface Build Number</th>
+                        <td>@softwareInfo.HostInterfaceBuildNumber</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.ZWaveProtocolVersion != null)
+                {
+                    <tr>
+                        <th scope="row">ZWave Protocol Version</th>
+                        <td>@softwareInfo.ZWaveProtocolVersion</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.ZWaveProtocolBuildNumber != null)
+                {
+                    <tr>
+                        <th scope="row">ZWave Protocol Build Number</th>
+                        <td>@softwareInfo.ZWaveProtocolBuildNumber</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.ApplicationVersion != null)
+                {
+                    <tr>
+                        <th scope="row">Application Version</th>
+                        <td>@softwareInfo.ApplicationVersion</td>
+                    </tr>
+                }
+
+                @if (softwareInfo.ApplicationBuildNumber != null)
+                {
+                    <tr>
+                        <th scope="row">Application Build Number</th>
+                        <td>@softwareInfo.ApplicationBuildNumber</td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+}
+
+@code {
+    [Parameter]
+    public VersionCommandClass? CommandClass { get; set; }
+}
