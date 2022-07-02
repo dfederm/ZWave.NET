@@ -1,0 +1,50 @@
+﻿@using ZWave.CommandClasses
+
+@if (CommandClass != null)
+{
+    <table class="table table-striped">
+        @if (CommandClass.ManufacturerInformation.HasValue)
+        {
+            var manufacturerInformation = CommandClass.ManufacturerInformation.Value;
+
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Manufacturer Information</th>
+                </tr>
+                <tr>
+                    <th scope="row">Manufacturer Id</th>
+                    <td>@manufacturerInformation.ManufacturerId</td>
+                </tr>
+                <tr>
+                    <th scope="row">Product Type Id</th>
+                    <td>@manufacturerInformation.ProductTypeId</td>
+                </tr>
+                <tr>
+                    <th scope="row">Product Id</th>
+                    <td>@manufacturerInformation.ProductId</td>
+                </tr>
+            </tbody>
+        }
+
+        @if (CommandClass.DeviceIds.Count > 0)
+        {
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Device Ids</th>
+                </tr>
+                @foreach ((ManufacturerSpecificDeviceIdType idType, string id) in CommandClass.DeviceIds)
+                {
+                    <tr>
+                        <th scope="row">@idType</th>
+                        <td>@id</td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+}
+
+@code {
+    [Parameter]
+    public ManufacturerSpecificCommandClass? CommandClass { get; set; }
+}

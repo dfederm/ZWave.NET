@@ -1,0 +1,53 @@
+﻿@using ZWave.CommandClasses
+
+@if (CommandClass != null)
+{
+    <table class="table table-striped">
+        @if (CommandClass.SupportedSensorTypes != null)
+        {
+            <tbody>
+                <tr>
+                    <th scope="row">Supported Sensor Types</th>
+                    <td>@(string.Join(", ", CommandClass.SupportedSensorTypes)))</td>
+                </tr>
+            </tbody>
+        }
+
+        @if (CommandClass.SupportedScales != null)
+        {
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Supported Scales</th>
+                </tr>
+                @foreach ((MultilevelSensorType sensorType, IReadOnlySet<MultilevelSensorScale>? scales) in CommandClass.SupportedScales)
+                {
+                    <tr>
+                        <th scope="row">@sensorType</th>
+                        <td>@(scales != null ? string.Join(", ", scales.Select(scale => $"{scale.Label} ({scale.Unit})")) : string.Empty)</td>
+                    </tr>
+                }
+            </tbody>
+        }
+
+        @if (CommandClass.SensorValues != null)
+        {
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Sensor Values</th>
+                </tr>
+                @foreach ((MultilevelSensorType sensorType, MultilevelSensorState? state) in CommandClass.SensorValues)
+                {
+                    <tr>
+                        <th scope="row">@sensorType</th>
+                        <td>@(state.HasValue ? $"{state.Value.Value} {state.Value.Scale.Unit}" : string.Empty)</td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+}
+
+@code {
+    [Parameter]
+    public MultilevelSensorCommandClass? CommandClass { get; set; }
+}

@@ -1,0 +1,113 @@
+﻿@using ZWave.CommandClasses
+
+@if (CommandClass != null)
+{
+    <table class="table table-striped">
+        @if (CommandClass.State.HasValue)
+        {
+            var state = CommandClass.State.Value;
+
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">State</th>
+                </tr>
+                <tr>
+                    <th scope="row">Battery Level</th>
+                    <td>@(state.BatteryLevel.IsLow ? "Low" : (state.BatteryLevel.Level + "%"))</td>
+                </tr>
+
+                @if (state.ChargingStatus.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Charging Status</th>
+                        <td>@state.ChargingStatus.Value</td>
+                    </tr>
+                }
+
+                @if (state.IsRechargeable.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Is Rechargeable</th>
+                        <td>@state.IsRechargeable.Value</td>
+                    </tr>
+                }
+
+                @if (state.IsBackupBattery.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Is Backup Battery</th>
+                        <td>@state.IsBackupBattery.Value</td>
+                    </tr>
+                }
+
+                @if (state.IsOverheating.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Is Overheating</th>
+                        <td>@state.IsOverheating.Value</td>
+                    </tr>
+                }
+
+                @if (state.HasLowFluid.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Has Low Fluid</th>
+                        <td>@state.HasLowFluid.Value</td>
+                    </tr>
+                }
+
+                @if (state.ReplaceRechargeStatus.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Replace/Recharge Status</th>
+                        <td>@state.ReplaceRechargeStatus.Value</td>
+                    </tr>
+                }
+
+                @if (state.IsLowTemperature.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Is Low Temperature</th>
+                        <td>@state.IsLowTemperature.Value</td>
+                    </tr>
+                }
+
+                @if (state.Disconnected.HasValue)
+                {
+                    <tr>
+                        <th scope="row">Disconnected</th>
+                        <td>@state.Disconnected.Value</td>
+                    </tr>
+                }
+            </tbody>
+        }
+
+        @if (CommandClass.Health.HasValue)
+        {
+            var health = CommandClass.Health.Value;
+
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Health</th>
+                </tr>
+                <tr>
+                    <th scope="row">MaximumCapacity</th>
+                    <td>@(health.MaximumCapacity.HasValue ? health.MaximumCapacity.Value + "%" : "Unknown")</td>
+                </tr>
+                <tr>
+                    <th scope="row">Battery Temperature Scale</th>
+                    <td>@health.BatteryTemperatureScale</td>
+                </tr>
+                <tr>
+                    <th scope="row">BatteryTemperature</th>
+                    <td>@(health.BatteryTemperature.HasValue ? health.BatteryTemperature.Value : "Unknown")</td>
+                </tr>
+            </tbody>
+        }
+    </table>
+}
+
+@code {
+    [Parameter]
+    public BatteryCommandClass? CommandClass { get; set; }
+}

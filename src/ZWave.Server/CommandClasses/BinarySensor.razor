@@ -1,0 +1,37 @@
+﻿@using ZWave.CommandClasses
+
+@if (CommandClass != null)
+{
+    <table class="table table-striped">
+        @if (CommandClass.SupportedSensorTypes != null)
+        {
+            <tbody>
+                <tr>
+                    <th scope="row">Supported Sensor Types</th>
+                    <td>@(string.Join(", ", CommandClass.SupportedSensorTypes)))</td>
+                </tr>
+            </tbody>
+        }
+
+        @if (CommandClass.SensorValues != null)
+        {
+            <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Sensor Values</th>
+                </tr>
+                @foreach ((BinarySensorType sensorType, bool? value) in CommandClass.SensorValues)
+                {
+                    <tr>
+                        <th scope="row">@sensorType</th>
+                        <td>@value</td>
+                    </tr>
+                }
+            </tbody>
+        }
+    </table>
+}
+
+@code {
+    [Parameter]
+    public BinarySensorCommandClass? CommandClass { get; set; }
+}
