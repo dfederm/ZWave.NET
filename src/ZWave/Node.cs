@@ -154,20 +154,7 @@ public sealed class Node
 
                 await _nodeInfoRecievedEvent.WaitAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                // Initialize command classes
-                List<Task> commandClassInitializationTasks;
-                lock (_commandClasses)
-                {
-                    commandClassInitializationTasks = new List<Task>(_commandClasses.Count);
-                    foreach (KeyValuePair<CommandClassId, CommandClass> pair in _commandClasses)
-                    {
-                        CommandClass commandClass = pair.Value;
-                        Task initializationTask = commandClass.InterviewAsync(cancellationToken);
-                        commandClassInitializationTasks.Add(initializationTask);
-                    }
-                }
-
-                await Task.WhenAll(commandClassInitializationTasks).ConfigureAwait(false);
+                await InterviewCommandClassesAsync(cancellationToken);
             },
             cancellationToken);
         }
@@ -199,6 +186,59 @@ public sealed class Node
                 CommandClass commandClass = CommandClassFactory.Create(commandClassInfo, _driver, this);
                 _commandClasses.Add(commandClassInfo.CommandClass, commandClass);
             }
+        }
+    }
+
+    private async Task InterviewCommandClassesAsync(CancellationToken cancellationToken)
+    {
+        /*
+            Command classes may depend on other command classes, so we need to interview them in topographical order.
+            Instead of sorting them completely out of the gate, we'll just create a list of all the command classes (list A) and if its dependencies
+            are met interview it and if not add to another list (list B). After exhausing the list A, swap list A and B and repeat until both are empty.
+        */
+        Queue<CommandClass> commandClasses = new(_commandClasses.Count);
+        lock (_commandClasses)
+        {
+            foreach ((_, CommandClass commandClass) in _commandClasses)
+            {
+                commandClasses.Enqueue(commandClass);
+            }
+        }
+
+        HashSet<CommandClassId> interviewedCommandClasses = new (_commandClasses.Count);
+        Queue<CommandClass> blockedCommandClasses = new(_commandClasses.Count);
+        while (commandClasses.Count > 0)
+        {
+            while (commandClasses.Count > 0)
+            {
+                CommandClass commandClass = commandClasses.Dequeue();
+                CommandClassId commandClassId = commandClass.Info.CommandClass;
+
+                bool isBlocked = false;
+                CommandClassId[] commandClassDependencies = commandClass.Dependencies;
+                for (int i = 0; i < commandClassDependencies.Length; i++)
+                {
+                    if (!interviewedCommandClasses.Contains(commandClassDependencies[i]))
+                    {
+                        isBlocked = true;
+                        break;
+                    }
+                }
+
+                if (isBlocked)
+                {
+                    blockedCommandClasses.Enqueue(commandClass);
+                }
+                else
+                {
+                    await commandClass.InterviewAsync(cancellationToken);
+                    interviewedCommandClasses.Add(commandClassId);
+                }
+            }
+
+            Queue<CommandClass> tmp = commandClasses;
+            commandClasses = blockedCommandClasses;
+            blockedCommandClasses = tmp;
         }
     }
 

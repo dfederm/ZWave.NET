@@ -121,7 +121,7 @@ internal class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitchComma
             _ => false,
         };
 
-    protected override async Task InterviewCoreAsync(CancellationToken cancellationToken)
+    internal override async Task InterviewAsync(CancellationToken cancellationToken)
     {
         _ = await GetAsync(cancellationToken);
 

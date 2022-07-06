@@ -152,7 +152,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         return IntervalCapabilities!.Value;
     }
 
-    protected override async Task InterviewCoreAsync(CancellationToken cancellationToken)
+    internal override async Task InterviewAsync(CancellationToken cancellationToken)
     {
         _ = await GetIntervalAsync(cancellationToken).ConfigureAwait(false);
 

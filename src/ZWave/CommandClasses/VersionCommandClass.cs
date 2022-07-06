@@ -231,11 +231,8 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
             _ => false,
         };
 
-    protected override Task WaitForDependenciesInterviewAsync()
-    {
-        // Overriding since the default is to depends on this CC.
-        return Task.CompletedTask;
-    }
+    // Overriding since the base class implementation is to depend on this CC.
+    internal override CommandClassId[] Dependencies => Array.Empty<CommandClassId>();
 
     /// <summary>
     /// Request the library type, protocol version and application version from a device that supports
@@ -282,7 +279,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
         return SoftwareInfo!.Value;
     }
 
-    protected override async Task InterviewCoreAsync(CancellationToken cancellationToken)
+    internal override async Task InterviewAsync(CancellationToken cancellationToken)
     {
         // Populate the version of every command class the node implements
         foreach (KeyValuePair<CommandClassId, CommandClassInfo> pair in Node.CommandClasses)
