@@ -99,7 +99,7 @@ public readonly struct MultilevelSwitchState
 
 // Note: We are not implementing the secondary switch at all since it's deprecated.
 [CommandClass(CommandClassId.MultilevelSwitch)]
-internal class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitchCommand>
+public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitchCommand>
 {
     public MultilevelSwitchCommandClass(CommandClassInfo info, Driver driver, Node node)
         : base(info, driver, node)
