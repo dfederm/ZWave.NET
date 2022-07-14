@@ -1,15 +1,8 @@
 ﻿@using ZWave.CommandClasses
 
-@if (_errorMessage != null)
-{
-    <div class="alert alert-danger" role="alert">
-        @_errorMessage
-        @if (!string.IsNullOrEmpty(_exceptionString))
-        {
-            <pre>@_exceptionString</pre>
-        }
-    </div>
-}
+@inherits CommandClassComponentBase
+
+<Error Message="@ErrorMessage" Exception="@ErrorException" />
 
 @if (CommandClass != null)
 {
@@ -69,12 +62,12 @@
         {
             <tbody>
                 <tr>
-                    <th scope="rowgroup" colspan="2">SupportedGet</th>
+                    <th scope="rowgroup" colspan="2">Get Supported</th>
                 </tr>
                 <tr>
                     <td></td>
                     <td>
-                        <button @onclick="GetSupportedAsync">SupportedGet</button>
+                        <button @onclick="GetSupportedAsync">Get Supported</button>
                     </td>
                 </tr>
             </tbody>
@@ -114,7 +107,7 @@
         {
             <tbody>
                 <tr>
-                    <th scope="rowgroup" colspan="2">StartLevelChange</th>
+                    <th scope="rowgroup" colspan="2">Start Level Change</th>
                 </tr>
                 <tr>
                     <th scope="row">Direction</th>
@@ -160,7 +153,7 @@
                 <tr>
                     <td></td>
                     <td>
-                        <button @onclick="StartLevelChangeAsync">StartLevelChange</button>
+                        <button @onclick="StartLevelChangeAsync">Start Level Change</button>
                     </td>
                 </tr>
             </tbody>
@@ -170,12 +163,12 @@
         {
             <tbody>
                 <tr>
-                    <th scope="rowgroup" colspan="2">StopLevelChange</th>
+                    <th scope="rowgroup" colspan="2">Stop Level Change</th>
                 </tr>
                 <tr>
                     <td></td>
                     <td>
-                        <button @onclick="StopLevelChangeAsync">StopLevelChange</button>
+                        <button @onclick="StopLevelChangeAsync">Stop Level Change</button>
                     </td>
                 </tr>
             </tbody>
@@ -184,9 +177,6 @@
 }
 
 @code {
-    private string? _errorMessage;
-    private string? _exceptionString;
-
     // Set
     private int _setValue;
     private byte? _setDuration;
@@ -233,24 +223,4 @@
         => await RunSafelyAsync(
             async () => await CommandClass!.StopLevelChangeAsync(CancellationToken.None),
             nameof(CommandClass.StopLevelChangeAsync));
-
-    private async Task RunSafelyAsync(Func<Task> action, string methodName)
-    {
-        ClearError();
-        try
-        {
-            await action();
-        }
-        catch (Exception ex)
-        {
-            _errorMessage = $"Error calling {methodName}";
-            _exceptionString = ex.ToString();
-        }
-    }
-
-    private void ClearError()
-    {
-        _errorMessage = null;
-        _exceptionString = null;
-    }
 }
