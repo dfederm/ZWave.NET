@@ -15,6 +15,9 @@
 
             <tbody>
                 <tr>
+                    <th scope="rowgroup" colspan="2">State</th>
+                </tr>
+                <tr>
                     <th scope="row">Power Level</th>
                     <td>@state.Powerlevel</td>
                 </tr>
@@ -34,6 +37,9 @@
             PowerlevelTestResult lastTestResult = CommandClass.LastTestResult.Value;
 
             <tbody>
+                <tr>
+                    <th scope="rowgroup" colspan="2">Last Test Result</th>
+                </tr>
                 <tr>
                     <th scope="row">Node Id</th>
                     <td>@lastTestResult.NodeId</td>
