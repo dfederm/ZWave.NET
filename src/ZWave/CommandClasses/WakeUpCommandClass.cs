@@ -41,8 +41,8 @@ public enum WakeUpCommand : byte
 public readonly struct WakeUpInterval
 {
     public WakeUpInterval(
-        uint? wakeupIntervalInSeconds,
-        uint? wakeupDestinationNodeId)
+        uint wakeupIntervalInSeconds,
+        uint wakeupDestinationNodeId)
     {
         WakeupIntervalInSeconds = wakeupIntervalInSeconds;
         WakeupDestinationNodeId = wakeupDestinationNodeId;
@@ -51,12 +51,12 @@ public readonly struct WakeUpInterval
     /// <summary>
     /// The time in seconds between Wake Up periods at the sending node
     /// </summary>
-    public uint? WakeupIntervalInSeconds { get; }
+    public uint WakeupIntervalInSeconds { get; }
 
     /// <summary>
     /// The Wake Up destination NodeID configured at the sending node
     /// </summary>
-    public uint? WakeupDestinationNodeId { get; }
+    public uint WakeupDestinationNodeId { get; }
 }
 
 public readonly struct WakeUpIntervalCapabilities
