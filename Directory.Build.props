@@ -23,6 +23,9 @@
 
     <!-- Enable implicit usings -->
     <ImplicitUsings>Enable</ImplicitUsings>
+
+    <!-- Required for code coverage -->
+    <DebugType>Full</DebugType>
   </PropertyGroup>
 
   <!-- Packaging -->
