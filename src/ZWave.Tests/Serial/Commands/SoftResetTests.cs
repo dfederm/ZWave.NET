@@ -13,6 +13,6 @@ public class SoftResetTests : CommandTestBase
             CommandId.SoftReset,
             new[]
             {
-                (Request: SoftResetRequest.Create(), ExpectedCommandParameters: ReadOnlyMemory<byte>.Empty),
+                (Request: SoftResetRequest.Create(), ExpectedCommandParameters: Array.Empty<byte>()),
             });
 }

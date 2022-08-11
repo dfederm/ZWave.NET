@@ -6,7 +6,7 @@ namespace ZWave.Tests.Serial.Commands;
 [TestClass]
 public class GetSerialApiCapabilitiesTests : CommandTestBase
 {
-    internal record GetSerialApiCapabilitiesResponseData(
+    private record GetSerialApiCapabilitiesResponseData(
         byte SerialApiVersion,
         byte SerialApiRevision,
         ushort ManufacturerId,
@@ -21,7 +21,7 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
             CommandId.GetSerialApiCapabilities,
             new[]
             {
-                (Request: GetSerialApiCapabilitiesRequest.Create(), ExpectedCommandParameters: ReadOnlyMemory<byte>.Empty),
+                (Request: GetSerialApiCapabilitiesRequest.Create(), ExpectedCommandParameters: Array.Empty<byte>()),
             });
 
     [TestMethod]

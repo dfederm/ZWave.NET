@@ -10,13 +10,13 @@ public class CommandTestBase
     internal static void TestSendableCommand<TCommand>(
         DataFrameType dataFrameType,
         CommandId commandId,
-        IReadOnlyList<(TCommand Command, ReadOnlyMemory<byte> ExpectedCommandParameters)> tests)
+        IReadOnlyList<(TCommand Command, byte[] ExpectedCommandParameters)> tests)
         where TCommand : struct, ICommand<TCommand>
     {
         Assert.AreEqual(dataFrameType, TCommand.Type);
         Assert.AreEqual(commandId, TCommand.CommandId);
 
-        foreach ((TCommand command, ReadOnlyMemory<byte> expectedCommandParameters) in tests)
+        foreach ((TCommand command, byte[] expectedCommandParameters) in tests)
         {
             Assert.AreEqual(dataFrameType, command.Frame.Type);
             Assert.AreEqual(commandId, command.Frame.CommandId);
@@ -31,7 +31,15 @@ public class CommandTestBase
         where TCommand : struct, ICommand<TCommand>
     {
         Assert.AreEqual(dataFrameType, TCommand.Type);
-        Assert.AreEqual(commandId, TCommand.CommandId);
+
+        if (commandId == 0)
+        {
+            Assert.ThrowsException<InvalidOperationException>(() => TCommand.CommandId);
+        }
+        else
+        {
+            Assert.AreEqual(commandId, TCommand.CommandId);
+        }
 
         BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
         PropertyInfo[] commandProperties = typeof(TCommand).GetProperties(bindingFlags)
@@ -64,10 +72,11 @@ public class CommandTestBase
                 object? expectedValue = dataProperty.GetValue(expectedData);
                 object? actualValue = commandProperty.GetValue(command);
 
+                string propertyName = commandProperty.Name;
                 Type propertyType = commandProperty.PropertyType;
                 if (propertyType == typeof(ReadOnlyMemory<byte>))
                 {
-                    Assert.That.MemoryIsEqual((ReadOnlyMemory<byte>)expectedValue!, (ReadOnlyMemory<byte>)actualValue!);
+                    Assert.That.MemoryIsEqual((ReadOnlyMemory<byte>)expectedValue!, (ReadOnlyMemory<byte>)actualValue!, $"Property '{propertyName}' not equal");
                 }
                 else if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(HashSet<>))
                 {
@@ -79,11 +88,35 @@ public class CommandTestBase
                     ICollection expectedValueList = (ICollection)listCtor.Invoke(new[] { expectedValue });
                     ICollection actualValueList = (ICollection)listCtor.Invoke(new[] { actualValue });
 
-                    CollectionAssert.AreEquivalent(expectedValueList, actualValueList);
+                    CollectionAssert.AreEquivalent(expectedValueList, actualValueList, $"Property '{propertyName}' not equal");
+                }
+                else if (propertyType.IsGenericType && propertyType.GetGenericTypeDefinition() == typeof(IReadOnlyList<>))
+                {
+                    Type[] genericArgs = propertyType.GetGenericArguments();
+                    Type listType = typeof(List<>).MakeGenericType(genericArgs);
+                    Type enumerableType = typeof(IEnumerable<>).MakeGenericType(genericArgs);
+                    ConstructorInfo listCtor = listType.GetConstructor(new[] { enumerableType })!;
+
+                    ICollection expectedValueList = (ICollection)listCtor.Invoke(new[] { expectedValue });
+                    ICollection actualValueList = (ICollection)listCtor.Invoke(new[] { actualValue });
+
+                    MethodInfo stringJoin = typeof(string).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                        .First(mi => mi.Name.Equals("Join", StringComparison.OrdinalIgnoreCase)
+                            && mi.GetParameters().Length == 2
+                            && mi.GetParameters()[0].ParameterType == typeof(string)
+                            && mi.IsGenericMethodDefinition)
+                        .MakeGenericMethod(genericArgs);
+
+                    CollectionAssert.AreEqual(
+                        expectedValueList,
+                        actualValueList,
+                        $"Property '{propertyName}' not equal.{Environment.NewLine}"
+                            + $"  Expected: {stringJoin.Invoke(null, new object[] { ", ", expectedValueList })}{Environment.NewLine}"
+                            + $"  Actual:   {stringJoin.Invoke(null, new object[] { ", ", actualValueList })}{Environment.NewLine}");
                 }
                 else
                 {
-                    Assert.AreEqual(expectedValue, actualValue);
+                    Assert.AreEqual(expectedValue, actualValue, $"Property '{propertyName}' not equal");
                 }
             }
         }

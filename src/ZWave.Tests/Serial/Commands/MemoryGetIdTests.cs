@@ -6,7 +6,7 @@ namespace ZWave.Tests.Serial.Commands;
 [TestClass]
 public class MemoryGetIdTests : CommandTestBase
 {
-    internal record MemoryGetIdResponseData(uint HomeId, byte NodeId);
+    private record MemoryGetIdResponseData(uint HomeId, byte NodeId);
 
     [TestMethod]
     public void Request()
@@ -15,7 +15,7 @@ public class MemoryGetIdTests : CommandTestBase
             CommandId.MemoryGetId,
             new[]
             {
-                (Request: MemoryGetIdRequest.Create(), ExpectedCommandParameters: ReadOnlyMemory<byte>.Empty),
+                (Request: MemoryGetIdRequest.Create(), ExpectedCommandParameters: Array.Empty<byte>()),
             });
 
     [TestMethod]

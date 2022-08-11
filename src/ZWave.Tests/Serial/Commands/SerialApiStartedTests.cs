@@ -6,7 +6,7 @@ namespace ZWave.Tests.Serial.Commands;
 [TestClass]
 public class SerialApiStartedTests : CommandTestBase
 {
-    internal record SerialApiStartedRequestData(
+    private record SerialApiStartedRequestData(
         SerialApiStartedWakeUpReason WakeUpReason,
         bool WatchdogStarted,
         byte DeviceOptionMask,

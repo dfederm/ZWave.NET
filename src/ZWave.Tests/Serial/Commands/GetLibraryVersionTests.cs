@@ -6,7 +6,7 @@ namespace ZWave.Tests.Serial.Commands;
 [TestClass]
 public class GetLibraryVersionTests : CommandTestBase
 {
-    internal record GetLibraryVersionResponseData(string LibraryVersion, LibraryType LibraryType);
+    private record GetLibraryVersionResponseData(string LibraryVersion, LibraryType LibraryType);
 
     [TestMethod]
     public void Request()
@@ -15,7 +15,7 @@ public class GetLibraryVersionTests : CommandTestBase
             CommandId.GetLibraryVersion,
             new[]
             {
-                (Request: GetLibraryVersionRequest.Create(), ExpectedCommandParameters: ReadOnlyMemory<byte>.Empty),
+                (Request: GetLibraryVersionRequest.Create(), ExpectedCommandParameters: Array.Empty<byte>()),
             });
 
     [TestMethod]

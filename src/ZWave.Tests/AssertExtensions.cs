@@ -80,10 +80,10 @@ internal static class AssertExtensions
         }
     }
 
-    public static void MemoryIsEqual(this Assert _, ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual)
+    public static void MemoryIsEqual(this Assert _, ReadOnlyMemory<byte> expected, ReadOnlyMemory<byte> actual, string? message = null)
         => Assert.IsTrue(
             expected.Span.SequenceEqual(actual.Span),
-            $"Sequences are not equal!{Environment.NewLine}"
+            $"{(message != null ? message + ". " : string.Empty)}Sequences are not equal!{Environment.NewLine}"
                 + $"  Expected: 0x{Convert.ToHexString(expected.Span)}{Environment.NewLine}"
                 + $"  Actual:   0x{Convert.ToHexString(actual.Span)}{Environment.NewLine}");
 }
