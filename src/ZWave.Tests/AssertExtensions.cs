@@ -144,6 +144,17 @@ internal static class AssertExtensions
             {
                 Assert.That.MemoryIsEqual((ReadOnlyMemory<byte>)expectedValue!, (ReadOnlyMemory<byte>)actualValue!, $"Property '{propertyPath}' not equal");
             }
+            else if (expectedPropertyType.IsGenericType && expectedPropertyType.GetGenericTypeDefinition() == typeof(ReadOnlyMemory<>))
+            {
+                Type[] genericArgs = expectedPropertyType.GetGenericArguments();
+
+                MethodInfo memoryIsEqual = typeof(AssertExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    .First(mi => mi.Name.Equals("MemoryIsEqual", StringComparison.OrdinalIgnoreCase) && mi.IsGenericMethodDefinition)
+                    .MakeGenericMethod(genericArgs);
+
+                memoryIsEqual.Invoke(null, new object?[] { Assert.That, expectedValue, actualValue, null });
+
+            }
             else if (expectedPropertyType.IsGenericType && expectedPropertyType.GetGenericTypeDefinition() == typeof(HashSet<>))
             {
                 Type[] genericArgs = expectedPropertyType.GetGenericArguments();
@@ -198,4 +209,11 @@ internal static class AssertExtensions
             $"{(message != null ? message + ". " : string.Empty)}Sequences are not equal!{Environment.NewLine}"
                 + $"  Expected: 0x{Convert.ToHexString(expected.Span)}{Environment.NewLine}"
                 + $"  Actual:   0x{Convert.ToHexString(actual.Span)}{Environment.NewLine}");
+
+    public static void MemoryIsEqual<T>(this Assert _, ReadOnlyMemory<T> expected, ReadOnlyMemory<T> actual, string? message = null)
+        => Assert.IsTrue(
+            expected.Span.SequenceEqual(actual.Span),
+            $"{(message != null ? message + ". " : string.Empty)}Sequences are not equal!{Environment.NewLine}"
+                + $"  Expected: {string.Join(", ", expected.ToArray())}{Environment.NewLine}"
+                + $"  Actual:   {string.Join(", ", actual.ToArray())}{Environment.NewLine}");
 }
