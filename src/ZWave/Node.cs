@@ -30,6 +30,8 @@ public sealed class Node
 
     public byte Id { get; }
 
+    public NodeInterviewStatus InterviewStatus { get; private set; }
+
     public bool IsListening { get; private set; }
 
     public bool IsRouting { get; private set; }
@@ -97,16 +99,18 @@ public sealed class Node
     }
 
     /// <summary>
-    /// Interviews a node.
+    /// Interviews the node.
     /// </summary>
     /// <remarks>
     /// the interview may take a very long time, so the returned task should generally not be awaited.
     /// </remarks>
-    internal async Task InterviewAsync(CancellationToken cancellationToken)
+    public async Task InterviewAsync(CancellationToken cancellationToken)
     {
         Task interviewTask;
         lock (_interviewStateLock)
         {
+            InterviewStatus = NodeInterviewStatus.None;
+
             // Cancel any previous interview
             _interviewCancellationTokenSource?.Cancel();
             Task? previousInterviewTask = _interviewTask;
@@ -119,8 +123,18 @@ public sealed class Node
                 // Wait for any previous interview to stop
                 if (previousInterviewTask != null)
                 {
-                    await previousInterviewTask.ConfigureAwait(false);
+                    try
+                    {
+                        await previousInterviewTask.ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Swallow the cancellation as we just cancelled it.
+                    }
                 }
+
+                // Reset the status again in case the previous interview task modified it.
+                InterviewStatus = NodeInterviewStatus.None;
 
                 var getNodeProtocolInfoRequest = GetNodeProtocolInfoRequest.Create(Id);
                 GetNodeProtocolInfoResponse getNodeProtocolInfoResponse = await _driver.SendCommandAsync<GetNodeProtocolInfoRequest, GetNodeProtocolInfoResponse>(
@@ -136,25 +150,38 @@ public sealed class Node
                 SupportsSecurity = getNodeProtocolInfoResponse.SupportsSecurity;
                 // TODO: Log
 
+                InterviewStatus = NodeInterviewStatus.ProtocolInfo;
+
                 // This is all we need for the controller node
                 if (Id == _driver.Controller.NodeId)
                 {
+                    InterviewStatus = NodeInterviewStatus.Complete;
                     return;
                 }
 
                 // This request causes unsolicited requests from the controller (kind of like a callback) with command id ApplicationControllerUpdate
                 var requestNodeInfoRequest = RequestNodeInfoRequest.Create(Id);
+                int requestNodeInfoRequestNum = 0;
                 ResponseStatusResponse requestNodeInfoResponse;
                 do
                 {
                     requestNodeInfoResponse = await _driver.SendCommandAsync<RequestNodeInfoRequest, ResponseStatusResponse>(requestNodeInfoRequest, cancellationToken)
                         .ConfigureAwait(false);
+
+                    if (requestNodeInfoRequestNum > 0)
+                    {
+                        await Task.Delay(100 * requestNodeInfoRequestNum);
+                    }
+
+                    requestNodeInfoRequestNum++;
                 }
                 while (!requestNodeInfoResponse.WasRequestAccepted); // If the command is rejected, retry.
 
                 await _nodeInfoRecievedEvent.WaitAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
+                InterviewStatus = NodeInterviewStatus.NodeInfo;
 
-                await InterviewCommandClassesAsync(cancellationToken);
+                await InterviewCommandClassesAsync(cancellationToken).ConfigureAwait(false);
+                InterviewStatus = NodeInterviewStatus.Complete;
             },
             cancellationToken);
         }

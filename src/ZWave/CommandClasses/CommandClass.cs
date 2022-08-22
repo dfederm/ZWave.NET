@@ -108,7 +108,7 @@ public abstract class CommandClass
                 if (awaitedReport.CommandId == frame.CommandId
                     && (awaitedReport.Predicate == null || awaitedReport.Predicate(frame)))
                 {
-                    awaitedReport.TaskCompletionSource.SetResult(frame);
+                    awaitedReport.TaskCompletionSource.TrySetResult(frame);
                     _awaitedReports.RemoveAt(i);
                 }
                 else
@@ -155,7 +155,7 @@ public abstract class CommandClass
             _awaitedReports.Add(awaitedReport);
         }
 
-        using (cancellationToken.Register(static state => ((TaskCompletionSource)state!).TrySetCanceled(), tcs))
+        using (cancellationToken.Register(static state => ((TaskCompletionSource<CommandClassFrame>)state!).TrySetCanceled(), tcs))
         {
             return await tcs.Task;
         }

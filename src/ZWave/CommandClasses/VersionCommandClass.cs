@@ -253,8 +253,15 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     {
         var command = VersionCommandClassGetCommand.Create(commandClassId);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<VersionCommandClassReportCommand>(cancellationToken).ConfigureAwait(false);
-        return Node.GetCommandClass(commandClassId).Version!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<VersionCommandClassReportCommand>(
+            predicate: frame =>
+            {
+                var report = new VersionCommandClassReportCommand(frame);
+                return report.RequestedCommandClass == commandClassId;
+            },
+            cancellationToken).ConfigureAwait(false);
+        var reportCommand = new VersionCommandClassReportCommand(reportFrame);
+        return reportCommand.CommandClassVersion;
     }
 
     /// <summary>
