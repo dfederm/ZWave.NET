@@ -139,7 +139,8 @@ internal struct ApplicationUpdateGeneric
     {
         get
         {
-            ReadOnlySpan<byte> allCommandClasses = Data.Span[5..];
+            byte length = Data.Span[1];
+            ReadOnlySpan<byte> allCommandClasses = Data.Span.Slice(5, length);
             return ParseCommandClasses(allCommandClasses);
         }
     }
