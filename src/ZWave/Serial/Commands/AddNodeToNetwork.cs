@@ -20,13 +20,13 @@ internal enum AddNodeMode : byte
     /// Add End Node.
     /// </summary>
     [Obsolete($"Deprecated: Use {nameof(AddNodeMode)}.{nameof(Any)} instead.")]
-    EndNode,
+    EndNode = 0x03,
 
     /// <summary>
     /// Add existing node.
     /// </summary>
     [Obsolete($"Deprecated: Use {nameof(AddNodeMode)}.{nameof(Any)} instead.")]
-    Existing,
+    Existing = 0x04,
 
     /// <summary>
     /// Stop network inclusion.
