@@ -9,20 +9,18 @@
     <LangVersion>Preview</LangVersion>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
 
-    <!-- Produce deterministic binaries -->
-    <Deterministic>true</Deterministic>
-
     <!-- Enable optimized NuGet restore -->
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
-
-    <!-- Enabled the built-in analyzers -->
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
 
     <!-- Enable nullable reference types -->
     <Nullable>Enable</Nullable>
 
     <!-- Enable implicit usings -->
     <ImplicitUsings>Enable</ImplicitUsings>
+
+    <!-- Use Directory.Packages.props to manage versions -->
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
   <!-- Packaging -->
@@ -35,10 +33,6 @@
     <PackageProjectUrl>https://github.com/dfederm/ZWave.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/dfederm/ZWave.NET.git</RepositoryUrl>
     <PackageTags>zwave z-wave</PackageTags>
-
-    <!-- Use Directory.Packages.props to manage versions -->
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
   <ItemGroup Condition="'$(IsPackable)' == 'true'">
     <None Include="$(PackageLicensePath)"
