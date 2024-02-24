@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <!-- Disable analyzer release tracking rule. These are internal to the repo; we don't release them. -->
     <NoWarn>$(NoWarn);RS2008</NoWarn>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
   <ItemGroup>
