@@ -25,5 +25,5 @@ internal static class FrameHeader
     /// <summary>
     /// All valid headers
     /// </summary>
-    public static readonly byte[] ValidHeaders = new byte[] { SOF, ACK, NAK, CAN };
+    public static ReadOnlySpan<byte> ValidHeaders => [SOF, ACK, NAK, CAN];
 }

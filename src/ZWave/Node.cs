@@ -13,7 +13,10 @@ public sealed class Node
 
     private readonly AsyncAutoResetEvent _nodeInfoRecievedEvent = new AsyncAutoResetEvent();
 
-    private readonly Dictionary<CommandClassId, CommandClass> _commandClasses = new Dictionary<CommandClassId, CommandClass>();
+    // Copy-on-write dictionary for lock-free reads. Writes are protected by _commandClassesWriteLock.
+    // NOTE! Any operation which uses this dictionary MUST be aware that it can be replaced at any time, so reading it to a local variable is recommended.
+    private volatile Dictionary<CommandClassId, CommandClass> _commandClasses = new Dictionary<CommandClassId, CommandClass>();
+    private readonly object _commandClassesWriteLock = new object();
 
     private readonly object _interviewStateLock = new object();
 
@@ -52,14 +55,11 @@ public sealed class Node
     {
         get
         {
-            Dictionary<CommandClassId, CommandClassInfo> commandClassInfos;
-            lock (_commandClasses)
+            Dictionary<CommandClassId, CommandClass> commandClasses = _commandClasses;
+            var commandClassInfos = new Dictionary<CommandClassId, CommandClassInfo>(commandClasses.Count);
+            foreach (KeyValuePair<CommandClassId, CommandClass> pair in commandClasses)
             {
-                commandClassInfos = new Dictionary<CommandClassId, CommandClassInfo>(_commandClasses.Count);
-                foreach (KeyValuePair<CommandClassId, CommandClass> pair in _commandClasses)
-                {
-                    commandClassInfos.Add(pair.Key, pair.Value.Info);
-                }
+                commandClassInfos.Add(pair.Key, pair.Value.Info);
             }
 
             return commandClassInfos;
@@ -91,12 +91,7 @@ public sealed class Node
             : commandClass;
 
     public bool TryGetCommandClass(CommandClassId commandClassId, [NotNullWhen(true)] out CommandClass? commandClass)
-    {
-        lock (_commandClasses)
-        {
-            return _commandClasses.TryGetValue(commandClassId, out commandClass);
-        }
-    }
+        => _commandClasses.TryGetValue(commandClassId, out commandClass);
 
     /// <summary>
     /// Interviews the node.
@@ -192,26 +187,64 @@ public sealed class Node
     internal void NotifyNodeInfoReceived(ApplicationUpdateRequest nodeInfoReceived)
     {
         // TODO: Log
-        foreach (CommandClassInfo commandClassInfo in nodeInfoReceived.Generic.CommandClasses)
-        {
-            AddCommandClass(commandClassInfo);
-        }
+        AddCommandClasses(nodeInfoReceived.Generic.CommandClasses);
 
         _nodeInfoRecievedEvent.Set();
     }
 
-    private void AddCommandClass(CommandClassInfo commandClassInfo)
+    private void AddCommandClasses(IReadOnlyList<CommandClassInfo> commandClassInfos)
     {
-        lock(_commandClasses)
+        if (commandClassInfos.Count == 0)
         {
-            if (_commandClasses.TryGetValue(commandClassInfo.CommandClass, out CommandClass? existingCommandClass))
+            return;
+        }
+
+        lock (_commandClassesWriteLock)
+        {
+            Dictionary<CommandClassId, CommandClass> currentDict = _commandClasses;
+
+            // First pass: check if we need to create a new dictionary
+            bool needsNewDict = false;
+            foreach (CommandClassInfo commandClassInfo in commandClassInfos)
             {
-                existingCommandClass.MergeInfo(commandClassInfo);
+                if (!currentDict.ContainsKey(commandClassInfo.CommandClass))
+                {
+                    needsNewDict = true;
+                    break;
+                }
+            }
+
+            if (needsNewDict)
+            {
+                // Copy-on-write: create new dictionary with all entries
+                var newDict = new Dictionary<CommandClassId, CommandClass>(currentDict.Count + commandClassInfos.Count);
+                foreach (KeyValuePair<CommandClassId, CommandClass> pair in currentDict)
+                {
+                    newDict.Add(pair.Key, pair.Value);
+                }
+
+                foreach (CommandClassInfo commandClassInfo in commandClassInfos)
+                {
+                    if (newDict.TryGetValue(commandClassInfo.CommandClass, out CommandClass? existingCommandClass))
+                    {
+                        existingCommandClass.MergeInfo(commandClassInfo);
+                    }
+                    else
+                    {
+                        CommandClass commandClass = CommandClassFactory.Create(commandClassInfo, _driver, this);
+                        newDict.Add(commandClassInfo.CommandClass, commandClass);
+                    }
+                }
+
+                _commandClasses = newDict;
             }
             else
             {
-                CommandClass commandClass = CommandClassFactory.Create(commandClassInfo, _driver, this);
-                _commandClasses.Add(commandClassInfo.CommandClass, commandClass);
+                // All command classes already exist, just merge
+                foreach (CommandClassInfo commandClassInfo in commandClassInfos)
+                {
+                    currentDict[commandClassInfo.CommandClass].MergeInfo(commandClassInfo);
+                }
             }
         }
     }
@@ -223,17 +256,15 @@ public sealed class Node
             Instead of sorting them completely out of the gate, we'll just create a list of all the command classes (list A) and if its dependencies
             are met interview it and if not add to another list (list B). After exhausing the list A, swap list A and B and repeat until both are empty.
         */
-        Queue<CommandClass> commandClasses = new(_commandClasses.Count);
-        lock (_commandClasses)
+        Dictionary<CommandClassId, CommandClass> currentCommandClasses = _commandClasses;
+        Queue<CommandClass> commandClasses = new(currentCommandClasses.Count);
+        foreach ((_, CommandClass commandClass) in currentCommandClasses)
         {
-            foreach ((_, CommandClass commandClass) in _commandClasses)
-            {
-                commandClasses.Enqueue(commandClass);
-            }
+            commandClasses.Enqueue(commandClass);
         }
 
-        HashSet<CommandClassId> interviewedCommandClasses = new (_commandClasses.Count);
-        Queue<CommandClass> blockedCommandClasses = new(_commandClasses.Count);
+        HashSet<CommandClassId> interviewedCommandClasses = new(currentCommandClasses.Count);
+        Queue<CommandClass> blockedCommandClasses = new(currentCommandClasses.Count);
         while (commandClasses.Count > 0)
         {
             while (commandClasses.Count > 0)
@@ -271,14 +302,10 @@ public sealed class Node
 
     internal void ProcessCommand(CommandClassFrame frame)
     {
-        CommandClass? commandClass;
-        lock (_commandClasses)
+        if (!TryGetCommandClass(frame.CommandClassId, out CommandClass? commandClass))
         {
-            if (!_commandClasses.TryGetValue(frame.CommandClassId, out commandClass))
-            {
-                // TODO: Log
-                return;
-            }
+            // TODO: Log
+            return;
         }
 
         commandClass.ProcessCommand(frame);
