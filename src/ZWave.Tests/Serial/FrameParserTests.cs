@@ -37,7 +37,7 @@ public class FrameParserTests
         Assert.AreEqual(default, frame);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(FrameHeader.ACK)]
     [DataRow(FrameHeader.NAK)]
     [DataRow(FrameHeader.CAN)]
@@ -107,7 +107,7 @@ public class FrameParserTests
         Assert.AreEqual(FrameType.Data, frame.Type);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(
         new byte[]
         {

@@ -36,7 +36,7 @@ public class CommandTestBase
 
         if (commandId == 0)
         {
-            Assert.ThrowsException<InvalidOperationException>(() => TCommand.CommandId);
+            Assert.Throws<InvalidOperationException>(() => TCommand.CommandId);
         }
         else
         {

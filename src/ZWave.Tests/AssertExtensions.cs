@@ -114,7 +114,7 @@ internal static class AssertExtensions
         PropertyInfo[] actualProperties = actualType.GetProperties(bindingFlags)
             .Where(p => !excludedProperties.Any(excludedProperty => p.Name.Equals(excludedProperty, StringComparison.OrdinalIgnoreCase)))
             .ToArray();
-        Assert.AreEqual(expectedProperties.Length, actualProperties.Length, $"Object property counts do not match for object {propertyPathBase ?? "<root>"}");
+        Assert.HasCount(expectedProperties.Length, actualProperties, $"Object property counts do not match for object {propertyPathBase ?? "<root>"}");
 
         var properties = new List<(PropertyInfo ExpectedProperty, PropertyInfo ActualProperty)>(actualProperties.Length);
         foreach (PropertyInfo expectedProperty in expectedProperties)

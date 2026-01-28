@@ -1,11 +1,12 @@
-﻿using System.Text;
+﻿using System.Collections.Immutable;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ZWave.BuildTools;
 
 [Generator]
-public sealed class CommandClassFactoryGenerator : ISourceGenerator
+public sealed class CommandClassFactoryGenerator : IIncrementalGenerator
 {
     private static readonly DiagnosticDescriptor DuplicateCommandClassId = new DiagnosticDescriptor(
         id: "ZWAVE001",
@@ -15,9 +16,7 @@ public sealed class CommandClassFactoryGenerator : ISourceGenerator
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public void Initialize(GeneratorInitializationContext context)
-    {
-        const string attributeSource = @"
+    private const string AttributeSource = @"
 namespace ZWave.CommandClasses;
 
 [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
@@ -29,21 +28,71 @@ internal sealed class CommandClassAttribute: Attribute
         => (Id) = (id);
 }
 ";
-        context.RegisterForPostInitialization((pi) => pi.AddSource("CommandClassAttribute.generated.cs", attributeSource));
-        context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
+
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
+        context.RegisterPostInitializationOutput(static ctx =>
+            ctx.AddSource("CommandClassAttribute.generated.cs", AttributeSource));
+
+        // Find all classes with [CommandClass] and extract (CommandClassId, ClassName)
+        IncrementalValuesProvider<(string CommandClassId, string ClassName)> commandClasses = context.SyntaxProvider
+            .ForAttributeWithMetadataName(
+                "ZWave.CommandClasses.CommandClassAttribute",
+                predicate: static (node, _) => node is ClassDeclarationSyntax,
+                transform: static (ctx, _) =>
+                {
+                    string className = ((ClassDeclarationSyntax)ctx.TargetNode).Identifier.ToString();
+
+                    // Get the attribute argument as "CommandClassId.EnumMemberName"
+                    foreach (AttributeData attr in ctx.Attributes)
+                    {
+                        if (attr.ConstructorArguments.Length > 0)
+                        {
+                            TypedConstant arg = attr.ConstructorArguments[0];
+                            if (arg.Type?.TypeKind == TypeKind.Enum)
+                            {
+                                // Get enum member name from the constant value
+                                string? memberName = arg.Type.GetMembers()
+                                    .OfType<IFieldSymbol>()
+                                    .FirstOrDefault(f => f.HasConstantValue && Equals(f.ConstantValue, arg.Value))
+                                    ?.Name;
+
+                                if (memberName != null)
+                                {
+                                    return ($"CommandClassId.{memberName}", className);
+                                }
+                            }
+                        }
+                    }
+
+                    return default;
+                })
+            .Where(static x => x.Item1 != null!);
+
+        IncrementalValueProvider<ImmutableArray<(string CommandClassId, string ClassName)>> collected = commandClasses.Collect();
+
+        context.RegisterSourceOutput(collected, static (spc, items) =>
+        {
+            var idToType = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            foreach ((string commandClassId, string className) in items)
+            {
+                if (idToType.ContainsKey(commandClassId))
+                {
+                    spc.ReportDiagnostic(Diagnostic.Create(DuplicateCommandClassId, Location.None, commandClassId));
+                }
+                else
+                {
+                    idToType.Add(commandClassId, className);
+                }
+            }
+
+            spc.AddSource("CommandClassFactory.generated.cs", GenerateSource(idToType));
+        });
     }
 
-    public void Execute(GeneratorExecutionContext context)
+    private static string GenerateSource(Dictionary<string, string> idToType)
     {
-        SyntaxReceiver syntaxReceiver = (SyntaxReceiver)context.SyntaxReceiver!;
-
-        foreach (Diagnostic diagnostic in syntaxReceiver.DiagnosticsToReport)
-        {
-            context.ReportDiagnostic(diagnostic);
-        }
-
-        Dictionary<string, string> commandClassIdToType = syntaxReceiver.CommandClassIdToType;
-
         var sb = new StringBuilder();
         sb.Append(@"
 #nullable enable
@@ -56,18 +105,9 @@ internal static class CommandClassFactory
     {
 ");
 
-        foreach (KeyValuePair<string, string> pair in commandClassIdToType)
+        foreach (KeyValuePair<string, string> pair in idToType)
         {
-            string commandClassId = pair.Key;
-            string commandClassType = pair.Value;
-
-            // { CommandClassId.Basic, (info, driver, node) => new BasicCommandClass(info, driver, node) },
-            sb.Append("        { ");
-            sb.Append(commandClassId);
-            sb.Append(", (info, driver, node) => new ");
-            sb.Append(commandClassType);
-            sb.Append("(info, driver, node) },");
-            sb.AppendLine();
+            sb.AppendLine($"        {{ {pair.Key}, (info, driver, node) => new {pair.Value}(info, driver, node) }},");
         }
 
         sb.Append(@"    };
@@ -76,18 +116,9 @@ internal static class CommandClassFactory
     {
 ");
 
-        foreach (KeyValuePair<string, string> pair in commandClassIdToType)
+        foreach (KeyValuePair<string, string> pair in idToType)
         {
-            string commandClassId = pair.Key;
-            string commandClassType = pair.Value;
-
-            // { typeof(BasicCommandClass), CommandClassId.Basic },
-            sb.Append("        { typeof(");
-            sb.Append(commandClassType);
-            sb.Append("), ");
-            sb.Append(commandClassId);
-            sb.Append(" },");
-            sb.AppendLine();
+            sb.AppendLine($"        {{ typeof({pair.Value}), {pair.Key} }},");
         }
 
         sb.Append(@"    };
@@ -102,55 +133,6 @@ internal static class CommandClassFactory
         => TypeToIdMap[typeof(TCommandClass)];
 }
 ");
-
-        context.AddSource("CommandClassFactory.generated.cs", sb.ToString());
+        return sb.ToString();
     }
-
-    private sealed class SyntaxReceiver : ISyntaxReceiver
-    {
-        public Dictionary<string, string> CommandClassIdToType { get; } = new Dictionary<string, string>(StringComparer.Ordinal);
-
-        public List<Diagnostic> DiagnosticsToReport { get; } = new List<Diagnostic>();
-
-        public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-        {
-            if (syntaxNode is ClassDeclarationSyntax classDeclarationSyntax)
-            {
-                foreach (AttributeListSyntax attributeListSyntax in classDeclarationSyntax.AttributeLists)
-                {
-                    foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
-                    {
-                        var attributeName = attributeSyntax.Name.ToString();
-                        if (attributeName == "CommandClass"
-                            || attributeName == "CommandClassAttribute")
-                        {
-                            if (attributeSyntax.ArgumentList != null
-                                && attributeSyntax.ArgumentList.Arguments.Count > 0)
-                            {
-                                AttributeArgumentSyntax attributeArgumentSyntax = attributeSyntax.ArgumentList.Arguments[0];
-                                string attributeArgumentValue = attributeArgumentSyntax.ToString();
-                                if (attributeArgumentValue.StartsWith("CommandClassId."))
-                                {
-                                    if (CommandClassIdToType.ContainsKey(attributeArgumentValue))
-                                    {
-                                        var diagnostic = Diagnostic.Create(
-                                            DuplicateCommandClassId,
-                                            attributeSyntax.GetLocation(),
-                                            attributeArgumentValue);
-                                        DiagnosticsToReport.Add(diagnostic);
-                                    }
-                                    else
-                                    {
-                                        CommandClassIdToType.Add(attributeArgumentValue, classDeclarationSyntax.Identifier.ToString());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private record struct CommandClassMetadata(string CommandClassId, string CommandClassType);
 }
