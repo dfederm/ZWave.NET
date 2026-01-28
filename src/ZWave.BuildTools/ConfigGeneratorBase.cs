@@ -1,10 +1,12 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Immutable;
+using System.Text.Json;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace ZWave.BuildTools;
 
-public abstract class ConfigGeneratorBase<TConfig> : ISourceGenerator
+public abstract class ConfigGeneratorBase<TConfig> : IIncrementalGenerator
 {
     private static readonly DiagnosticDescriptor MissingConfig = new DiagnosticDescriptor(
         id: "ZWAVE002",
@@ -22,80 +24,68 @@ public abstract class ConfigGeneratorBase<TConfig> : ISourceGenerator
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
+    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
+    {
+        AllowTrailingCommas = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        ReadCommentHandling = JsonCommentHandling.Skip,
+    };
+
     protected abstract string ConfigType { get; }
 
-    public void Initialize(GeneratorInitializationContext context)
+    public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        // No initialization required
-    }
+        // Filter additional texts to find the matching config file and extract path + content
+        IncrementalValueProvider<ImmutableArray<(string Path, string Content)>> configFiles = context.AdditionalTextsProvider
+            .Combine(context.AnalyzerConfigOptionsProvider)
+            .Where(pair => pair.Right.GetOptions(pair.Left).TryGetValue("build_metadata.additionalfiles.ConfigType", out string? configType) && configType.Equals(ConfigType))
+            .Select(static (pair, cancellationToken) => (Path: pair.Left.Path, Content: pair.Left.GetText(cancellationToken)?.ToString() ?? string.Empty))
+            .Where(static item => !string.IsNullOrEmpty(item.Content))
+            .Collect();
 
-    public void Execute(GeneratorExecutionContext context)
-{
-        AdditionalText? configFile = GetMatchingConfigFile(context);
-        if (configFile == null)
+        context.RegisterSourceOutput(configFiles, (sourceProductionContext, files) =>
         {
-            context.ReportDiagnostic(Diagnostic.Create(MissingConfig, Location.None, ConfigType));
-            return;
-        }
-
-        string configContent = configFile.GetText()!.ToString();
-
-        TConfig? config;
-        try
-        {
-            config = JsonSerializer.Deserialize<TConfig>(
-                configContent,
-                new JsonSerializerOptions
-                {
-                    AllowTrailingCommas = true,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                });
-        }
-        catch (JsonException ex)
-        {
-            Location location;
-            if (ex.LineNumber == null || ex.BytePositionInLine == null)
+            if (files.Length == 0)
             {
-                location = Location.None;
+                sourceProductionContext.ReportDiagnostic(Diagnostic.Create(MissingConfig, Location.None, ConfigType));
+                return;
             }
-            else
+
+            var configFile = files[0];
+            TConfig? config;
+            try
             {
-                var linePosition = new LinePosition((int)ex.LineNumber.Value, (int)ex.BytePositionInLine.Value);
+                config = JsonSerializer.Deserialize<TConfig>(configFile.Content, JsonOptions);
+            }
+            catch (JsonException ex)
+            {
+                Location location;
+                if (ex.LineNumber == null || ex.BytePositionInLine == null)
+                {
+                    location = Location.None;
+                }
+                else
+                {
+                    var linePosition = new LinePosition((int)ex.LineNumber.Value, (int)ex.BytePositionInLine.Value);
                 var lineSpan = new LinePositionSpan(linePosition, linePosition);
                 var textSpan = new TextSpan(0, 0);
                 location = Location.Create(configFile.Path, textSpan, lineSpan);
+                }
+
+                var diagnostic = Diagnostic.Create(InvalidConfig, location, ConfigType, ex.Message);
+                sourceProductionContext.ReportDiagnostic(diagnostic);
+                return;
             }
 
-            var diagnostic = Diagnostic.Create(InvalidConfig, location, ConfigType, ex.Message);
-            context.ReportDiagnostic(diagnostic);
-            return;
-        }
+            if (config == null)
+            {
+                sourceProductionContext.ReportDiagnostic(Diagnostic.Create(InvalidConfig, Location.None, ConfigType, "Json was invalid"));
+                return;
+            }
 
-        if (config == null)
-        {
-            var diagnostic = Diagnostic.Create(InvalidConfig, Location.None, ConfigType, "Json was invalid");
-            context.ReportDiagnostic(diagnostic);
-            return;
-        }
-
-        string source = CreateSource(config);
-        context.AddSource(ConfigType + ".generated.cs", source);
+            sourceProductionContext.AddSource(ConfigType + ".generated.cs", CreateSource(config));
+        });
     }
 
     protected abstract string CreateSource(TConfig config);
-
-    private AdditionalText? GetMatchingConfigFile(GeneratorExecutionContext context)
-    {
-        foreach (AdditionalText file in context.AdditionalFiles)
-        {
-            if (context.AnalyzerConfigOptions.GetOptions(file).TryGetValue("build_metadata.additionalfiles.ConfigType", out string? configType)
-                && configType.Equals(ConfigType))
-            {
-                return file;
-            }
-        }
-
-        return null;
-    }
 }

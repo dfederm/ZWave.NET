@@ -19,10 +19,10 @@ public class FrameTests
     [TestMethod]
     public void ConstructorEmptyData()
     {
-        Assert.ThrowsException<ArgumentException>(() => new Frame(Array.Empty<byte>()));
+        Assert.Throws<ArgumentException>(() => new Frame(Array.Empty<byte>()));
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(FrameHeader.ACK, FrameType.ACK)]
     [DataRow(FrameHeader.NAK, FrameType.NAK)]
     [DataRow(FrameHeader.CAN, FrameType.CAN)]
@@ -32,17 +32,17 @@ public class FrameTests
         Assert.AreEqual(expectedFrameType, frame.Type);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(FrameHeader.ACK)]
     [DataRow(FrameHeader.NAK)]
     [DataRow(FrameHeader.CAN)]
     public void ConstructorSingleByteFramesWithExtraData(byte frameHeader)
     {
-        Assert.ThrowsException<ArgumentException>(() => new Frame(new byte[] { frameHeader, 0x01 }));
+        Assert.Throws<ArgumentException>(() => new Frame(new byte[] { frameHeader, 0x01 }));
     }
 
     // Single byte frames use a singleton array to avoid holding onto many small arrays
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(true, new[] { FrameHeader.ACK })]
     [DataRow(true, new[] { FrameHeader.NAK })]
     [DataRow(true, new[] { FrameHeader.CAN })]
@@ -80,7 +80,7 @@ public class FrameTests
         byte[] frameData = ValidDataFrameData.ToArray();
         frameData[1]--; // Length
 
-        Assert.ThrowsException<ArgumentException>(() => new Frame(frameData));
+        Assert.Throws<ArgumentException>(() => new Frame(frameData));
     }
 
     [TestMethod]
@@ -94,7 +94,7 @@ public class FrameTests
             0xEF,
         };
 
-        Assert.ThrowsException<ArgumentException>(() => new Frame(frameData));
+        Assert.Throws<ArgumentException>(() => new Frame(frameData));
     }
 
     [TestMethod]
@@ -117,10 +117,10 @@ public class FrameTests
     [TestMethod]
     public void ToDataFrameForNonDataFrame()
     {
-        Assert.ThrowsException<InvalidOperationException>(() => Frame.ACK.ToDataFrame());
+        Assert.Throws<InvalidOperationException>(() => Frame.ACK.ToDataFrame());
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(true, new[] { FrameHeader.ACK }, new[] { FrameHeader.ACK })]
     [DataRow(true, new[] { FrameHeader.NAK }, new[] { FrameHeader.NAK })]
     [DataRow(true, new[] { FrameHeader.CAN }, new[] { FrameHeader.CAN })]
@@ -170,7 +170,7 @@ public class FrameTests
         Assert.AreEqual(expectedAreEqual, frame1 == frame2);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow(new[] { FrameHeader.ACK })]
     [DataRow(new[] { FrameHeader.NAK })]
     [DataRow(new[] { FrameHeader.CAN })]
@@ -225,6 +225,6 @@ public class FrameTests
             0xF6 // Checksum
         }));
 
-        Assert.AreEqual(hashCodesAdded, hashCodes.Count);
+        Assert.HasCount(hashCodesAdded, hashCodes);
     }
 }

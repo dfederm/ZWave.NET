@@ -21,7 +21,7 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
       - name: Test
-        run: dotnet test --configuration Release --no-build --logger trx --results-directory TestResults --collect:"XPlat Code Coverage"
+        run: dotnet test --configuration Release --no-build --report-trx --results-directory TestResults --coverage
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
