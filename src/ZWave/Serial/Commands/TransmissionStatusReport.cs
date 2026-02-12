@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal enum TransmissionStatusReportLastRouteSpeed : byte
+public enum TransmissionStatusReportLastRouteSpeed : byte
 {
     /// <summary>
     /// Z-Wave 9.6 kbits/s
@@ -32,7 +32,7 @@ internal enum TransmissionStatusReportLastRouteSpeed : byte
 ///     A host application MUST be resistant to unexpected length of this field (both shorter and longer).
 /// The spec doesn't define just how short we need to be resilient to, so consider *all* fields optional.
 /// </remarks>
-internal readonly struct TransmissionStatusReport
+public readonly struct TransmissionStatusReport
 {
     private readonly ReadOnlyMemory<byte> _data;
 

@@ -1,4 +1,4 @@
-﻿using ZWave.CommandClasses;
+using ZWave.CommandClasses;
 using static ZWave.Serial.Commands.CommandDataParsingHelpers;
 
 namespace ZWave.Serial.Commands;
@@ -6,7 +6,7 @@ namespace ZWave.Serial.Commands;
 /// <summary>
 /// Indicates which event has triggered the transmission of thie ApplicationControllerUpdate command.
 /// </summary>
-enum ApplicationUpdateEvent
+public enum ApplicationUpdateEvent
 {
     /// <summary>
     /// The SIS NodeID has been updated.
@@ -65,7 +65,7 @@ enum ApplicationUpdateEvent
     NodeInfoSmartStartHomeIdReceivedLongRange = 0x87,
 }
 
-internal struct ApplicationUpdateRequest : ICommand<ApplicationUpdateRequest>
+public readonly struct ApplicationUpdateRequest : ICommand<ApplicationUpdateRequest>
 {
     public ApplicationUpdateRequest(DataFrame frame)
     {
@@ -115,7 +115,7 @@ internal struct ApplicationUpdateRequest : ICommand<ApplicationUpdateRequest>
     public static ApplicationUpdateRequest Create(DataFrame frame) => new ApplicationUpdateRequest(frame);
 }
 
-internal struct ApplicationUpdateGeneric
+public readonly struct ApplicationUpdateGeneric
 {
     public ApplicationUpdateGeneric(ReadOnlyMemory<byte> data)
     {
@@ -146,7 +146,7 @@ internal struct ApplicationUpdateGeneric
     }
 }
 
-internal struct ApplicationUpdateSmartStartPrime
+public readonly struct ApplicationUpdateSmartStartPrime
 {
     public ApplicationUpdateSmartStartPrime(ReadOnlyMemory<byte> data)
     {
@@ -184,7 +184,7 @@ internal struct ApplicationUpdateSmartStartPrime
     }
 }
 
-internal struct ApplicationUpdateSmartStartIncludedNodeInfo
+public readonly struct ApplicationUpdateSmartStartIncludedNodeInfo
 {
     public ApplicationUpdateSmartStartIncludedNodeInfo(ReadOnlyMemory<byte> data)
     {

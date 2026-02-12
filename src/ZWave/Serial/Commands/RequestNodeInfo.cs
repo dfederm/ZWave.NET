@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal struct RequestNodeInfoRequest : ICommand<RequestNodeInfoRequest>
+public readonly struct RequestNodeInfoRequest : ICommand<RequestNodeInfoRequest>
 {
     public RequestNodeInfoRequest(DataFrame frame)
     {
@@ -15,9 +15,10 @@ internal struct RequestNodeInfoRequest : ICommand<RequestNodeInfoRequest>
 
     public static RequestNodeInfoRequest Create(byte nodeId)
     {
-        Span<byte> commandParameters = stackalloc byte[1];
-        commandParameters[0] = nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-
+        ReadOnlySpan<byte> commandParameters =
+        [
+            nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+        ];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new RequestNodeInfoRequest(frame);
     }

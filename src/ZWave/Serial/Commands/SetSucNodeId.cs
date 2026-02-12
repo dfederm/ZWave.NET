@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal enum SetSucNodeIdRequestCapabilities : byte
+public enum SetSucNodeIdRequestCapabilities : byte
 {
     /// <summary>
     /// Enable the NodeID server functionality to become a SIS.
@@ -11,7 +11,7 @@ internal enum SetSucNodeIdRequestCapabilities : byte
 /// <summary>
 /// Indicate the status regarding the configuration of a static/bridge controller to be SUC/SIS node
 /// </summary>
-internal enum SetSucNodeIdStatus : byte
+public enum SetSucNodeIdStatus : byte
 {
     /// <summary>
     /// The process of configuring the static/bridge controller is ended successfully
@@ -24,7 +24,7 @@ internal enum SetSucNodeIdStatus : byte
     Failed = 0x06,
 }
 
-internal struct SetSucNodeIdRequest : IRequestWithCallback<SetSucNodeIdRequest>
+public readonly struct SetSucNodeIdRequest : IRequestWithCallback<SetSucNodeIdRequest>
 {
     public SetSucNodeIdRequest(DataFrame frame)
     {
@@ -48,13 +48,14 @@ internal struct SetSucNodeIdRequest : IRequestWithCallback<SetSucNodeIdRequest>
         TransmissionOptions transmissionOptions,
         byte sessionId)
     {
-        Span<byte> commandParameters = stackalloc byte[5];
-        commandParameters[0] = nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        commandParameters[1] = (byte)(enableSuc ? 1 : 0);
-        commandParameters[2] = (byte)transmissionOptions;
-        commandParameters[3] = (byte)capabilities;
-        commandParameters[4] = sessionId;
-
+        ReadOnlySpan<byte> commandParameters =
+        [
+            nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+            (byte)(enableSuc ? 1 : 0),
+            (byte)transmissionOptions,
+            (byte)capabilities,
+            sessionId,
+        ];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SetSucNodeIdRequest(frame);
     }
@@ -62,7 +63,7 @@ internal struct SetSucNodeIdRequest : IRequestWithCallback<SetSucNodeIdRequest>
     public static SetSucNodeIdRequest Create(DataFrame frame) => new SetSucNodeIdRequest(frame);
 }
 
-internal struct SetSucNodeIdCallback : ICommand<SetSucNodeIdCallback>
+public readonly struct SetSucNodeIdCallback : ICommand<SetSucNodeIdCallback>
 {
     public SetSucNodeIdCallback(DataFrame frame)
     {

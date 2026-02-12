@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal struct ResponseStatusResponse : ICommand<ResponseStatusResponse>
+public readonly struct ResponseStatusResponse : ICommand<ResponseStatusResponse>
 {
     public ResponseStatusResponse(DataFrame frame)
     {

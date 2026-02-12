@@ -132,9 +132,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
 
         public static BasicSetCommand Create(GenericValue value)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = value.Value;
-
+            ReadOnlySpan<byte> commandParameters = [value.Value];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new BasicSetCommand(frame);
         }

@@ -1,7 +1,7 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 [Flags]
-internal enum ReceivedStatus : byte
+public enum ReceivedStatus : byte
 {
     // Bit 0 is reserved
 

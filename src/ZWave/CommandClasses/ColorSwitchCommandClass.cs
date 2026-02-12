@@ -294,9 +294,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
 
         public static ColorSwitchGetCommand Create(ColorSwitchColorComponent colorComponent)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = (byte)colorComponent;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)colorComponent];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new ColorSwitchGetCommand(frame);
         }
@@ -440,9 +438,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
 
         public static ColorSwitchStartLevelChangeCommand Create(ColorSwitchColorComponent colorComponent)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = (byte)colorComponent;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)colorComponent];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new ColorSwitchStartLevelChangeCommand(frame);
         }

@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal struct SendDataRequest : IRequestWithCallback<SendDataRequest>
+public readonly struct SendDataRequest : IRequestWithCallback<SendDataRequest>
 {
     public SendDataRequest(DataFrame frame)
     {
@@ -37,7 +37,7 @@ internal struct SendDataRequest : IRequestWithCallback<SendDataRequest>
     public static SendDataRequest Create(DataFrame frame) => new SendDataRequest(frame);
 }
 
-internal struct SendDataCallback : ICommand<SendDataCallback>
+public readonly struct SendDataCallback : ICommand<SendDataCallback>
 {
     public SendDataCallback(DataFrame frame)
     {

@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal struct MemoryGetIdRequest : ICommand<MemoryGetIdRequest>
+public readonly struct MemoryGetIdRequest : ICommand<MemoryGetIdRequest>
 {
     public MemoryGetIdRequest(DataFrame frame)
     {
@@ -22,7 +22,7 @@ internal struct MemoryGetIdRequest : ICommand<MemoryGetIdRequest>
     public static MemoryGetIdRequest Create(DataFrame frame) => new MemoryGetIdRequest(frame);
 }
 
-internal struct MemoryGetIdResponse : ICommand<MemoryGetIdResponse>
+public readonly struct MemoryGetIdResponse : ICommand<MemoryGetIdResponse>
 {
     public MemoryGetIdResponse(DataFrame frame)
     {

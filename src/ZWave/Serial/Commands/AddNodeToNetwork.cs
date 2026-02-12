@@ -1,9 +1,9 @@
-﻿using ZWave.CommandClasses;
+using ZWave.CommandClasses;
 using static ZWave.Serial.Commands.CommandDataParsingHelpers;
 
 namespace ZWave.Serial.Commands;
 
-internal enum AddNodeMode : byte
+public enum AddNodeMode : byte
 {
     /// <summary>
     /// Add any node.
@@ -49,7 +49,7 @@ internal enum AddNodeMode : byte
     StartSmartStart = 0x09,
 }
 
-internal enum AddNodeStatus : byte
+public enum AddNodeStatus : byte
 {
     /// <summary>
     /// The Z-Wave Module has initiated Network inclusion and is ready to include new nodes.
@@ -82,7 +82,7 @@ internal enum AddNodeStatus : byte
     InclusionCompleted = 0x06,
 }
 
-internal struct AddNodeToNetworkRequest : ICommand<AddNodeToNetworkRequest>
+public readonly struct AddNodeToNetworkRequest : ICommand<AddNodeToNetworkRequest>
 {
     private const byte HighPower = 0b1000_0000;
     private const byte NetworkWide = 0b0100_0000;
@@ -179,11 +179,11 @@ internal struct AddNodeToNetworkRequest : ICommand<AddNodeToNetworkRequest>
 
     public static AddNodeToNetworkRequest CreateStartSmartStart()
     {
-        Span<byte> commandParameters = stackalloc byte[2];
-
-        commandParameters[0] = NetworkWide | (byte)AddNodeMode.SmartStartInclude;
-        commandParameters[1] = 0; // No callback
-
+        ReadOnlySpan<byte> commandParameters =
+        [
+            NetworkWide | (byte)AddNodeMode.SmartStartInclude,
+            0, // No callback
+        ];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AddNodeToNetworkRequest(frame);
     }
@@ -191,7 +191,7 @@ internal struct AddNodeToNetworkRequest : ICommand<AddNodeToNetworkRequest>
     public static AddNodeToNetworkRequest Create(DataFrame frame) => new AddNodeToNetworkRequest(frame);
 }
 
-internal struct AddNodeToNetworkCallback : ICommand<AddNodeToNetworkCallback>
+public readonly struct AddNodeToNetworkCallback : ICommand<AddNodeToNetworkCallback>
 {
     public AddNodeToNetworkCallback(DataFrame frame)
     {

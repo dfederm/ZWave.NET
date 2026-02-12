@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal struct SoftResetRequest : ICommand<SoftResetRequest>
+public readonly struct SoftResetRequest : ICommand<SoftResetRequest>
 {
     public SoftResetRequest(DataFrame frame)
     {

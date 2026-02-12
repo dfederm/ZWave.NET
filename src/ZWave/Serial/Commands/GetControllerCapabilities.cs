@@ -1,7 +1,7 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 [Flags]
-internal enum ControllerCapabilities : byte
+public enum ControllerCapabilities : byte
 {
     /// <summary>
     /// The Z-Wave Module has the secondary controller role
@@ -37,7 +37,7 @@ internal enum ControllerCapabilities : byte
     NoNodesIncluded = 1 << 5,
 }
 
-internal struct GetControllerCapabilitiesRequest : ICommand<GetControllerCapabilitiesRequest>
+public readonly struct GetControllerCapabilitiesRequest : ICommand<GetControllerCapabilitiesRequest>
 {
     public GetControllerCapabilitiesRequest(DataFrame frame)
     {
@@ -59,7 +59,7 @@ internal struct GetControllerCapabilitiesRequest : ICommand<GetControllerCapabil
     public static GetControllerCapabilitiesRequest Create(DataFrame frame) => new GetControllerCapabilitiesRequest(frame);
 }
 
-internal struct GetControllerCapabilitiesResponse : ICommand<GetControllerCapabilitiesResponse>
+public readonly struct GetControllerCapabilitiesResponse : ICommand<GetControllerCapabilitiesResponse>
 {
     public GetControllerCapabilitiesResponse(DataFrame frame)
     {

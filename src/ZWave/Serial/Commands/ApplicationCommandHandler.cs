@@ -1,9 +1,9 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// This command is used by a Z-Wave module to notify a host application that a Z-Wave frame has been received
 /// </summary>
-internal struct ApplicationCommandHandler : ICommand<ApplicationCommandHandler>
+public readonly struct ApplicationCommandHandler : ICommand<ApplicationCommandHandler>
 {
     public ApplicationCommandHandler(DataFrame frame)
     {

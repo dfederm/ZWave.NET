@@ -3,7 +3,7 @@ using ZWave.Serial.Commands;
 
 namespace ZWave.Serial;
 
-internal readonly struct DataFrame
+public readonly struct DataFrame
 {
     public DataFrame(ReadOnlyMemory<byte> data)
     {

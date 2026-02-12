@@ -288,10 +288,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
                 && sensorType.HasValue
                 && scaleId.HasValue)
             {
-                Span<byte> commandParameters = stackalloc byte[2];
-                commandParameters[0] = (byte)sensorType.Value;
-                commandParameters[1] = (byte)((scaleId & 0b0000_0011) << 3);
-
+                ReadOnlySpan<byte> commandParameters = [(byte)sensorType.Value, (byte)((scaleId & 0b0000_0011) << 3)];
                 frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             }
             else
@@ -433,9 +430,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
         public static MultilevelSensorSupportedScaleGetCommand Create(MultilevelSensorType sensorType)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = (byte)sensorType;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)sensorType];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new MultilevelSensorSupportedScaleGetCommand(frame);
         }

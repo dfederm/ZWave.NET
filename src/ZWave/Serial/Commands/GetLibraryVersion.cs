@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace ZWave.Serial.Commands;
 
@@ -42,7 +42,7 @@ public enum LibraryType : byte
     BridgeController = 0x07,
 }
 
-internal struct GetLibraryVersionRequest : ICommand<GetLibraryVersionRequest>
+public readonly struct GetLibraryVersionRequest : ICommand<GetLibraryVersionRequest>
 {
     public GetLibraryVersionRequest(DataFrame frame)
     {
@@ -64,7 +64,7 @@ internal struct GetLibraryVersionRequest : ICommand<GetLibraryVersionRequest>
     public static GetLibraryVersionRequest Create(DataFrame frame) => new GetLibraryVersionRequest(frame);
 }
 
-internal struct GetLibraryVersionResponse : ICommand<GetLibraryVersionResponse>
+public readonly struct GetLibraryVersionResponse : ICommand<GetLibraryVersionResponse>
 {
     public GetLibraryVersionResponse(DataFrame frame)
     {

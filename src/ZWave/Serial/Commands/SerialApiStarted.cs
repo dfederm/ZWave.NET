@@ -1,9 +1,9 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Describes the reason the Z-Wave API Module has been woken up.
 /// </summary>
-internal enum SerialApiStartedWakeUpReason : byte
+public enum SerialApiStartedWakeUpReason : byte
 {
     /// <summary>
     /// Reset or external interrupt
@@ -62,7 +62,7 @@ internal enum SerialApiStartedWakeUpReason : byte
 }
 
 [Flags]
-internal enum SerialApiStartedSupportedProtocols : byte
+public enum SerialApiStartedSupportedProtocols : byte
 {
     /// <summary>
     /// Indicates if the Z-Wave API module supports Z-Wave
@@ -73,7 +73,7 @@ internal enum SerialApiStartedSupportedProtocols : byte
 /// <summary>
 /// This command is used by the Z-Wave Module to indicate that it is ready to be operated after a reboot or reset operation
 /// </summary>
-internal struct SerialApiStartedRequest : ICommand<SerialApiStartedRequest>
+public readonly struct SerialApiStartedRequest : ICommand<SerialApiStartedRequest>
 {
     public SerialApiStartedRequest(DataFrame frame)
     {
