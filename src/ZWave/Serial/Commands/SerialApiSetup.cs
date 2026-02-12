@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 public enum SerialApiSetupSubcommand : byte
 {
@@ -48,7 +48,7 @@ public enum SerialApiSetupSubcommand : byte
     SetNodeIdBaseType = 0x80,
 }
 
-internal partial struct SerialApiSetupRequest : ICommand<SerialApiSetupRequest>
+public readonly partial struct SerialApiSetupRequest : ICommand<SerialApiSetupRequest>
 {
     public SerialApiSetupRequest(DataFrame frame)
     {

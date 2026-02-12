@@ -1,7 +1,7 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 [Flags]
-internal enum GetInitDataCapabilities : byte
+public enum GetInitDataCapabilities : byte
 {
     /// <summary>
     /// The Z-Wave module is an end node.
@@ -27,7 +27,7 @@ internal enum GetInitDataCapabilities : byte
     SisFunctionality = 1 << 3,
 }
 
-internal struct GetInitDataRequest : ICommand<GetInitDataRequest>
+public readonly struct GetInitDataRequest : ICommand<GetInitDataRequest>
 {
     public GetInitDataRequest(DataFrame frame)
     {
@@ -49,7 +49,7 @@ internal struct GetInitDataRequest : ICommand<GetInitDataRequest>
     public static GetInitDataRequest Create(DataFrame frame) => new GetInitDataRequest(frame);
 }
 
-internal struct GetInitDataResponse : ICommand<GetInitDataResponse>
+public readonly struct GetInitDataResponse : ICommand<GetInitDataResponse>
 {
     public GetInitDataResponse(DataFrame frame)
     {

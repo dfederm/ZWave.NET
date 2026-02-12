@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal interface IRequestWithCallback<TCommand> : ICommand<TCommand>
+public interface IRequestWithCallback<TCommand> : ICommand<TCommand>
     where TCommand : struct, ICommand<TCommand>
 {
     /// <summary>

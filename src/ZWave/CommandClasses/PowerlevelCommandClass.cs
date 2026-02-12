@@ -275,10 +275,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
 
         public static PowerlevelSetCommand Create(Powerlevel powerlevel, byte timeoutInSeconds)
         {
-            Span<byte> commandParameters = stackalloc byte[2];
-            commandParameters[0] = (byte)powerlevel;
-            commandParameters[1] = timeoutInSeconds;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)powerlevel, timeoutInSeconds];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new PowerlevelSetCommand(frame);
         }

@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 public enum FrequentListeningMode
 {
@@ -18,7 +18,7 @@ public enum NodeType
     EndNode,
 }
 
-internal struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfoRequest>
+public readonly struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfoRequest>
 {
     public GetNodeProtocolInfoRequest(DataFrame frame)
     {
@@ -33,9 +33,10 @@ internal struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfoRequest
 
     public static GetNodeProtocolInfoRequest Create(byte nodeId)
     {
-        Span<byte> commandParameters = stackalloc byte[1];
-        commandParameters[0] = nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-
+        ReadOnlySpan<byte> commandParameters =
+        [
+            nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+        ];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new GetNodeProtocolInfoRequest(frame);
     }
@@ -43,7 +44,7 @@ internal struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfoRequest
     public static GetNodeProtocolInfoRequest Create(DataFrame frame) => new GetNodeProtocolInfoRequest(frame);
 }
 
-internal struct GetNodeProtocolInfoResponse : ICommand<GetNodeProtocolInfoResponse>
+public readonly struct GetNodeProtocolInfoResponse : ICommand<GetNodeProtocolInfoResponse>
 {
     public GetNodeProtocolInfoResponse(DataFrame frame)
     {

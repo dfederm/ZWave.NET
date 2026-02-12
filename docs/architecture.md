@@ -56,7 +56,7 @@ The lowest layer handles raw byte framing over the serial port per INS12350 (Ser
 
 ### Serial API Commands (`src/ZWave/Serial/Commands/`)
 
-Each Z-Wave Serial API function is represented as a struct. These map to the function IDs in INS12350.
+Each Z-Wave Serial API function is represented as a struct. These map to the function IDs in INS12350. All function IDs defined in the `CommandId` enum have corresponding implementation structs.
 
 **Key interfaces:**
 - `ICommand<T>` - A serial API command with a `Type` (REQ/RES), `CommandId`, factory `Create(DataFrame)` method, and a `Frame` property
@@ -65,9 +65,12 @@ Each Z-Wave Serial API function is represented as a struct. These map to the fun
 **`CommandId` enum** - All Serial API function IDs (e.g. `SendData = 0x13`, `GetInitData = 0x02`).
 
 **Communication patterns:**
-- **Request → Response:** Host sends a REQ, chip replies with a RES (e.g. `MemoryGetId`, `GetLibraryVersion`)
-- **Request → Response + Callback:** Host sends a REQ, chip replies with a RES (status), then later sends an unsolicited REQ as a callback (e.g. `SendData`, `SetSucNodeId`). The callback is correlated by `SessionId`.
-- **Unsolicited request:** Chip sends a REQ without the host asking (e.g. `ApplicationCommandHandler`, `ApplicationUpdate`)
+- **Fire-and-forget:** Host sends a REQ with no response expected (e.g. `SoftReset`, `SendDataAbort`, `WatchdogKick`)
+- **Request → Response:** Host sends a REQ, chip replies with a RES (e.g. `MemoryGetId`, `GetLibraryVersion`, `GetRoutingInfo`, `IsFailedNode`)
+- **Request → Response + Callback:** Host sends a REQ, chip replies with a RES (status), then later sends an unsolicited REQ as a callback (e.g. `SendData`, `SetSucNodeId`, `RemoveFailedNode`). The callback is correlated by `SessionId`.
+- **Request → Callback (no response):** Host sends a REQ, chip later sends an unsolicited REQ as a callback without an initial RES (e.g. `SetDefault`, `SetLearnMode`, `RequestNodeNeighborUpdate`)
+- **Set only:** Host sends a REQ to configure the chip with no response (e.g. `ApplicationNodeInformation`, `SetPromiscuousMode`)
+- **Unsolicited request:** Chip sends a REQ without the host asking (e.g. `ApplicationCommandHandler`, `ApplicationUpdate`, `ApplicationCommandHandlerBridge`, `SerialApiStarted`)
 
 ### Command Classes (`src/ZWave/CommandClasses/`)
 

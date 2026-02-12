@@ -1,7 +1,7 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 [Flags]
-internal enum TransmissionOptions : byte
+public enum TransmissionOptions : byte
 {
     /// <summary>
     /// Request the destination node to return an MPDU acknowledgement.

@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal struct GetSucNodeIdRequest : ICommand<GetSucNodeIdRequest>
+public readonly struct GetSucNodeIdRequest : ICommand<GetSucNodeIdRequest>
 {
     public GetSucNodeIdRequest(DataFrame frame)
     {
@@ -22,7 +22,7 @@ internal struct GetSucNodeIdRequest : ICommand<GetSucNodeIdRequest>
     public static GetSucNodeIdRequest Create(DataFrame frame) => new GetSucNodeIdRequest(frame);
 }
 
-internal struct GetSucNodeIdResponse : ICommand<GetSucNodeIdResponse>
+public readonly struct GetSucNodeIdResponse : ICommand<GetSucNodeIdResponse>
 {
     public GetSucNodeIdResponse(DataFrame frame)
     {

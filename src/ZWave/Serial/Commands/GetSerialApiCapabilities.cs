@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal struct GetSerialApiCapabilitiesRequest : ICommand<GetSerialApiCapabilitiesRequest>
+public readonly struct GetSerialApiCapabilitiesRequest : ICommand<GetSerialApiCapabilitiesRequest>
 {
     public GetSerialApiCapabilitiesRequest(DataFrame frame)
     {
@@ -22,7 +22,7 @@ internal struct GetSerialApiCapabilitiesRequest : ICommand<GetSerialApiCapabilit
     public static GetSerialApiCapabilitiesRequest Create(DataFrame frame) => new GetSerialApiCapabilitiesRequest(frame);
 }
 
-internal struct GetSerialApiCapabilitiesResponse : ICommand<GetSerialApiCapabilitiesResponse>
+public readonly struct GetSerialApiCapabilitiesResponse : ICommand<GetSerialApiCapabilitiesResponse>
 {
     public GetSerialApiCapabilitiesResponse(DataFrame frame)
     {

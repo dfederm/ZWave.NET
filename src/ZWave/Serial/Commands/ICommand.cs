@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal interface ICommand<TCommand> where TCommand : struct, ICommand<TCommand>
+public interface ICommand<TCommand> where TCommand : struct, ICommand<TCommand>
 {
     public static abstract DataFrameType Type { get; }
 

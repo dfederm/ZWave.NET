@@ -1,8 +1,8 @@
-﻿using ZWave.CommandClasses;
+using ZWave.CommandClasses;
 
 namespace ZWave.Serial.Commands;
 
-internal enum RemoveNodeMode : byte
+public enum RemoveNodeMode : byte
 {
     /// <summary>
     /// Remove any node.
@@ -27,7 +27,7 @@ internal enum RemoveNodeMode : byte
     StopNetworkExclusion = 0x05,
 }
 
-internal enum RemoveNodeStatus : byte
+public enum RemoveNodeStatus : byte
 {
     /// <summary>
     /// The Z-Wave Module has initiated Network exclusion and is ready to remove existing nodes.
@@ -66,7 +66,7 @@ internal enum RemoveNodeStatus : byte
     NotPrimary = 0x23,
 }
 
-internal struct RemoveNodeFromNetworkRequest : ICommand<RemoveNodeFromNetworkRequest>
+public readonly struct RemoveNodeFromNetworkRequest : ICommand<RemoveNodeFromNetworkRequest>
 {
     public RemoveNodeFromNetworkRequest(DataFrame frame)
     {
@@ -108,7 +108,7 @@ internal struct RemoveNodeFromNetworkRequest : ICommand<RemoveNodeFromNetworkReq
     public static RemoveNodeFromNetworkRequest Create(DataFrame frame) => new RemoveNodeFromNetworkRequest(frame);
 }
 
-internal struct RemoveNodeFromNetworkCallback : ICommand<RemoveNodeFromNetworkCallback>
+public readonly struct RemoveNodeFromNetworkCallback : ICommand<RemoveNodeFromNetworkCallback>
 {
     public RemoveNodeFromNetworkCallback(DataFrame frame)
     {

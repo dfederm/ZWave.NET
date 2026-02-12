@@ -460,9 +460,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
 
         public static VersionGetCommand Create(CommandClassId commandClassId)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = (byte)commandClassId;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)commandClassId];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new VersionGetCommand(frame);
         }

@@ -176,9 +176,7 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
         {
             if (version >= 2 && sensorType.HasValue)
             {
-                Span<byte> commandParameters = stackalloc byte[1];
-                commandParameters[0] = (byte)sensorType.Value;
-
+                ReadOnlySpan<byte> commandParameters = [(byte)sensorType.Value];
                 CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
                 return new BinarySensorGetCommand(frame);
             }

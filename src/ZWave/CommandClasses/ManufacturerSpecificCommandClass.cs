@@ -209,9 +209,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
 
         public static ManufacturerSpecificDeviceSpecificGetCommand Create(ManufacturerSpecificDeviceIdType deviceIdType)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = (byte)deviceIdType;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)deviceIdType];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new ManufacturerSpecificDeviceSpecificGetCommand(frame);
         }

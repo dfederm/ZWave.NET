@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal enum TransmissionStatus : byte
+public enum TransmissionStatus : byte
 {
     /// <summary>
     /// Transmission completed and successful

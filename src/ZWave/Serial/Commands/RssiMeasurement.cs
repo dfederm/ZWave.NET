@@ -1,6 +1,6 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal enum RssiMeasurementType
+public enum RssiMeasurementType
 {
     /// <summary>
     /// The RSSI measurement has a value
@@ -23,7 +23,7 @@ internal enum RssiMeasurementType
     Unavailable,
 }
 
-internal struct RssiMeasurement : IEquatable<RssiMeasurement>
+public readonly struct RssiMeasurement : IEquatable<RssiMeasurement>
 {
     private readonly sbyte _value;
 

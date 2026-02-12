@@ -1,15 +1,15 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
-internal partial struct SerialApiSetupRequest
+public readonly partial struct SerialApiSetupRequest
 {
     public static SerialApiSetupRequest SetTxStatusReport(bool enable)
     {
-        Span<byte> subcommandParameters = stackalloc byte[] { (byte)(enable ? 1 : 0) };
+        ReadOnlySpan<byte> subcommandParameters = [(byte)(enable ? 1 : 0)];
         return Create(SerialApiSetupSubcommand.SetTxStatusReport, subcommandParameters);
     }
 }
 
-internal struct SerialApiSetupSetTxStatusReportResponse : ICommand<SerialApiSetupSetTxStatusReportResponse>
+public readonly struct SerialApiSetupSetTxStatusReportResponse : ICommand<SerialApiSetupSetTxStatusReportResponse>
 {
     public SerialApiSetupSetTxStatusReportResponse(DataFrame frame)
     {

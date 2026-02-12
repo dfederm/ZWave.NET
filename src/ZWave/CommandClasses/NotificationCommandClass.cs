@@ -303,9 +303,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
         public static NotificationGetV1Command Create(byte alarmType)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = alarmType;
-
+            ReadOnlySpan<byte> commandParameters = [alarmType];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new NotificationGetV1Command(frame);
         }
@@ -477,10 +475,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
         public static NotificationSetCommand Create(NotificationType notificationType, bool notificationStatus)
         {
-            Span<byte> commandParameters = stackalloc byte[2];
-            commandParameters[0] = (byte)notificationType;
-            commandParameters[1] = notificationStatus ? (byte)0xff : (byte)0x00;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)notificationType, notificationStatus ? (byte)0xff : (byte)0x00];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new NotificationSetCommand(frame);
         }
@@ -561,9 +556,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
         public static NotificationEventSupportedGetCommand Create(NotificationType notificationType)
         {
-            Span<byte> commandParameters = stackalloc byte[1];
-            commandParameters[0] = (byte)notificationType;
-
+            ReadOnlySpan<byte> commandParameters = [(byte)notificationType];
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new NotificationEventSupportedGetCommand(frame);
         }
