@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DDBF7DBF-FA5
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave", "src\ZWave\ZWave.csproj", "{0DDB24D9-D40B-46C8-94D1-52787C6B4EF8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave.Tests", "src\ZWave.Tests\ZWave.Tests.csproj", "{21EBC097-E7F1-4A0F-83B0-9EC78CB2D157}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave.Serial.Tests", "src\ZWave.Serial.Tests\ZWave.Serial.Tests.csproj", "{21EBC097-E7F1-4A0F-83B0-9EC78CB2D157}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{602EEBC3-5AB7-43DE-83CF-DECA112F40B7}"
 	ProjectSection(SolutionItems) = preProject
@@ -26,6 +26,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave.Server", "src\ZWave.Server\ZWave.Server.csproj", "{7DDFF15E-9BEB-44DB-BB2D-971BB6EF62E2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave.BuildTools", "src\ZWave.BuildTools\ZWave.BuildTools.csproj", "{9C8EA31C-5651-49FC-9B86-E967EF14922E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave.Serial", "src\ZWave.Serial\ZWave.Serial.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +51,10 @@ Global
 		{9C8EA31C-5651-49FC-9B86-E967EF14922E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9C8EA31C-5651-49FC-9B86-E967EF14922E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9C8EA31C-5651-49FC-9B86-E967EF14922E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -58,6 +64,7 @@ Global
 		{21EBC097-E7F1-4A0F-83B0-9EC78CB2D157} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
 		{7DDFF15E-9BEB-44DB-BB2D-971BB6EF62E2} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
 		{9C8EA31C-5651-49FC-9B86-E967EF14922E} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3FF630D0-FE46-40C3-B360-5908CC951F13}

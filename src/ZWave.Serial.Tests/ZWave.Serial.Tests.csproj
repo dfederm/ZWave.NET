@@ -1,0 +1,19 @@
+﻿<Project Sdk="MSTest.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZWave.Serial\ZWave.Serial.csproj" />
+  </ItemGroup>
+
+  <!-- Run tests in parallel -->
+  <ItemGroup>
+    <AssemblyAttribute Include="Microsoft.VisualStudio.TestTools.UnitTesting.ParallelizeAttribute">
+      <Scope>Microsoft.VisualStudio.TestTools.UnitTesting.ExecutionScope.MethodLevel</Scope>
+      <Scope_IsLiteral>true</Scope_IsLiteral>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>
