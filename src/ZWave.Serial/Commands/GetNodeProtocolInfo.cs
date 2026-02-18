@@ -1,23 +1,5 @@
 namespace ZWave.Serial.Commands;
 
-public enum FrequentListeningMode
-{
-    None,
-
-    Sensor1000ms,
-
-    Sensor250ms,
-}
-
-public enum NodeType
-{
-    Unknown,
-
-    Controller,
-
-    EndNode,
-}
-
 public readonly struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfoRequest>
 {
     public GetNodeProtocolInfoRequest(DataFrame frame)

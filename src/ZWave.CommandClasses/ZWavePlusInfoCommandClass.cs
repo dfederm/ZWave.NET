@@ -84,7 +84,7 @@ public enum ZWavePlusNodeType : byte
 [CommandClass(CommandClassId.ZWavePlusInfo)]
 public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoCommand>
 {
-    internal ZWavePlusInfoCommandClass(CommandClassInfo info, Driver driver, Node node)
+    internal ZWavePlusInfoCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }

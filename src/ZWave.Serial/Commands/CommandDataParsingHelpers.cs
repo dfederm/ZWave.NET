@@ -1,6 +1,4 @@
-﻿using ZWave.CommandClasses;
-
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 internal static class CommandDataParsingHelpers
 {

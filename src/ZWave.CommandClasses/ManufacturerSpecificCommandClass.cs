@@ -64,7 +64,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
 {
     private readonly Dictionary<ManufacturerSpecificDeviceIdType, string> _deviceIds = new();
 
-    public ManufacturerSpecificCommandClass(CommandClassInfo info, Driver driver, Node node)
+    public ManufacturerSpecificCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }

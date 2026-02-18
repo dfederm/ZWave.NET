@@ -10,6 +10,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Shared\BinaryExtensions.cs" Link="BinaryExtensions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ZWave.Protocol\ZWave.Protocol.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="ZWave.Serial.Tests" />
   </ItemGroup>
 

@@ -87,7 +87,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
 {
     private Dictionary<ColorSwitchColorComponent, ColorSwitchColorComponentState?>? _colorComponents;
 
-    public ColorSwitchCommandClass(CommandClassInfo info, Driver driver, Node node)
+    public ColorSwitchCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }

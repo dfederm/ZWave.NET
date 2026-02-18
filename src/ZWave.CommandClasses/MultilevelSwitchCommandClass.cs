@@ -101,7 +101,7 @@ public readonly struct MultilevelSwitchState
 [CommandClass(CommandClassId.MultilevelSwitch)]
 public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitchCommand>
 {
-    public MultilevelSwitchCommandClass(CommandClassInfo info, Driver driver, Node node)
+    public MultilevelSwitchCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }

@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+﻿namespace ZWave;
 
 public record struct CommandClassInfo(
     CommandClassId CommandClass,

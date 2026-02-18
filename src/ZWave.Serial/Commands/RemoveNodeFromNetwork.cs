@@ -1,5 +1,3 @@
-using ZWave.CommandClasses;
-
 namespace ZWave.Serial.Commands;
 
 public enum RemoveNodeMode : byte

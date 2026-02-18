@@ -1,5 +1,4 @@
-﻿using ZWave.CommandClasses;
-using ZWave.Serial;
+﻿using ZWave.Serial;
 using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;

@@ -10,18 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ZWave.Serial\ZWave.Serial.csproj" />
-    <ProjectReference Include="..\ZWave.BuildTools\ZWave.BuildTools.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="ConfigType" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="Config\MultilevelSensorTypes.json" ConfigType="MultilevelSensorTypes" />
-    <AdditionalFiles Include="Config\MultilevelSensorScales.json" ConfigType="MultilevelSensorScales" />
+    <ProjectReference Include="..\ZWave.CommandClasses\ZWave.CommandClasses.csproj" />
   </ItemGroup>
 
 </Project>
