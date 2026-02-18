@@ -1,5 +1,8 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Identifies a color component of a color switch device.
+/// </summary>
 public enum ColorSwitchColorComponent : byte
 {
     WarmWhite = 0x00,
@@ -21,6 +24,9 @@ public enum ColorSwitchColorComponent : byte
     Index = 0x08,
 }
 
+/// <summary>
+/// The direction of a color switch level change.
+/// </summary>
 public enum ColorSwitchChangeDirection : byte
 {
     Up = 0x00,
@@ -45,15 +51,30 @@ public enum ColorSwitchCommand : byte
     /// </summary>
     Get = 0x03,
 
+    /// <summary>
+    /// Report the status of a specified color component.
+    /// </summary>
     Report = 0x04,
 
+    /// <summary>
+    /// Set the value of one or more color components.
+    /// </summary>
     Set = 0x05,
 
+    /// <summary>
+    /// Initiate a color component level change.
+    /// </summary>
     StartLevelChange = 0x06,
 
+    /// <summary>
+    /// Stop an ongoing color component level change.
+    /// </summary>
     StopLevelChange = 0x07,
 }
 
+/// <summary>
+/// Represents the state of a single color component.
+/// </summary>
 public readonly struct ColorSwitchColorComponentState
 {
     public ColorSwitchColorComponentState(
@@ -102,6 +123,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
     /// </summary>
     public IReadOnlyDictionary<ColorSwitchColorComponent, ColorSwitchColorComponentState?>? ColorComponents => _colorComponents;
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(ColorSwitchCommand command)
         => command switch
         {

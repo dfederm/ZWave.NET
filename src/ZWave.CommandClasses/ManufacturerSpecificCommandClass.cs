@@ -2,6 +2,9 @@
 
 namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Identifies the type of device ID.
+/// </summary>
 public enum ManufacturerSpecificDeviceIdType : byte
 {
     FactoryDefault = 0x00,
@@ -34,6 +37,9 @@ public enum ManufacturerSpecificCommand : byte
     DeviceSpecificReport = 0x07,
 }
 
+/// <summary>
+/// Represents manufacturer identification information.
+/// </summary>
 public readonly struct ManufacturerInformation
 {
     public ManufacturerInformation(ushort manufacturerId, ushort productTypeId, ushort productId)
@@ -69,10 +75,17 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
     {
     }
 
+    /// <summary>
+    /// Gets the manufacturer identification information.
+    /// </summary>
     public ManufacturerInformation? ManufacturerInformation { get; private set; }
 
+    /// <summary>
+    /// Gets the device-specific IDs reported by the device.
+    /// </summary>
     public IReadOnlyDictionary<ManufacturerSpecificDeviceIdType, string> DeviceIds => _deviceIds;
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(ManufacturerSpecificCommand command)
         => command switch
         {

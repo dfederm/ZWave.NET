@@ -6,6 +6,9 @@ using ZWave.Serial.Commands;
 
 namespace ZWave;
 
+/// <summary>
+/// The main entry point for communicating with a Z-Wave USB controller.
+/// </summary>
 public sealed class Driver : IDriver, IAsyncDisposable
 {
     private record struct AwaitedFrameResponse(CommandId CommandId, TaskCompletionSource<DataFrame> TaskCompletionSource);
@@ -77,12 +80,18 @@ public sealed class Driver : IDriver, IAsyncDisposable
         Controller = new Controller(logger, this);
     }
 
+    /// <summary>
+    /// Gets the controller associated with this driver.
+    /// </summary>
     public Controller Controller { get; }
 
     /// <inheritdoc />
     public INode? GetNode(byte nodeId)
         => Controller.Nodes.TryGetValue(nodeId, out Node? node) ? node : null;
 
+    /// <summary>
+    /// Creates and initializes a new driver instance for the specified serial port.
+    /// </summary>
     public static async Task<Driver> CreateAsync(
         ILogger logger,
         string portName,
@@ -95,6 +104,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
         return driver;
     }
 
+    /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
         _dataFrameSendChannelWriter.Complete();
@@ -263,6 +273,9 @@ public sealed class Driver : IDriver, IAsyncDisposable
         _logger.LogDriverInitialized();
     }
 
+    /// <summary>
+    /// Performs a soft reset of the Z-Wave module.
+    /// </summary>
     public async Task SoftResetAsync(CancellationToken cancellationToken)
     {
         _logger.LogSoftReset();
@@ -403,6 +416,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
         where TRequest : struct, ICommand<TRequest>
         => await SendFrameAsync(request.Frame, cancellationToken).ConfigureAwait(false);
 
+    /// <inheritdoc />
     public async Task SendCommandAsync<TCommand>(
         TCommand request,
         byte nodeId,

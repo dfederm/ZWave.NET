@@ -5,6 +5,9 @@ using ZWave.Serial.Commands;
 
 namespace ZWave;
 
+/// <summary>
+/// Represents the Z-Wave USB controller and its properties.
+/// </summary>
 public sealed class Controller
 {
     private readonly ILogger _logger;
@@ -21,38 +24,89 @@ public sealed class Controller
         _driver = driver;
     }
 
+    /// <summary>
+    /// Gets the Home ID of the Z-Wave network.
+    /// </summary>
     public uint HomeId { get; private set; }
 
+    /// <summary>
+    /// Gets the node ID of the controller.
+    /// </summary>
     public byte NodeId { get; private set; }
 
+    /// <summary>
+    /// Gets the firmware version of the controller.
+    /// </summary>
     public Version? FirmwareVersion { get; private set; }
 
+    /// <summary>
+    /// Gets the manufacturer ID of the controller.
+    /// </summary>
     public ushort ManufacturerId { get; private set; }
 
+    /// <summary>
+    /// Gets the manufacturer product type of the controller.
+    /// </summary>
     public ushort ProductType { get; private set; }
 
+    /// <summary>
+    /// Gets the manufacturer product ID of the controller.
+    /// </summary>
     public ushort ProductId { get; private set; }
 
+    /// <summary>
+    /// Gets the set of Serial API command IDs supported by the controller.
+    /// </summary>
     public HashSet<CommandId>? SupportedCommandIds { get; private set; }
 
+    /// <summary>
+    /// Gets the Z-Wave library version string.
+    /// </summary>
     public string? LibraryVersion { get; private set; }
 
+    /// <summary>
+    /// Gets the Z-Wave library type.
+    /// </summary>
     public LibraryType LibraryType { get; private set; }
 
+    /// <summary>
+    /// Gets the set of Serial API Setup subcommands supported by the controller.
+    /// </summary>
     public HashSet<SerialApiSetupSubcommand>? SupportedSerialApiSetupSubcommands { get; private set; }
 
+    /// <summary>
+    /// Gets the node ID of the SUC/SIS node.
+    /// </summary>
     public byte SucNodeId { get; private set; }
 
+    /// <summary>
+    /// Gets the Serial API version.
+    /// </summary>
     public byte ApiVersion { get; private set; }
 
+    /// <summary>
+    /// Gets the chip type identifier.
+    /// </summary>
     public byte ChipType { get; private set; }
 
+    /// <summary>
+    /// Gets the chip version.
+    /// </summary>
     public byte ChipVersion { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether this controller is the primary controller.
+    /// </summary>
     public bool IsPrimary { get; private set; }
 
+    /// <summary>
+    /// Gets the nodes in the Z-Wave network.
+    /// </summary>
     public IReadOnlyDictionary<byte, Node> Nodes => _nodes;
 
+    /// <summary>
+    /// Queries the controller to identify its properties and discover the network nodes.
+    /// </summary>
     public async Task IdentifyAsync(CancellationToken cancellationToken)
     {
         try

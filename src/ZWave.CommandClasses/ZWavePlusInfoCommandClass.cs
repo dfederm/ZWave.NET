@@ -13,6 +13,9 @@ public enum ZWavePlusInfoCommand : byte
     Report = 0x02,
 }
 
+/// <summary>
+/// Identifies the Z-Wave Plus role type of a node.
+/// </summary>
 public enum ZWavePlusRoleType : byte
 {
     CentralStaticController = 0x00,
@@ -26,6 +29,9 @@ public enum ZWavePlusRoleType : byte
     NetworkAwareSlave = 0x08,
 }
 
+/// <summary>
+/// Represents Z-Wave Plus information for a device.
+/// </summary>
 public readonly struct ZWavePlusInfo
 {
     public ZWavePlusInfo(
@@ -68,6 +74,9 @@ public readonly struct ZWavePlusInfo
     public ushort UserIconType { get; }
 }
 
+/// <summary>
+/// Identifies the Z-Wave Plus node type.
+/// </summary>
 public enum ZWavePlusNodeType : byte
 {
     /// <summary>
@@ -89,8 +98,12 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
     {
     }
 
+    /// <summary>
+    /// Gets the Z-Wave Plus information.
+    /// </summary>
     public ZWavePlusInfo? ZWavePlusInfo { get; private set; }
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(ZWavePlusInfoCommand command)
         => command switch
         {

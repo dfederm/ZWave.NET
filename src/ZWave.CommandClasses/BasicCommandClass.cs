@@ -18,6 +18,9 @@ public enum BasicCommand : byte
     Report = 0x03,
 }
 
+/// <summary>
+/// Represents the state reported by a Basic Command Class device.
+/// </summary>
 public readonly struct BasicState
 {
     public BasicState(
@@ -57,6 +60,9 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
     {
     }
 
+    /// <summary>
+    /// Gets the last reported state of the device.
+    /// </summary>
     public BasicState? State { get; private set; }
 
     /// <inheritdoc />

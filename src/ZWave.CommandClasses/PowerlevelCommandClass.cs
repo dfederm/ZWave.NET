@@ -1,5 +1,8 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Defines RF transmit power levels relative to normal power.
+/// </summary>
 public enum Powerlevel : byte
 {
     Normal = 0x00,
@@ -75,6 +78,9 @@ public enum PowerlevelCommand : byte
     TestNodeReport = 0x06,
 }
 
+/// <summary>
+/// Represents the current power level state of a device.
+/// </summary>
 public readonly struct PowerlevelState
 {
     public PowerlevelState(Powerlevel powerlevel, byte? timeoutInSeconds)
@@ -97,6 +103,9 @@ public readonly struct PowerlevelState
     public byte? TimeoutInSeconds { get; }
 }
 
+/// <summary>
+/// Represents the result of a powerlevel test.
+/// </summary>
 public readonly struct PowerlevelTestResult
 {
     public PowerlevelTestResult(byte nodeId, PowerlevelTestStatus status, ushort frameAcknowledgedCount)
@@ -130,8 +139,14 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
     {
     }
 
+    /// <summary>
+    /// Gets the last reported power level state.
+    /// </summary>
     public PowerlevelState? State { get; private set; }
 
+    /// <summary>
+    /// Gets the last powerlevel test result.
+    /// </summary>
     public PowerlevelTestResult? LastTestResult { get; private set; }
 
     public override bool? IsCommandSupported(PowerlevelCommand command) => true;

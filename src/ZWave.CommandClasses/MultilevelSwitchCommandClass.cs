@@ -1,5 +1,8 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// The direction of a multilevel switch level change.
+/// </summary>
 public enum MultilevelSwitchChangeDirection : byte
 {
     Up = 0x00,
@@ -12,6 +15,9 @@ public enum MultilevelSwitchChangeDirection : byte
     // None = 0x03,
 }
 
+/// <summary>
+/// Identifies the type of a multilevel switch.
+/// </summary>
 public enum MultilevelSwitchType : byte
 {
     NotSupported = 0x00,
@@ -69,6 +75,9 @@ public enum MultilevelSwitchCommand : byte
     SupportedReport = 0x07,
 }
 
+/// <summary>
+/// Represents the state reported by a Multilevel Switch Command Class device.
+/// </summary>
 public readonly struct MultilevelSwitchState
 {
     public MultilevelSwitchState(
@@ -106,10 +115,17 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
     {
     }
 
+    /// <summary>
+    /// Gets the last reported switch state.
+    /// </summary>
     public MultilevelSwitchState? State { get; private set; }
 
+    /// <summary>
+    /// Gets the switch type.
+    /// </summary>
     public MultilevelSwitchType? SwitchType { get; private set; }
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(MultilevelSwitchCommand command)
         => command switch
         {

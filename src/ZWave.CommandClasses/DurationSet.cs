@@ -44,6 +44,9 @@ public struct DurationSet
     /// </summary>
     public static DurationSet FactoryDefault => new DurationSet(0xff);
 
+    /// <summary>
+    /// Gets the raw duration byte value.
+    /// </summary>
     public byte Value { get; }
 
     public static implicit operator DurationSet(byte b) => new DurationSet(b);

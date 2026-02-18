@@ -1,20 +1,78 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Identifies the type of a binary sensor.
+/// </summary>
 public enum BinarySensorType : byte
 {
+    /// <summary>
+    /// General purpose sensor.
+    /// </summary>
     GeneralPurpose = 0x01,
+
+    /// <summary>
+    /// Smoke sensor.
+    /// </summary>
     Smoke = 0x02,
+
+    /// <summary>
+    /// Carbon monoxide sensor.
+    /// </summary>
     CO = 0x03,
+
+    /// <summary>
+    /// Carbon dioxide sensor.
+    /// </summary>
     CO2 = 0x04,
+
+    /// <summary>
+    /// Heat sensor.
+    /// </summary>
     Heat = 0x05,
+
+    /// <summary>
+    /// Water sensor.
+    /// </summary>
     Water = 0x06,
+
+    /// <summary>
+    /// Freeze sensor.
+    /// </summary>
     Freeze = 0x07,
+
+    /// <summary>
+    /// Tamper sensor.
+    /// </summary>
     Tamper = 0x08,
+
+    /// <summary>
+    /// Auxiliary sensor.
+    /// </summary>
     Aux = 0x09,
+
+    /// <summary>
+    /// Door/window sensor.
+    /// </summary>
     DoorWindow = 0x0a,
+
+    /// <summary>
+    /// Tilt sensor.
+    /// </summary>
     Tilt = 0x0b,
+
+    /// <summary>
+    /// Motion sensor.
+    /// </summary>
     Motion = 0x0c,
+
+    /// <summary>
+    /// Glass break sensor.
+    /// </summary>
     GlassBreak = 0x0d,
+
+    /// <summary>
+    /// Request the first supported sensor type.
+    /// </summary>
     FirstSupported = 0xff,
 }
 
@@ -61,6 +119,7 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
     /// </summary>
     public IReadOnlyDictionary<BinarySensorType, bool?>? SensorValues => _sensorValues;
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(BinarySensorCommand command)
         => command switch
         {

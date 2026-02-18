@@ -1,5 +1,8 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Identifies the type of notification.
+/// </summary>
 public enum NotificationType : byte
 {
     SmokeAlarm = 0x01,
@@ -65,6 +68,9 @@ public enum NotificationCommand : byte
     SupportedReport = 0x08,
 }
 
+/// <summary>
+/// Represents a notification received from a device.
+/// </summary>
 public readonly struct Notification
 {
     public Notification(
@@ -87,8 +93,14 @@ public readonly struct Notification
         SequenceNumber = sequenceNumber;
     }
 
+    /// <summary>
+    /// Gets the legacy V1 alarm type.
+    /// </summary>
     public byte? V1AlarmType { get; }
 
+    /// <summary>
+    /// Gets the legacy V1 alarm level.
+    /// </summary>
     public byte? V1AlarmLevel { get; }
 
     /// <summary>
@@ -96,17 +108,35 @@ public readonly struct Notification
     /// </summary>
     public byte? ZensorNetSourceNodeId { get; }
 
+    /// <summary>
+    /// Gets the notification status.
+    /// </summary>
     public bool? NotificationStatus { get; }
 
+    /// <summary>
+    /// Gets the notification type.
+    /// </summary>
     public byte? NotificationType { get; }
 
+    /// <summary>
+    /// Gets the notification event.
+    /// </summary>
     public byte? NotificationEvent { get; }
 
+    /// <summary>
+    /// Gets the event parameters.
+    /// </summary>
     public ReadOnlyMemory<byte>? EventParameters { get; }
 
+    /// <summary>
+    /// Gets the sequence number.
+    /// </summary>
     public byte? SequenceNumber { get; }
 }
 
+/// <summary>
+/// Represents the supported notification types of a device.
+/// </summary>
 public readonly struct SupportedNotifications
 {
     public SupportedNotifications(
@@ -122,6 +152,9 @@ public readonly struct SupportedNotifications
     public IReadOnlySet<NotificationType> SupportedNotificationTypes { get; }
 }
 
+/// <summary>
+/// Represents the supported notification events for a given notification type.
+/// </summary>
 public readonly struct SupportedNotificationEvents
 {
     public SupportedNotificationEvents(
@@ -149,10 +182,20 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
     }
 
     // TODO: Should be an event. Although shouldn't all state changes?
+
+    /// <summary>
+    /// Gets the last received notification.
+    /// </summary>
     public Notification? LastNotification { get; private set; }
 
+    /// <summary>
+    /// Gets the supported notification types.
+    /// </summary>
     public SupportedNotifications? SupportedNotifications { get; private set; }
 
+    /// <summary>
+    /// Gets the supported notification events for each notification type.
+    /// </summary>
     public IReadOnlyDictionary<NotificationType, SupportedNotificationEvents?>? SupportedNotificationEvents => _supportedNotificationEvents;
 
     /// <inheritdoc />

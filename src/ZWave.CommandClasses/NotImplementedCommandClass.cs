@@ -1,5 +1,8 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Placeholder command enum for command classes that have not been implemented.
+/// </summary>
 public enum NotImplementedCommand : byte
 {
 }
