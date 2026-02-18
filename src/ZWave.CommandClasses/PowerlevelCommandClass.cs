@@ -1,6 +1,4 @@
-﻿using ZWave.Serial.Commands;
-
-namespace ZWave.CommandClasses;
+﻿namespace ZWave.CommandClasses;
 
 public enum Powerlevel : byte
 {
@@ -127,7 +125,7 @@ public readonly struct PowerlevelTestResult
 [CommandClass(CommandClassId.Powerlevel)]
 public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
 {
-    public PowerlevelCommandClass(CommandClassInfo info, Driver driver, Node node)
+    public PowerlevelCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }
@@ -188,7 +186,8 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
             throw new ArgumentException("The test node must be different from the node performing the test.", nameof(testNodeId));
         }
 
-        if (!Driver.Controller.Nodes.TryGetValue(testNodeId, out Node? testNode))
+        INode? testNode = Driver.GetNode(testNodeId);
+        if (testNode == null)
         {
             throw new ArgumentException($"The test node {testNodeId} does not exist.", nameof(testNodeId));
         }

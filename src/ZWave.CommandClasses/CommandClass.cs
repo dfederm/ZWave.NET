@@ -5,7 +5,7 @@ namespace ZWave.CommandClasses;
 public abstract class CommandClass<TCommand> : CommandClass
     where TCommand : struct, Enum
 {
-    internal CommandClass(CommandClassInfo info, Driver driver, Node node)
+    internal CommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
         if (Unsafe.SizeOf<TCommand>() != Unsafe.SizeOf<byte>())
@@ -44,8 +44,8 @@ public abstract class CommandClass
 
     internal CommandClass(
         CommandClassInfo info,
-        Driver driver,
-        Node node)
+        IDriver driver,
+        INode node)
     {
         Info = info;
         Driver = driver;
@@ -54,9 +54,9 @@ public abstract class CommandClass
 
     public CommandClassInfo Info { get; private set; }
 
-    protected Driver Driver { get; }
+    protected IDriver Driver { get; }
 
-    public Node Node { get; }
+    public INode Node { get; }
 
     public byte? Version { get; private set; }
 

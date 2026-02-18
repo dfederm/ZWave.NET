@@ -105,7 +105,7 @@ public readonly struct WakeUpIntervalCapabilities
 [CommandClass(CommandClassId.WakeUp)]
 public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
 {
-    public WakeUpCommandClass(CommandClassInfo info, Driver driver, Node node)
+    public WakeUpCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }

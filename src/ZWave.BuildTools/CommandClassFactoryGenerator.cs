@@ -101,7 +101,7 @@ namespace ZWave.CommandClasses;
 
 internal static class CommandClassFactory
 {
-    private static readonly Dictionary<CommandClassId, Func<CommandClassInfo, Driver, Node, CommandClass>> Constructors = new Dictionary<CommandClassId, Func<CommandClassInfo, Driver, Node, CommandClass>>
+    private static readonly Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, INode, CommandClass>> Constructors = new Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, INode, CommandClass>>
     {
 ");
 
@@ -123,8 +123,8 @@ internal static class CommandClassFactory
 
         sb.Append(@"    };
 
-    public static CommandClass Create(CommandClassInfo info, Driver driver, Node node)
-        => Constructors.TryGetValue(info.CommandClass, out Func<CommandClassInfo, Driver, Node, CommandClass>? constructor)
+    public static CommandClass Create(CommandClassInfo info, IDriver driver, INode node)
+        => Constructors.TryGetValue(info.CommandClass, out Func<CommandClassInfo, IDriver, INode, CommandClass>? constructor)
             ? constructor(info, driver, node)
             : new NotImplementedCommandClass(info, driver, node);
 

@@ -6,7 +6,7 @@ using ZWave.Serial.Commands;
 
 namespace ZWave;
 
-public sealed class Driver : IAsyncDisposable
+public sealed class Driver : IDriver, IAsyncDisposable
 {
     private record struct AwaitedFrameResponse(CommandId CommandId, TaskCompletionSource<DataFrame> TaskCompletionSource);
 
@@ -78,6 +78,10 @@ public sealed class Driver : IAsyncDisposable
     }
 
     public Controller Controller { get; }
+
+    /// <inheritdoc />
+    public INode? GetNode(byte nodeId)
+        => Controller.Nodes.TryGetValue(nodeId, out Node? node) ? node : null;
 
     public static async Task<Driver> CreateAsync(
         ILogger logger,
@@ -399,7 +403,7 @@ public sealed class Driver : IAsyncDisposable
         where TRequest : struct, ICommand<TRequest>
         => await SendFrameAsync(request.Frame, cancellationToken).ConfigureAwait(false);
 
-    internal async Task SendCommandAsync<TCommand>(
+    public async Task SendCommandAsync<TCommand>(
         TCommand request,
         byte nodeId,
         CancellationToken cancellationToken)

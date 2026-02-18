@@ -206,7 +206,7 @@ public readonly struct VersionSoftwareInfo
 [CommandClass(CommandClassId.Version)]
 public sealed class VersionCommandClass : CommandClass<VersionCommand>
 {
-    public VersionCommandClass(CommandClassInfo info, Driver driver, Node node)
+    public VersionCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }

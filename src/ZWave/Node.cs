@@ -5,7 +5,7 @@ using ZWave.Serial.Commands;
 
 namespace ZWave;
 
-public sealed class Node
+public sealed class Node : INode
 {
     private readonly Driver _driver;
 

@@ -49,7 +49,7 @@ public readonly struct BinarySwitchState
 [CommandClass(CommandClassId.BinarySwitch)]
 public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
 {
-    internal BinarySwitchCommandClass(CommandClassInfo info, Driver driver, Node node)
+    internal BinarySwitchCommandClass(CommandClassInfo info, IDriver driver, INode node)
         : base(info, driver, node)
     {
     }
