@@ -3,8 +3,17 @@ using ZWave.Serial.Commands;
 
 namespace ZWave.Serial;
 
+/// <summary>
+/// Represents a Z-Wave Serial API data frame (SOF-framed).
+/// </summary>
+/// <remarks>
+/// As defined by INS12350 section 5.
+/// </remarks>
 public readonly struct DataFrame
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DataFrame"/> struct from raw frame bytes.
+    /// </summary>
     public DataFrame(ReadOnlyMemory<byte> data)
     {
         if (data.Span[0] != FrameHeader.SOF)
@@ -20,17 +29,35 @@ public readonly struct DataFrame
         Data = data;
     }
 
+    /// <summary>
+    /// Gets the raw frame bytes including SOF, length, type, command, parameters, and checksum.
+    /// </summary>
     public ReadOnlyMemory<byte> Data { get; }
 
+    /// <summary>
+    /// Gets the data frame type (REQ or RES).
+    /// </summary>
     public DataFrameType Type => (DataFrameType)Data.Span[2];
 
+    /// <summary>
+    /// Gets the Serial API command identifier.
+    /// </summary>
     public CommandId CommandId => (CommandId)Data.Span[3];
 
+    /// <summary>
+    /// Gets the command parameters, excluding SOF, length, type, command ID, and checksum.
+    /// </summary>
     public ReadOnlyMemory<byte> CommandParameters => Data[4..^1];
 
+    /// <summary>
+    /// Creates a new data frame with no command parameters.
+    /// </summary>
     public static DataFrame Create(DataFrameType type, CommandId commandId)
         => Create(type, commandId, ReadOnlySpan<byte>.Empty);
 
+    /// <summary>
+    /// Creates a new data frame with the specified command parameters.
+    /// </summary>
     public static DataFrame Create(DataFrameType type, CommandId commandId, ReadOnlySpan<byte> commandParameters)
     {
         byte[] data = new byte[5 + commandParameters.Length];
@@ -43,6 +70,9 @@ public readonly struct DataFrame
         return new DataFrame(data);
     }
 
+    /// <summary>
+    /// Validates the checksum of this data frame.
+    /// </summary>
     public bool IsChecksumValid()
     {
         byte expectedChecksum = CalculateChecksum(Data.Span);

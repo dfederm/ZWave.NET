@@ -6,6 +6,9 @@ using Microsoft.Extensions.Logging;
 
 namespace ZWave.Serial;
 
+/// <summary>
+/// Represents a data frame transmission request with its completion source.
+/// </summary>
 public record struct DataFrameTransmission(DataFrame Frame, TaskCompletionSource TransmissionComplete);
 
 /// <summary>

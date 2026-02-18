@@ -1,5 +1,8 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Represents a battery level value.
+/// </summary>
 public struct BatteryLevel
 {
     public BatteryLevel(byte value)
@@ -7,15 +10,27 @@ public struct BatteryLevel
         Value = value;
     }
 
+    /// <summary>
+    /// Gets the raw battery level byte.
+    /// </summary>
     public byte Value { get; }
 
+    /// <summary>
+    /// Gets the battery level as a percentage (0-100).
+    /// </summary>
     public int Level => Value == 0xff ? 0 : Value;
 
+    /// <summary>
+    /// Gets a value indicating whether the battery level is critically low.
+    /// </summary>
     public bool IsLow => Value == 0xff;
 
     public static implicit operator BatteryLevel(byte b) => new BatteryLevel(b);
 }
 
+/// <summary>
+/// Indicates the charging status of a battery.
+/// </summary>
 public enum BatteryChargingStatus : byte
 {
     Discharging = 0x00,
@@ -25,6 +40,9 @@ public enum BatteryChargingStatus : byte
     Maintaining = 0x02,
 }
 
+/// <summary>
+/// Indicates whether the battery needs to be recharged or replaced.
+/// </summary>
 public enum BatterRechargeOrReplaceStatus : byte
 {
     /// <summary>
@@ -45,6 +63,9 @@ public enum BatterRechargeOrReplaceStatus : byte
     Now = 0x03,
 }
 
+/// <summary>
+/// The temperature scale used for battery temperature readings.
+/// </summary>
 public enum BatteryTemperatureScale : byte
 {
     Celcius = 0x00,
@@ -176,10 +197,17 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
     {
     }
 
+    /// <summary>
+    /// Gets the last reported battery state.
+    /// </summary>
     public BatteryState? State { get; private set; }
 
+    /// <summary>
+    /// Gets the last reported battery health.
+    /// </summary>
     public BatteryHealth? Health { get; private set; }
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(BatteryCommand command)
         => command switch
         {

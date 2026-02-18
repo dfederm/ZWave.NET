@@ -2,6 +2,9 @@
 
 namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Base class for command classes with a strongly-typed command enum.
+/// </summary>
 public abstract class CommandClass<TCommand> : CommandClass
     where TCommand : struct, Enum
 {
@@ -28,6 +31,9 @@ public abstract class CommandClass<TCommand> : CommandClass
         => IsCommandSupported(Unsafe.As<byte, TCommand>(ref command));
 }
 
+/// <summary>
+/// Base class for all Z-Wave command class implementations.
+/// </summary>
 public abstract class CommandClass
 {
     private record struct AwaitedReport(
@@ -52,12 +58,24 @@ public abstract class CommandClass
         Node = node;
     }
 
+    /// <summary>
+    /// Gets information about this command class, including whether it is supported and/or controlled.
+    /// </summary>
     public CommandClassInfo Info { get; private set; }
 
+    /// <summary>
+    /// Gets the driver used to send commands.
+    /// </summary>
     protected IDriver Driver { get; }
 
+    /// <summary>
+    /// Gets the node this command class belongs to.
+    /// </summary>
     public INode Node { get; }
 
+    /// <summary>
+    /// Gets the version of this command class, or null if not yet determined.
+    /// </summary>
     public byte? Version { get; private set; }
 
     // If we don't know the version, we have to assume it's version 1

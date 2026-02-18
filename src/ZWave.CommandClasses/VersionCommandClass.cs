@@ -1,5 +1,8 @@
 ﻿namespace ZWave.CommandClasses;
 
+/// <summary>
+/// Identifies the type of Z-Wave library.
+/// </summary>
 public enum ZWaveLibraryType : byte
 {
     NotApplicable = 0x00,
@@ -71,6 +74,9 @@ public enum VersionCommand : byte
     ZWaveSoftwareReport = 0x18,
 }
 
+/// <summary>
+/// Represents the hardware version information of a Z-Wave device.
+/// </summary>
 public readonly struct VersionHardwareInfo
 {
     public VersionHardwareInfo(
@@ -106,6 +112,9 @@ public readonly struct VersionHardwareInfo
     public byte? HardwareVersion { get; }
 }
 
+/// <summary>
+/// Identifies version capabilities supported by the device.
+/// </summary>
 [Flags]
 public enum VersionCapabilities : byte
 {
@@ -132,6 +141,9 @@ public enum VersionCapabilities : byte
     ZWaveSoftware = 1 << 2,
 }
 
+/// <summary>
+/// Represents the software version information of a Z-Wave device.
+/// </summary>
 public readonly struct VersionSoftwareInfo
 {
     public VersionSoftwareInfo(
@@ -211,6 +223,9 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     {
     }
 
+    /// <summary>
+    /// Gets the hardware version information.
+    /// </summary>
     public VersionHardwareInfo? HardwareInfo { get; private set; }
 
     /// <summary>
@@ -218,6 +233,9 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     /// </summary>
     public VersionCapabilities? Capabilities { get; private set; }
 
+    /// <summary>
+    /// Gets the software version information.
+    /// </summary>
     public VersionSoftwareInfo? SoftwareInfo { get; private set; }
 
     /// <inheritdoc />

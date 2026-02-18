@@ -59,6 +59,9 @@ public readonly struct WakeUpInterval
     public uint WakeupDestinationNodeId { get; }
 }
 
+/// <summary>
+/// Represents the wake up interval capabilities of a device.
+/// </summary>
 public readonly struct WakeUpIntervalCapabilities
 {
     public WakeUpIntervalCapabilities(
@@ -110,10 +113,17 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
     {
     }
 
+    /// <summary>
+    /// Gets the current wake up interval configuration.
+    /// </summary>
     public WakeUpInterval? Interval { get; private set; }
 
+    /// <summary>
+    /// Gets the wake up interval capabilities.
+    /// </summary>
     public WakeUpIntervalCapabilities? IntervalCapabilities { get; private set; }
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(WakeUpCommand command)
         => command switch
         {
@@ -144,6 +154,9 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Request the wake up interval capabilities from the device.
+    /// </summary>
     public async Task<WakeUpIntervalCapabilities> GetIntervalCapabilitiesAsync(CancellationToken cancellationToken)
     {
         var command = WakeUpIntervalCapabilitiesGetCommand.Create();

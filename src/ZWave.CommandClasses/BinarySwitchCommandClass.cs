@@ -18,6 +18,9 @@ public enum BinarySwitchCommand : byte
     Report = 0x03,
 }
 
+/// <summary>
+/// Represents the state reported by a Binary Switch Command Class device.
+/// </summary>
 public readonly struct BinarySwitchState
 {
     public BinarySwitchState(
@@ -54,6 +57,9 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
     {
     }
 
+    /// <summary>
+    /// Gets the last reported switch state.
+    /// </summary>
     public BinarySwitchState? State { get; private set; }
 
     /// <inheritdoc />

@@ -33,6 +33,9 @@ public enum MultilevelSensorCommand : byte
     SupportedScaleReport = 0x06,
 }
 
+/// <summary>
+/// Represents a multilevel sensor reading.
+/// </summary>
 public readonly struct MultilevelSensorState
 {
     public MultilevelSensorState(MultilevelSensorType sensorType, MultilevelSensorScale scale, double value)
@@ -76,6 +79,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
     public IReadOnlyDictionary<MultilevelSensorType, MultilevelSensorState?>? SensorValues => _sensorValues;
 
+    /// <inheritdoc />
     public override bool? IsCommandSupported(MultilevelSensorCommand command)
         => command switch
         {

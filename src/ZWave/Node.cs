@@ -5,6 +5,9 @@ using ZWave.Serial.Commands;
 
 namespace ZWave;
 
+/// <summary>
+/// Represents a Z-Wave network node.
+/// </summary>
 public sealed class Node : INode
 {
     private readonly Driver _driver;
@@ -31,26 +34,57 @@ public sealed class Node : INode
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Gets the node ID.
+    /// </summary>
     public byte Id { get; }
 
+    /// <summary>
+    /// Gets the current interview status of the node.
+    /// </summary>
     public NodeInterviewStatus InterviewStatus { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether this node is an always-listening device.
+    /// </summary>
     public bool IsListening { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether this node supports routing.
+    /// </summary>
     public bool IsRouting { get; private set; }
 
+    /// <summary>
+    /// Gets the communication speeds supported by this node.
+    /// </summary>
     public IReadOnlyList<int> SupportedSpeeds { get; private set; } = Array.Empty<int>();
 
+    /// <summary>
+    /// Gets the Z-Wave protocol version of this node.
+    /// </summary>
     public byte ProtocolVersion { get; private set; }
 
+    /// <summary>
+    /// Gets the type of this node (controller or end node).
+    /// </summary>
     public NodeType NodeType { get; private set; }
 
+    /// <summary>
+    /// Gets the frequent listening mode of this node.
+    /// </summary>
     public FrequentListeningMode FrequentListeningMode { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether this node supports beaming.
+    /// </summary>
     public bool SupportsBeaming { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether this node supports security.
+    /// </summary>
     public bool SupportsSecurity { get; private set; }
 
+    /// <inheritdoc />
     public IReadOnlyDictionary<CommandClassId, CommandClassInfo> CommandClasses
     {
         get
@@ -66,10 +100,16 @@ public sealed class Node : INode
         }
     }
 
+    /// <summary>
+    /// Gets a specific command class by its CLR type.
+    /// </summary>
     public TCommandClass GetCommandClass<TCommandClass>()
         where TCommandClass : CommandClass
         => (TCommandClass)GetCommandClass(CommandClassFactory.GetCommandClassId<TCommandClass>());
 
+    /// <summary>
+    /// Tries to get a specific command class by its CLR type.
+    /// </summary>
     public bool TryGetCommandClass<TCommandClass>([NotNullWhen(true)]out TCommandClass? commandClass)
         where TCommandClass : CommandClass
     {
@@ -85,11 +125,15 @@ public sealed class Node : INode
         }
     }
 
+    /// <inheritdoc />
     public CommandClass GetCommandClass(CommandClassId commandClassId)
         => !TryGetCommandClass(commandClassId, out CommandClass? commandClass)
             ? throw new ZWaveException(ZWaveErrorCode.CommandClassNotImplemented, $"The command class {commandClassId} is not implemented by this node.")
             : commandClass;
 
+    /// <summary>
+    /// Tries to get a specific command class by its command class ID.
+    /// </summary>
     public bool TryGetCommandClass(CommandClassId commandClassId, [NotNullWhen(true)] out CommandClass? commandClass)
         => _commandClasses.TryGetValue(commandClassId, out commandClass);
 

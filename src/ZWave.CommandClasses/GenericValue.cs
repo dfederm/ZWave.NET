@@ -28,8 +28,14 @@ public struct GenericValue
         Value = state ? (byte)0xff : (byte)0;
     }
 
+    /// <summary>
+    /// Gets the raw byte value.
+    /// </summary>
     public byte Value { get; }
 
+    /// <summary>
+    /// Gets the interpreted level (0-100), or null if unknown.
+    /// </summary>
     public int? Level => Value switch
     {
         <= 99 => Value,
@@ -38,6 +44,9 @@ public struct GenericValue
         _ => null, // Reserved. Treat as unknown
     };
 
+    /// <summary>
+    /// Gets the interpreted boolean state, or null if unknown.
+    /// </summary>
     public bool? State => Value switch
     {
         0 => false,

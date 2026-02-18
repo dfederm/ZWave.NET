@@ -13,8 +13,14 @@ public readonly struct DurationReport
         Value = value;
     }
 
+    /// <summary>
+    /// Gets the raw duration byte value.
+    /// </summary>
     public byte Value { get; }
 
+    /// <summary>
+    /// Gets the interpreted duration, or null if unknown.
+    /// </summary>
     public TimeSpan? Duration =>
         Value switch
         {
