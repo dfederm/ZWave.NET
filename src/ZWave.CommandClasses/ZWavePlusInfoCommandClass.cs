@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 public enum ZWavePlusInfoCommand : byte
 {
@@ -150,7 +150,7 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
         }
     }
 
-    private struct ZWavePlusInfoGetCommand : ICommand
+    private readonly struct ZWavePlusInfoGetCommand : ICommand
     {
         public ZWavePlusInfoGetCommand(CommandClassFrame frame)
         {
@@ -170,7 +170,7 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
         }
     }
 
-    private struct ZWavePlusInfoReportCommand : ICommand
+    private readonly struct ZWavePlusInfoReportCommand : ICommand
     {
         public ZWavePlusInfoReportCommand(CommandClassFrame frame)
         {

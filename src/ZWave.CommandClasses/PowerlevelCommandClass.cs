@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 /// <summary>
 /// Defines RF transmit power levels relative to normal power.
@@ -274,7 +274,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         }
     }
 
-    private struct PowerlevelSetCommand : ICommand
+    private readonly struct PowerlevelSetCommand : ICommand
     {
         public PowerlevelSetCommand(CommandClassFrame frame)
         {
@@ -295,7 +295,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         }
     }
 
-    private struct PowerlevelGetCommand : ICommand
+    private readonly struct PowerlevelGetCommand : ICommand
     {
         public PowerlevelGetCommand(CommandClassFrame frame)
         {
@@ -315,7 +315,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         }
     }
 
-    private struct PowerlevelReportCommand : ICommand
+    private readonly struct PowerlevelReportCommand : ICommand
     {
         public PowerlevelReportCommand(CommandClassFrame frame)
         {
@@ -341,7 +341,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
             : null;
     }
 
-    private struct PowerlevelTestNodeSetCommand : ICommand
+    private readonly struct PowerlevelTestNodeSetCommand : ICommand
     {
         public PowerlevelTestNodeSetCommand(CommandClassFrame frame)
         {
@@ -369,7 +369,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         }
     }
 
-    private struct PowerlevelTestNodeGetCommand : ICommand
+    private readonly struct PowerlevelTestNodeGetCommand : ICommand
     {
         public PowerlevelTestNodeGetCommand(CommandClassFrame frame)
         {
@@ -389,7 +389,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         }
     }
 
-    private struct PowerlevelTestNodeReportCommand : ICommand
+    private readonly struct PowerlevelTestNodeReportCommand : ICommand
     {
         public PowerlevelTestNodeReportCommand(CommandClassFrame frame)
         {

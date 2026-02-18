@@ -42,7 +42,7 @@ public readonly struct CommandClassFrame
     /// Creates a new command class frame with no command parameters.
     /// </summary>
     public static CommandClassFrame Create(CommandClassId commandClassId, byte commandId)
-        => Create(commandClassId, commandId, ReadOnlySpan<byte>.Empty);
+        => Create(commandClassId, commandId, []);
 
     /// <summary>
     /// Creates a new command class frame with the specified command parameters.

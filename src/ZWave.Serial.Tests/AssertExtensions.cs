@@ -102,7 +102,7 @@ internal static class AssertExtensions
 
         Assert.IsNotNull(actualObj);
 
-        excludedProperties ??= Array.Empty<string>();
+        excludedProperties ??= [];
 
         Type expectedType = expectedObj.GetType();
         Type actualType = actualObj.GetType();

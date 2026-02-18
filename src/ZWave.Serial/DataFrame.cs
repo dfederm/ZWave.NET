@@ -53,7 +53,7 @@ public readonly struct DataFrame
     /// Creates a new data frame with no command parameters.
     /// </summary>
     public static DataFrame Create(DataFrameType type, CommandId commandId)
-        => Create(type, commandId, ReadOnlySpan<byte>.Empty);
+        => Create(type, commandId, []);
 
     /// <summary>
     /// Creates a new data frame with the specified command parameters.

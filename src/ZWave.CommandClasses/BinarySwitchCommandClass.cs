@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 public enum BinarySwitchCommand : byte
 {
@@ -121,7 +121,7 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
         }
     }
 
-    private struct BinarySwitchSetCommand : ICommand
+    private readonly struct BinarySwitchSetCommand : ICommand
     {
         public BinarySwitchSetCommand(CommandClassFrame frame)
         {
@@ -149,7 +149,7 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
         }
     }
 
-    private struct BinarySwitchGetCommand : ICommand
+    private readonly struct BinarySwitchGetCommand : ICommand
     {
         public BinarySwitchGetCommand(CommandClassFrame frame)
         {
@@ -169,7 +169,7 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
         }
     }
 
-    private struct BinarySwitchReportCommand : ICommand
+    private readonly struct BinarySwitchReportCommand : ICommand
     {
         private readonly byte _version;
 

@@ -57,7 +57,7 @@ public sealed class Node : INode
     /// <summary>
     /// Gets the communication speeds supported by this node.
     /// </summary>
-    public IReadOnlyList<int> SupportedSpeeds { get; private set; } = Array.Empty<int>();
+    public IReadOnlyList<int> SupportedSpeeds { get; private set; } = [];
 
     /// <summary>
     /// Gets the Z-Wave protocol version of this node.

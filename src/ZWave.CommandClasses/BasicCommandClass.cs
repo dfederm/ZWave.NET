@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 public enum BasicCommand : byte
 {
@@ -121,7 +121,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
         }
     }
 
-    private struct BasicSetCommand : ICommand
+    private readonly struct BasicSetCommand : ICommand
     {
         public BasicSetCommand(CommandClassFrame frame)
         {
@@ -144,7 +144,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
         }
     }
 
-    private struct BasicGetCommand : ICommand
+    private readonly struct BasicGetCommand : ICommand
     {
         public BasicGetCommand(CommandClassFrame frame)
         {
@@ -164,7 +164,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
         }
     }
 
-    private struct BasicReportCommand : ICommand
+    private readonly struct BasicReportCommand : ICommand
     {
         private readonly byte _version;
 
