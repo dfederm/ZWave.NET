@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 /// <summary>
 /// Represents a battery level value.
@@ -279,7 +279,7 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
         }
     }
 
-    private struct BatteryGetCommand : ICommand
+    private readonly struct BatteryGetCommand : ICommand
     {
         public BatteryGetCommand(CommandClassFrame frame)
         {
@@ -299,7 +299,7 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
         }
     }
 
-    private struct BatteryReportCommand : ICommand
+    private readonly struct BatteryReportCommand : ICommand
     {
         private readonly byte _version;
 
@@ -378,7 +378,7 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
             : null;
     }
 
-    private struct BatteryHealthGetCommand : ICommand
+    private readonly struct BatteryHealthGetCommand : ICommand
     {
         public BatteryHealthGetCommand(CommandClassFrame frame)
         {
@@ -398,7 +398,7 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
         }
     }
 
-    private struct BatteryHealthReportCommand : ICommand
+    private readonly struct BatteryHealthReportCommand : ICommand
     {
         public BatteryHealthReportCommand(CommandClassFrame frame)
         {

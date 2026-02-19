@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace ZWave.CommandClasses;
 
@@ -158,7 +158,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         }
     }
 
-    private struct ManufacturerSpecificGetCommand : ICommand
+    private readonly struct ManufacturerSpecificGetCommand : ICommand
     {
         public ManufacturerSpecificGetCommand(CommandClassFrame frame)
         {
@@ -178,7 +178,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         }
     }
 
-    private struct ManufacturerSpecificReportCommand : ICommand
+    private readonly struct ManufacturerSpecificReportCommand : ICommand
     {
         public ManufacturerSpecificReportCommand(CommandClassFrame frame)
         {
@@ -207,7 +207,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         public ushort ProductId => Frame.CommandParameters.Span[4..6].ToUInt16BE();
     }
 
-    private struct ManufacturerSpecificDeviceSpecificGetCommand : ICommand
+    private readonly struct ManufacturerSpecificDeviceSpecificGetCommand : ICommand
     {
         public ManufacturerSpecificDeviceSpecificGetCommand(CommandClassFrame frame)
         {
@@ -228,7 +228,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         }
     }
 
-    private struct ManufacturerSpecificDeviceSpecificReportCommand : ICommand
+    private readonly struct ManufacturerSpecificDeviceSpecificReportCommand : ICommand
     {
         public ManufacturerSpecificDeviceSpecificReportCommand(CommandClassFrame frame)
         {

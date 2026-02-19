@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 public enum MultilevelSensorCommand : byte
 {
@@ -269,7 +269,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         }
     }
 
-    private struct MultilevelSensorGetCommand : ICommand
+    private readonly struct MultilevelSensorGetCommand : ICommand
     {
         public MultilevelSensorGetCommand(CommandClassFrame frame)
         {
@@ -304,7 +304,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         }
     }
 
-    private struct MultilevelSensorReportCommand : ICommand
+    private readonly struct MultilevelSensorReportCommand : ICommand
     {
         public MultilevelSensorReportCommand(CommandClassFrame frame)
         {
@@ -358,7 +358,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         }
     }
 
-    private struct MultilevelSensorSupportedSensorGetCommand : ICommand
+    private readonly struct MultilevelSensorSupportedSensorGetCommand : ICommand
     {
         public MultilevelSensorSupportedSensorGetCommand(CommandClassFrame frame)
         {
@@ -378,7 +378,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         }
     }
 
-    private struct MultilevelSensorSupportedSensorReportCommand : ICommand
+    private readonly struct MultilevelSensorSupportedSensorReportCommand : ICommand
     {
         public MultilevelSensorSupportedSensorReportCommand(CommandClassFrame frame)
         {
@@ -419,7 +419,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         }
     }
 
-    private struct MultilevelSensorSupportedScaleGetCommand : ICommand
+    private readonly struct MultilevelSensorSupportedScaleGetCommand : ICommand
     {
         public MultilevelSensorSupportedScaleGetCommand(CommandClassFrame frame)
         {
@@ -440,7 +440,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         }
     }
 
-    private struct MultilevelSensorSupportedScaleReportCommand : ICommand
+    private readonly struct MultilevelSensorSupportedScaleReportCommand : ICommand
     {
         public MultilevelSensorSupportedScaleReportCommand(CommandClassFrame frame)
         {

@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 public enum WakeUpCommand : byte
 {
@@ -213,7 +213,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         }
     }
 
-    private struct WakeUpIntervalSetCommand : ICommand
+    private readonly struct WakeUpIntervalSetCommand : ICommand
     {
         public WakeUpIntervalSetCommand(CommandClassFrame frame)
         {
@@ -249,7 +249,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         }
     }
 
-    private struct WakeUpIntervalGetCommand : ICommand
+    private readonly struct WakeUpIntervalGetCommand : ICommand
     {
         public WakeUpIntervalGetCommand(CommandClassFrame frame)
         {
@@ -269,7 +269,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         }
     }
 
-    private struct WakeUpIntervalReportCommand : ICommand
+    private readonly struct WakeUpIntervalReportCommand : ICommand
     {
         public WakeUpIntervalReportCommand(CommandClassFrame frame)
         {
@@ -293,7 +293,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         public uint WakeupDestinationNodeId => Frame.CommandParameters.Span[3];
     }
 
-    private struct WakeUpNotificationCommand : ICommand
+    private readonly struct WakeUpNotificationCommand : ICommand
     {
         public WakeUpNotificationCommand(CommandClassFrame frame)
         {
@@ -307,7 +307,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         public CommandClassFrame Frame { get; }
     }
 
-    private struct WakeUpNoMoreInformationCommand : ICommand
+    private readonly struct WakeUpNoMoreInformationCommand : ICommand
     {
         public WakeUpNoMoreInformationCommand(CommandClassFrame frame)
         {
@@ -327,7 +327,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         }
     }
 
-    private struct WakeUpIntervalCapabilitiesGetCommand : ICommand
+    private readonly struct WakeUpIntervalCapabilitiesGetCommand : ICommand
     {
         public WakeUpIntervalCapabilitiesGetCommand(CommandClassFrame frame)
         {
@@ -347,7 +347,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         }
     }
 
-    private struct WakeUpIntervalCapabilitiesReportCommand : ICommand
+    private readonly struct WakeUpIntervalCapabilitiesReportCommand : ICommand
     {
         private readonly byte _version;
 
