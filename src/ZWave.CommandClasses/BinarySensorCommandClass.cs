@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 /// <summary>
 /// Identifies the type of a binary sensor.
@@ -218,7 +218,7 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
         }
     }
 
-    private struct BinarySensorGetCommand : ICommand
+    private readonly struct BinarySensorGetCommand : ICommand
     {
         public BinarySensorGetCommand(CommandClassFrame frame)
         {
@@ -247,7 +247,7 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
         }
     }
 
-    private struct BinarySensorReportCommand : ICommand
+    private readonly struct BinarySensorReportCommand : ICommand
     {
         private readonly byte _version;
 
@@ -276,7 +276,7 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
             : null;
     }
 
-    private struct BinarySensorSupportedGetCommand : ICommand
+    private readonly struct BinarySensorSupportedGetCommand : ICommand
     {
         public BinarySensorSupportedGetCommand(CommandClassFrame frame)
         {
@@ -296,7 +296,7 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
         }
     }
 
-    private struct BinarySensorSupportedReportCommand : ICommand
+    private readonly struct BinarySensorSupportedReportCommand : ICommand
     {
         public BinarySensorSupportedReportCommand(CommandClassFrame frame)
         {

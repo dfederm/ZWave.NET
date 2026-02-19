@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 /// <summary>
 /// Identifies a color component of a color switch device.
@@ -241,7 +241,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
         }
     }
 
-    private struct ColorSwitchSupportedGetCommand : ICommand
+    private readonly struct ColorSwitchSupportedGetCommand : ICommand
     {
         public ColorSwitchSupportedGetCommand(CommandClassFrame frame)
         {
@@ -261,7 +261,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
         }
     }
 
-    private struct ColorSwitchSupportedReportCommand : ICommand
+    private readonly struct ColorSwitchSupportedReportCommand : ICommand
     {
         public ColorSwitchSupportedReportCommand(CommandClassFrame frame)
         {
@@ -301,7 +301,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
         }
     }
 
-    private struct ColorSwitchGetCommand : ICommand
+    private readonly struct ColorSwitchGetCommand : ICommand
     {
         public ColorSwitchGetCommand(CommandClassFrame frame)
         {
@@ -322,7 +322,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
         }
     }
 
-    private struct ColorSwitchReportCommand : ICommand
+    private readonly struct ColorSwitchReportCommand : ICommand
     {
         private readonly byte _version;
 
@@ -363,7 +363,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
             : null;
     }
 
-    private struct ColorSwitchSetCommand : ICommand
+    private readonly struct ColorSwitchSetCommand : ICommand
     {
         public ColorSwitchSetCommand(CommandClassFrame frame)
         {
@@ -402,7 +402,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
         }
     }
 
-    private struct ColorSwitchStartLevelChangeCommand : ICommand
+    private readonly struct ColorSwitchStartLevelChangeCommand : ICommand
     {
         public ColorSwitchStartLevelChangeCommand(CommandClassFrame frame)
         {
@@ -445,7 +445,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
         }
     }
 
-    private struct ColorSwitchStopLevelChangeCommand : ICommand
+    private readonly struct ColorSwitchStopLevelChangeCommand : ICommand
     {
         public ColorSwitchStopLevelChangeCommand(CommandClassFrame frame)
         {

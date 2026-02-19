@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 /// <summary>
 /// Identifies the type of notification.
@@ -331,7 +331,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationGetV1Command : ICommand
+    private readonly struct NotificationGetV1Command : ICommand
     {
         public NotificationGetV1Command(CommandClassFrame frame)
         {
@@ -352,7 +352,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationGetCommand : ICommand
+    private readonly struct NotificationGetCommand : ICommand
     {
         public NotificationGetCommand(CommandClassFrame frame)
         {
@@ -386,7 +386,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationReportCommand : ICommand
+    private readonly struct NotificationReportCommand : ICommand
     {
         // Note: Notifications describe point-in-time events, so avoid version checking if we don't have the version
         // since we don't want to lose any events before the version is determined.
@@ -503,7 +503,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationSetCommand : ICommand
+    private readonly struct NotificationSetCommand : ICommand
     {
         public NotificationSetCommand(CommandClassFrame frame)
         {
@@ -524,7 +524,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationSupportedGetCommand : ICommand
+    private readonly struct NotificationSupportedGetCommand : ICommand
     {
         public NotificationSupportedGetCommand(CommandClassFrame frame)
         {
@@ -544,7 +544,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationSupportedReportCommand : ICommand
+    private readonly struct NotificationSupportedReportCommand : ICommand
     {
         public NotificationSupportedReportCommand(CommandClassFrame frame)
         {
@@ -584,7 +584,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationEventSupportedGetCommand : ICommand
+    private readonly struct NotificationEventSupportedGetCommand : ICommand
     {
         public NotificationEventSupportedGetCommand(CommandClassFrame frame)
         {
@@ -605,7 +605,7 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
         }
     }
 
-    private struct NotificationEventSupportedReportCommand : ICommand
+    private readonly struct NotificationEventSupportedReportCommand : ICommand
     {
         public NotificationEventSupportedReportCommand(CommandClassFrame frame)
         {

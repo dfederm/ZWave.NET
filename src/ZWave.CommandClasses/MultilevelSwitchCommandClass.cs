@@ -1,4 +1,4 @@
-﻿namespace ZWave.CommandClasses;
+namespace ZWave.CommandClasses;
 
 /// <summary>
 /// The direction of a multilevel switch level change.
@@ -238,7 +238,7 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
         }
     }
 
-    private struct MultilevelSwitchSetCommand : ICommand
+    private readonly struct MultilevelSwitchSetCommand : ICommand
     {
         public MultilevelSwitchSetCommand(CommandClassFrame frame)
         {
@@ -266,7 +266,7 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
         }
     }
 
-    private struct MultilevelSwitchGetCommand : ICommand
+    private readonly struct MultilevelSwitchGetCommand : ICommand
     {
         public MultilevelSwitchGetCommand(CommandClassFrame frame)
         {
@@ -286,7 +286,7 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
         }
     }
 
-    private struct MultilevelSwitchReportCommand : ICommand
+    private readonly struct MultilevelSwitchReportCommand : ICommand
     {
         private readonly byte _version;
 
@@ -322,7 +322,7 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
             : null;
     }
 
-    private struct MultilevelSwitchStartLevelChangeCommand : ICommand
+    private readonly struct MultilevelSwitchStartLevelChangeCommand : ICommand
     {
         public MultilevelSwitchStartLevelChangeCommand(CommandClassFrame frame)
         {
@@ -363,7 +363,7 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
         }
     }
 
-    private struct MultilevelSwitchStopLevelChangeCommand : ICommand
+    private readonly struct MultilevelSwitchStopLevelChangeCommand : ICommand
     {
         public MultilevelSwitchStopLevelChangeCommand(CommandClassFrame frame)
         {
@@ -383,7 +383,7 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
         }
     }
 
-    private struct MultilevelSwitchSupportedGetCommand : ICommand
+    private readonly struct MultilevelSwitchSupportedGetCommand : ICommand
     {
         public MultilevelSwitchSupportedGetCommand(CommandClassFrame frame)
         {
@@ -403,7 +403,7 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
         }
     }
 
-    private struct MultilevelSwitchSupportedReportCommand : ICommand
+    private readonly struct MultilevelSwitchSupportedReportCommand : ICommand
     {
         public MultilevelSwitchSupportedReportCommand(CommandClassFrame frame)
         {
