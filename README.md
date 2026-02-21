@@ -14,25 +14,7 @@ A .NET library for communicating with Z-Wave devices through a Z-Wave USB contro
 - Node interviewing with topological command class dependency resolution
 - Async-first design using `System.IO.Pipelines`, `System.Threading.Channels`, and `CancellationToken` throughout
 
-### Implemented Command Classes
-
-| Command Class | ID | Get | Set | Report |
-|---|---|---|---|---|
-| Basic | 0x20 | ✅ | ✅ | ✅ |
-| Binary Switch | 0x25 | ✅ | ✅ | ✅ |
-| Multilevel Switch | 0x26 | ✅ | ✅ | ✅ |
-| Binary Sensor | 0x30 | ✅ | — | ✅ |
-| Multilevel Sensor | 0x31 | ✅ | — | ✅ |
-| Color Switch | 0x33 | ✅ | ✅ | ✅ |
-| Z-Wave Plus Info | 0x5E | ✅ | — | ✅ |
-| Notification | 0x71 | ✅ | ✅ | ✅ |
-| Manufacturer Specific | 0x72 | ✅ | — | ✅ |
-| Powerlevel | 0x73 | ✅ | ✅ | ✅ |
-| Battery | 0x80 | ✅ | — | ✅ |
-| Wake Up | 0x84 | ✅ | ✅ | ✅ |
-| Version | 0x86 | ✅ | — | ✅ |
-
-Unimplemented command classes reported by a device are tracked as `NotImplementedCommandClass` and do not block node interviews.
+Implemented command classes include Basic, Battery, Binary Sensor, Binary Switch, Color Switch, Manufacturer Specific, Multilevel Sensor, Multilevel Switch, Notification, Powerlevel, Version, Wake Up, and Z-Wave Plus Info. Unimplemented command classes reported by a device are tracked and do not block node interviews.
 
 ## Quick Start
 
