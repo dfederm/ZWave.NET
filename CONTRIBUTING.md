@@ -56,7 +56,7 @@ This is the most common type of contribution. Look at an existing command class 
    - Private inner structs for each command
 3. That's it - the source generator auto-registers your class in the factory
 
-Refer to the [Command Class specification (SDS13781)](https://www.zwavepublic.com/files/sds13781-z-wave-application-command-class-specificationpdf) for message formats and field definitions.
+Refer to the [Z-Wave Application Specification](https://z-wavealliance.org/development-resources-overview/specification-for-developers/) for message formats and field definitions.
 
 ### Adding a Serial API Command
 
@@ -66,7 +66,7 @@ Look at an existing command like `GetLibraryVersion.cs` (simple request/response
 2. Create a new file in `src/ZWave.Serial/Commands/`
 3. Add tests in `src/ZWave.Serial.Tests/Commands/` - the `CommandTestBase` class has helpers for verifying frame round-tripping
 
-Refer to the [Serial API programming guide (INS12350)](https://www.silabs.com/documents/public/user-guides/INS12350-Serial-API-Host-Appl.-Prg.-Guide.pdf) for command definitions.
+Refer to the Z-Wave Host API Specification (from the [Z-Wave Alliance specification package](https://z-wavealliance.org/development-resources-overview/specification-for-developers/)) for command definitions.
 
 ### Logging
 
@@ -81,7 +81,10 @@ Log messages are defined in `Logging.cs` files using source-generated `[LoggerMe
 
 ## Protocol References
 
-- [INS12350 - Serial API Host Application Programming Guide](https://www.silabs.com/documents/public/user-guides/INS12350-Serial-API-Host-Appl.-Prg.-Guide.pdf)
-- [SDS13781 - Z-Wave Application Command Class Specification](https://www.zwavepublic.com/files/sds13781-z-wave-application-command-class-specificationpdf)
+The official Z-Wave specification package can be downloaded from the [Z-Wave Alliance](https://z-wavealliance.org/development-resources-overview/specification-for-developers/). The two most relevant specs are:
+- **Z-Wave Host API Specification** — Serial API frame format, handshake, initialization, command definitions
+- **Z-Wave Application Specification** — Command Class message formats, versioning, required fields
+
+Additional resources:
 - [Silicon Labs Z-Wave Serial API Reference](https://docs.silabs.com/z-wave/latest/zwave-api/serial-api)
-- [zwave-js/specs](https://github.com/zwave-js/specs) - Full specification collection
+- [zwave-js/specs](https://github.com/zwave-js/specs) — Community-maintained specification collection

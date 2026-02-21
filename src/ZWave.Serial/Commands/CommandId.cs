@@ -4,9 +4,8 @@
 /// The ids for various Serial API commands.
 /// </summary>
 /// <remarks>
-/// Reference specs:
-/// https://www.silabs.com/documents/public/user-guides/INS12350-Serial-API-Host-Appl.-Prg.-Guide.pdf
-/// https://www.silabs.com/documents/public/user-guides/INS13954-Instruction-Z-Wave-500-Series-Appl-Programmers-Guide-v6_8x_0x.pdf
+/// As defined by the Z-Wave Host API Specification.
+/// Download the specification package from: https://z-wavealliance.org/development-resources-overview/specification-for-developers/
 /// </remarks>
 public enum CommandId : byte
 {

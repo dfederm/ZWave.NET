@@ -71,7 +71,7 @@ The foundational layer contains Z-Wave domain types shared across all other proj
 
 ### Serial Frame Layer (`src/ZWave.Serial/`)
 
-The lowest layer handles raw byte framing over the serial port per INS12350 (Serial API Host Application Programming Guide).
+The lowest layer handles raw byte framing over the serial port per the Z-Wave Host API Specification (referred to as INS12350 in some source code comments).
 
 | File | Purpose |
 |---|---|
@@ -81,7 +81,7 @@ The lowest layer handles raw byte framing over the serial port per INS12350 (Ser
 | `DataFrameType.cs` | REQ (request) or RES (response) |
 | `FrameType.cs` | ACK, NAK, CAN, or Data |
 | `FrameParser.cs` | Stateless parser that extracts `Frame` instances from a `ReadOnlySequence<byte>` using `System.IO.Pipelines`. Skips invalid data gracefully. |
-| `ZWaveSerialPortCoordinator.cs` | Manages the serial port lifecycle, read/write loops, ACK handshake, retransmission (up to 3 retries per INS12350 §6.3), and port re-opening on failure. Uses `System.Threading.Channels` for decoupled send/receive. |
+| `ZWaveSerialPortCoordinator.cs` | Manages the serial port lifecycle, read/write loops, ACK handshake, retransmission (up to 3 retries per the Host API Specification §6.3), and port re-opening on failure. Uses `System.Threading.Channels` for decoupled send/receive. |
 
 **Data flow:**
 1. `ZWaveSerialPortCoordinator` reads bytes from the serial port into a `PipeReader`
@@ -91,7 +91,7 @@ The lowest layer handles raw byte framing over the serial port per INS12350 (Ser
 
 ### Serial API Commands (`src/ZWave.Serial/Commands/`)
 
-Each Z-Wave Serial API function is represented as a struct. These map to the function IDs in INS12350. All function IDs defined in the `CommandId` enum have corresponding implementation structs.
+Each Z-Wave Serial API function is represented as a struct. These map to the function IDs in the Z-Wave Host API Specification. All function IDs defined in the `CommandId` enum have corresponding implementation structs.
 
 **Key interfaces:**
 - `ICommand<T>` - A serial API command with a `Type` (REQ/RES), `CommandId`, factory `Create(DataFrame)` method, and a `Frame` property
@@ -109,7 +109,7 @@ Each Z-Wave Serial API function is represented as a struct. These map to the fun
 
 ### Command Classes (`src/ZWave.CommandClasses/`)
 
-Implements Z-Wave Command Classes per SDS13781 (Z-Wave Application Command Class Specification). These are the application-level messages exchanged between Z-Wave nodes. This project references `ZWave.Protocol` but **not** `ZWave.Serial`, enabling mock driver implementations without a serial dependency.
+Implements Z-Wave Command Classes per the Z-Wave Application Specification. These are the application-level messages exchanged between Z-Wave nodes. This project references `ZWave.Protocol` but **not** `ZWave.Serial`, enabling mock driver implementations without a serial dependency.
 
 **Base classes:**
 - `CommandClass` - Abstract base with interview lifecycle, version tracking, awaited report management, and dependency declaration. Takes `IDriver` and `INode` interfaces (not concrete types) to enable mock implementations.
@@ -135,8 +135,8 @@ Implements Z-Wave Command Classes per SDS13781 (Z-Wave Application Command Class
 
 **`Driver`** (`Driver.cs`) - Entry point for the library. Created via `Driver.CreateAsync()`. Implements `IDriver`.
 - Opens the serial port via `ZWaveSerialPortCoordinator`
-- Runs the initialization sequence per INS12350 §6.1 (NAK → soft reset → wait for SerialApiStarted)
-- Manages request-response flow (only one REQ→RES session at a time per INS12350 §6.5.2)
+- Runs the initialization sequence per the Host API Specification §6.1 (NAK → soft reset → wait for SerialApiStarted)
+- Manages request-response flow (only one REQ→RES session at a time per the Host API Specification §6.5.2)
 - Tracks pending callbacks by `(CommandId, SessionId)` key
 - Routes unsolicited requests (`ApplicationCommandHandler`, `ApplicationUpdate`) to the correct `Node`
 
@@ -189,13 +189,13 @@ Event ID ranges:
 
 The implementation references these official specifications:
 
-- **INS12350** - Serial API Host Application Programming Guide (frame format, handshake, initialization sequence, command definitions)
-- **SDS13781** - Z-Wave Application Command Class Specification (CC message formats, versioning, required fields)
-- **INS13954** - Z-Wave 500 Series Application Programmer's Guide (legacy reference for older command IDs)
-- **ITU-T G.9959** - PHY/MAC layer standard
+The official Z-Wave specification package can be downloaded from the [Z-Wave Alliance](https://z-wavealliance.org/development-resources-overview/specification-for-developers/). The most relevant specs from the package are:
 
-Online resources:
+- **Z-Wave Host API Specification** — Serial API frame format, handshake, initialization sequence, command definitions. Replaces the old INS12350 document; existing source code comments still reference INS12350 section numbers which map to this spec.
+- **Z-Wave Application Specification** — Command Class message formats, versioning, required fields
+- **Z-Wave and Z-Wave Long Range Network Layer Specification** — Network protocol overview, routing, security framing
+- **Z-Wave Long Range PHY and MAC Layer Specification** — PHY/MAC layer (supersedes ITU-T G.9959 references)
+
+Additional resources:
 - [Silicon Labs Serial API Reference](https://docs.silabs.com/z-wave/latest/zwave-api/serial-api)
-- [Silicon Labs Serial API Programming Guide](https://docs.silabs.com/z-wave/latest/z-wave-serial-api-host-app-programming-guide/)
-- [Z-Wave Alliance - Specification for Developers](https://z-wavealliance.org/development-resources-overview/specification-for-developers/)
-- [zwave-js/specs](https://github.com/zwave-js/specs) - Full specification collection
+- [zwave-js/specs](https://github.com/zwave-js/specs) — Community-maintained specification collection
