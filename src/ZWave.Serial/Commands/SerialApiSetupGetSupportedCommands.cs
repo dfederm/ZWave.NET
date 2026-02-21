@@ -3,7 +3,7 @@ namespace ZWave.Serial.Commands;
 public readonly partial struct SerialApiSetupRequest
 {
     public static SerialApiSetupRequest GetSupportedCommands()
-        => Create(SerialApiSetupSubcommand.GetSupportedCommands, ReadOnlySpan<byte>.Empty);
+        => Create(SerialApiSetupSubcommand.GetSupportedCommands, []);
 }
 
 public readonly struct SerialApiSetupGetSupportedCommandsResponse : ICommand<SerialApiSetupGetSupportedCommandsResponse>
