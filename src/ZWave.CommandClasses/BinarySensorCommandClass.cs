@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 /// <summary>
@@ -104,8 +106,8 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
 {
     private Dictionary<BinarySensorType, bool?>? _sensorValues;
 
-    public BinarySensorCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    public BinarySensorCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
@@ -132,32 +134,55 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
         BinarySensorType? sensorType,
         CancellationToken cancellationToken)
     {
-        var command = BinarySensorGetCommand.Create(EffectiveVersion, sensorType);
+        BinarySensorGetCommand command = BinarySensorGetCommand.Create(EffectiveVersion, sensorType);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
 
-        var reportFrame = await AwaitNextReportAsync<BinarySensorReportCommand>(
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<BinarySensorReportCommand>(
             predicate: frame =>
             {
                 // Ensure the sensor type matches. If one wasn't provided, we don't know the default sensor type, so just
                 // return the next report. We can't know for sure whether this is the reply to this command as we don't
                 // know the device's default sensor type, but this overload is really just here for back-compat and the
                 // caller should really always provide a sensor type.
-                var command = new BinarySensorReportCommand(frame, EffectiveVersion);
-                return !sensorType.HasValue
-                    || sensorType.Value == BinarySensorType.FirstSupported
-                    || command.SensorType == sensorType.Value;
+                if (!sensorType.HasValue || sensorType.Value == BinarySensorType.FirstSupported)
+                {
+                    return true;
+                }
+
+                return frame.CommandParameters.Length > 1
+                    && (BinarySensorType)frame.CommandParameters.Span[1] == sensorType.Value;
             },
             cancellationToken).ConfigureAwait(false);
-        var reportCommand = new BinarySensorReportCommand(reportFrame, EffectiveVersion);
-        return reportCommand.SensorValue;
+        (BinarySensorType? reportSensorType, bool sensorValue) = BinarySensorReportCommand.Parse(reportFrame, Logger);
+        BinarySensorType key = reportSensorType.GetValueOrDefault(BinarySensorType.FirstSupported);
+        _sensorValues![key] = sensorValue;
+        return sensorValue;
     }
 
     public async Task<IReadOnlySet<BinarySensorType>> GetSupportedSensorTypesAsync(CancellationToken cancellationToken)
     {
-        var command = BinarySensorSupportedGetCommand.Create();
+        BinarySensorSupportedGetCommand command = BinarySensorSupportedGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<BinarySensorSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
-        return SupportedSensorTypes!;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<BinarySensorSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
+        IReadOnlySet<BinarySensorType> supportedTypes = BinarySensorSupportedReportCommand.Parse(reportFrame, Logger);
+        SupportedSensorTypes = supportedTypes;
+
+        Dictionary<BinarySensorType, bool?> newSensorValues = new Dictionary<BinarySensorType, bool?>();
+        foreach (BinarySensorType type in supportedTypes)
+        {
+            // Persist any existing known state.
+            if (SensorValues == null
+                || !SensorValues.TryGetValue(type, out bool? existing))
+            {
+                existing = null;
+            }
+
+            newSensorValues.Add(type, existing);
+        }
+
+        _sensorValues = newSensorValues;
+
+        return supportedTypes;
     }
 
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
@@ -176,30 +201,29 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
         }
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((BinarySensorCommand)frame.CommandId)
         {
             case BinarySensorCommand.Get:
             case BinarySensorCommand.SupportedGet:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case BinarySensorCommand.Report:
             {
-                var command = new BinarySensorReportCommand(frame, EffectiveVersion);
-                var sensorType = command.SensorType.GetValueOrDefault(BinarySensorType.FirstSupported);
-                _sensorValues![sensorType] = command.SensorValue;
+                (BinarySensorType? parsedSensorType, bool sensorValue) = BinarySensorReportCommand.Parse(frame, Logger);
+                BinarySensorType key = parsedSensorType.GetValueOrDefault(BinarySensorType.FirstSupported);
+                _sensorValues![key] = sensorValue;
                 break;
             }
             case BinarySensorCommand.SupportedReport:
             {
-                var command = new BinarySensorSupportedReportCommand(frame);
-                SupportedSensorTypes = command.SupportedSensorTypes;
+                IReadOnlySet<BinarySensorType> supportedTypes = BinarySensorSupportedReportCommand.Parse(frame, Logger);
+                SupportedSensorTypes = supportedTypes;
 
-                var newSensorValues = new Dictionary<BinarySensorType, bool?>();
-                foreach (BinarySensorType sensorType in SupportedSensorTypes)
+                Dictionary<BinarySensorType, bool?> newSensorValues = new Dictionary<BinarySensorType, bool?>();
+                foreach (BinarySensorType sensorType in supportedTypes)
                 {
                     // Persist any existing known state.
                     if (SensorValues == null
@@ -249,12 +273,9 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
 
     private readonly struct BinarySensorReportCommand : ICommand
     {
-        private readonly byte _version;
-
-        public BinarySensorReportCommand(CommandClassFrame frame, byte version)
+        public BinarySensorReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.BinarySensor;
@@ -263,17 +284,20 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The sensor value
-        /// </summary>
-        public bool SensorValue => Frame.CommandParameters.Span[0] == 0xff;
+        public static (BinarySensorType? SensorType, bool SensorValue) Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 1)
+            {
+                logger.LogWarning("Binary Sensor Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Binary Sensor Report frame is too short");
+            }
 
-        /// <summary>
-        /// The sensor type
-        /// </summary>
-        public BinarySensorType? SensorType => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? (BinarySensorType)Frame.CommandParameters.Span[1]
-            : null;
+            bool sensorValue = frame.CommandParameters.Span[0] == 0xff;
+            BinarySensorType? sensorType = frame.CommandParameters.Length > 1
+                ? (BinarySensorType)frame.CommandParameters.Span[1]
+                : null;
+            return (sensorType, sensorValue);
+        }
     }
 
     private readonly struct BinarySensorSupportedGetCommand : ICommand
@@ -309,30 +333,30 @@ public sealed class BinarySensorCommandClass : CommandClass<BinarySensorCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The supported sensor types by the binary sensor device.
-        /// </summary>
-        public IReadOnlySet<BinarySensorType> SupportedSensorTypes
+        public static IReadOnlySet<BinarySensorType> Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 1)
             {
-                var supportedSensorTypes = new HashSet<BinarySensorType>();
+                logger.LogWarning("Binary Sensor Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Binary Sensor Supported Report frame is too short");
+            }
 
-                ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span[1..];
-                for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            HashSet<BinarySensorType> supportedSensorTypes = new HashSet<BinarySensorType>();
+
+            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span[1..];
+            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            {
+                for (int bitNum = 0; bitNum < 8; bitNum++)
                 {
-                    for (int bitNum = 0; bitNum < 8; bitNum++)
+                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
                     {
-                        if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                        {
-                            BinarySensorType sensorType = (BinarySensorType)((byteNum << 3) + bitNum);
-                            supportedSensorTypes.Add(sensorType);
-                        }
+                        BinarySensorType sensorType = (BinarySensorType)((byteNum << 3) + bitNum);
+                        supportedSensorTypes.Add(sensorType);
                     }
                 }
-
-                return supportedSensorTypes;
             }
+
+            return supportedSensorTypes;
         }
     }
 }

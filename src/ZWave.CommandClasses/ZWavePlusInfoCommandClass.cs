@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 public enum ZWavePlusInfoCommand : byte
@@ -32,47 +34,31 @@ public enum ZWavePlusRoleType : byte
 /// <summary>
 /// Represents Z-Wave Plus information for a device.
 /// </summary>
-public readonly struct ZWavePlusInfo
-{
-    public ZWavePlusInfo(
-        byte zwavePlusVersion,
-        ZWavePlusRoleType roleType,
-        ZWavePlusNodeType nodeType,
-        ushort installerIconType,
-        ushort userIconType)
-    {
-        ZWavePlusVersion = zwavePlusVersion;
-        RoleType = roleType;
-        NodeType = nodeType;
-        InstallerIconType = installerIconType;
-        UserIconType = userIconType;
-    }
-
+public readonly record struct ZWavePlusInfo(
     /// <summary>
     /// Enables a future revision of the Z-Wave Plus framework where it is necessary to distinguish it from the previous frameworks
     /// </summary>
-    public byte ZWavePlusVersion { get; }
+    byte ZWavePlusVersion,
 
     /// <summary>
     /// Indicates the role the Z-Wave Plus device in question possess in the network and functionalities supported.
     /// </summary>
-    public ZWavePlusRoleType RoleType { get; }
+    ZWavePlusRoleType RoleType,
 
     /// <summary>
     /// Indicates the type of node the Z-Wave Plus device in question possess in the network.
     /// </summary>
-    public ZWavePlusNodeType NodeType { get; }
+    ZWavePlusNodeType NodeType,
 
     /// <summary>
     /// Indicates the icon to use in Graphical User Interfaces for network management
     /// </summary>
-    public ushort InstallerIconType { get; }
+    ushort InstallerIconType,
 
     /// <summary>
     /// Indicates the icon to use in Graphical User Interfaces for end users
     /// </summary>
-    public ushort UserIconType { get; }
-}
+    ushort UserIconType);
 
 /// <summary>
 /// Identifies the Z-Wave Plus node type.
@@ -93,8 +79,8 @@ public enum ZWavePlusNodeType : byte
 [CommandClass(CommandClassId.ZWavePlusInfo)]
 public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoCommand>
 {
-    internal ZWavePlusInfoCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    internal ZWavePlusInfoCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
@@ -114,12 +100,14 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
     /// <summary>
     /// Get additional information of the Z-Wave Plus device in question.
     /// </summary>
-    public async Task<object> GetAsync(CancellationToken cancellationToken)
+    public async Task<ZWavePlusInfo> GetAsync(CancellationToken cancellationToken)
     {
-        var command = ZWavePlusInfoGetCommand.Create();
+        ZWavePlusInfoGetCommand command = ZWavePlusInfoGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<ZWavePlusInfoReportCommand>(cancellationToken).ConfigureAwait(false);
-        return ZWavePlusInfo!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<ZWavePlusInfoReportCommand>(cancellationToken).ConfigureAwait(false);
+        ZWavePlusInfo info = ZWavePlusInfoReportCommand.Parse(reportFrame, Logger);
+        ZWavePlusInfo = info;
+        return info;
     }
 
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
@@ -127,24 +115,17 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
         _ = await GetAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((ZWavePlusInfoCommand)frame.CommandId)
         {
             case ZWavePlusInfoCommand.Get:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case ZWavePlusInfoCommand.Report:
             {
-                var command = new ZWavePlusInfoReportCommand(frame);
-                ZWavePlusInfo = new ZWavePlusInfo(
-                    command.ZWavePlusVersion,
-                    command.RoleType,
-                    command.NodeType,
-                    command.InstallerIconType,
-                    command.UserIconType);
+                ZWavePlusInfo = ZWavePlusInfoReportCommand.Parse(frame, Logger);
                 break;
             }
         }
@@ -183,29 +164,20 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// Enables a future revision of the Z-Wave Plus framework where it is necessary to distinguish it from the previous frameworks
-        /// </summary>
-        public byte ZWavePlusVersion => Frame.CommandParameters.Span[0];
+        public static ZWavePlusInfo Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 7)
+            {
+                logger.LogWarning("Z-Wave Plus Info Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Z-Wave Plus Info Report frame is too short");
+            }
 
-        /// <summary>
-        /// Indicates the role the Z-Wave Plus device in question possess in the network and functionalities supported.
-        /// </summary>
-        public ZWavePlusRoleType RoleType => (ZWavePlusRoleType)Frame.CommandParameters.Span[1];
-
-        /// <summary>
-        /// Indicates the type of node the Z-Wave Plus device in question possess in the network.
-        /// </summary>
-        public ZWavePlusNodeType NodeType => (ZWavePlusNodeType)Frame.CommandParameters.Span[2];
-
-        /// <summary>
-        /// Indicates the icon to use in Graphical User Interfaces for network management
-        /// </summary>
-        public ushort InstallerIconType => Frame.CommandParameters.Span[3..5].ToUInt16BE();
-
-        /// <summary>
-        /// Indicates the icon to use in Graphical User Interfaces for end users
-        /// </summary>
-        public ushort UserIconType => Frame.CommandParameters.Span[5..7].ToUInt16BE();
+            byte zwavePlusVersion = frame.CommandParameters.Span[0];
+            ZWavePlusRoleType roleType = (ZWavePlusRoleType)frame.CommandParameters.Span[1];
+            ZWavePlusNodeType nodeType = (ZWavePlusNodeType)frame.CommandParameters.Span[2];
+            ushort installerIconType = frame.CommandParameters.Span[3..5].ToUInt16BE();
+            ushort userIconType = frame.CommandParameters.Span[5..7].ToUInt16BE();
+            return new ZWavePlusInfo(zwavePlusVersion, roleType, nodeType, installerIconType, userIconType);
+        }
     }
 }

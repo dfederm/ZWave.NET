@@ -13,12 +13,11 @@ Use this as a quick reference. Each item is explained in detail below.
 
 1. Ensure `CommandClassId` has an entry for this CC in `src/ZWave.Protocol/CommandClassId.cs`
 2. Create `src/ZWave.CommandClasses/{Name}CommandClass.cs`
-3. Define domain enums and structs (public types for the CC's values)
+3. Define domain enums and report record structs (public types for the CC's values)
 4. Define the command enum (`byte`-backed, one entry per spec command)
-5. Define state struct(s) if the CC has cacheable device state
-6. Implement the CC class: `[CommandClass]` attribute, constructor, `IsCommandSupported`, `InterviewAsync`, public API methods, `ProcessCommandCore`
-7. Implement private inner command structs (Get, Set, Report, etc.)
-8. Build with `dotnet build --configuration Release` to verify
+5. Implement the CC class: `[CommandClass]` attribute, constructor, `IsCommandSupported`, `InterviewAsync`, public API methods, `ProcessUnsolicitedCommand`
+6. Implement private inner command structs (Get, Set, Report, etc.) with static `Parse` methods on report commands
+7. Build with `dotnet build --configuration Release` to verify
 
 ## Prerequisites
 
@@ -32,13 +31,12 @@ If the `CommandClassId` enum does not yet have an entry for this CC, add it to `
 
 Create a single file: `src/ZWave.CommandClasses/{Name}CommandClass.cs`
 
-The file uses the `ZWave.CommandClasses` namespace (file-scoped). The contents are ordered as follows:
+The file uses the `ZWave.CommandClasses` namespace (file-scoped) and must include `using Microsoft.Extensions.Logging;`. The contents are ordered as follows:
 
-1. Domain enums and structs (public) — types representing the CC's values and state
+1. Domain enums and report record structs (public) — types representing the CC's values
 2. A **command enum** (`byte`-backed) listing every command in the CC
-3. A **state struct** (if the CC reports cacheable state) — `public readonly struct`
-4. The **CC class** itself — `sealed`, inherits `CommandClass<TCommand>`
-5. **Private inner command structs** — one per command (Get, Set, Report, etc.), nested inside the CC class
+3. The **CC class** itself — `sealed`, inherits `CommandClass<TCommand>`
+4. **Private inner command structs** — one per command (Get, Set, Report, etc.), nested inside the CC class
 
 ## Design Principles
 
@@ -64,22 +62,64 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 Z-Wave Command Classes are designed to be forward-compatible. When implementing a CC that spans multiple versions, **implement the receiver for the highest version**. In practice this means:
 
 - **Do NOT mask reserved bits.** If bits are reserved in V1 but assigned meaning in V2, do not zero them out when parsing V1. Assume the sending device is compliant and pass through all bits. This allows the implementation to naturally handle newer devices even before the CC version is explicitly known.
-- Do not add version checks that discard data. Version checks should only be used to determine whether a field is *present* in the payload (based on payload length), not to ignore data that is present.
+- **Do NOT use version checks to determine if fields are present.** Always use **payload length** instead. A V2+ device may send extended fields before version negotiation is complete, and a V1 device will simply send a shorter payload. Checking `_version >= 2` to decide if a field is present is a forward-compatibility violation.
+- Do not add version checks that discard data. Version checks should only be used to determine whether a command is *supported* (in `IsCommandSupported`), not to ignore data that is present in a payload.
 
-**`Version` vs `EffectiveVersion`**: The base class provides both. `Version` (nullable `byte?`) is the actual reported version, or `null` if not yet known. `EffectiveVersion` is `Version.GetValueOrDefault(1)` — it defaults to 1 when unknown. Use `Version` in `IsCommandSupported` to express "we don't know yet" (`null`). Use `EffectiveVersion` when parsing payloads or building commands, because if we don't know the version we must assume V1 payload format.
+**`Version` vs `EffectiveVersion`**: The base class provides both. `Version` (nullable `byte?`) is the actual reported version, or `null` if not yet known. `EffectiveVersion` is `Version.GetValueOrDefault(1)` — it defaults to 1 when unknown. Use `Version` in `IsCommandSupported` to express "we don't know yet" (`null`). Use `EffectiveVersion` when building outbound commands where the command payload format varies by version.
+
+### Solicited vs. Unsolicited Reports
+
+The base class `CommandClass.ProcessCommand` distinguishes between **solicited** and **unsolicited** reports:
+
+- **Solicited reports** are responses to a Get command. The base class matches incoming frames against registered awaiters (from `AwaitNextReportAsync`) and completes them directly. The `GetAsync` method then calls the report's `Parse` method on the returned frame. `ProcessUnsolicitedCommand` is **not** called for solicited reports.
+- **Unsolicited reports** are spontaneous updates from the device (e.g., a light switch was physically toggled). These are dispatched to `ProcessUnsolicitedCommand`, which calls `Parse` and updates cached state.
+
+This means `Parse` is called exactly **once** per report — either in `GetAsync` (solicited) or `ProcessUnsolicitedCommand` (unsolicited), never both.
 
 ### State vs. Direct API
 
 Not everything a CC can do should be exposed as cached state on the CC class. Use this guideline:
 
-- **Cached state properties** (set via `ProcessCommandCore`, queried during interview): Use for ongoing **device state and behavior** — values that change over time and that callers may want to read without sending a command. Examples: whether a light is on/off, current thermostat setpoint, battery level.
-- **Direct API methods** (return a value directly, no cached property): Use for **device data and capabilities** — values that are static, queried on-demand, or used for configuration/diagnostics rather than ongoing monitoring. Examples: supported logging types, device-specific IDs, test results.
+- **Cached state properties** (updated in both `GetAsync` and `ProcessUnsolicitedCommand`): Use for ongoing **device state and behavior** — values that change over time and that callers may want to read without sending a command. Examples: whether a light is on/off, current thermostat setpoint, battery level.
+  - Name the primary report property **`LastReport`** (e.g., `BasicReport? LastReport`).
+  - For secondary report properties, use **`Last{Descriptive}`** (e.g., `LastHealthReport`, `LastTestResult`, `LastNotification`, `LastInterval`).
+- **Cached capability/static properties** (queried once, don't change at runtime): Use descriptive names **without** the `Last` prefix. Examples: `HardwareInfo`, `Capabilities`, `SupportedSensorTypes`, `SwitchType`, `IntervalCapabilities`.
+- **Direct API methods** (return a value directly, no cached property): Use for **device data** queried on-demand. Examples: supported logging types, device-specific IDs, command class versions.
 
 When in doubt, **ask the user** whether a value should be cached state or a direct API.
 
 ### Payload Validation
 
-When the specification says a field value MUST be within a certain range or a frame MUST have a minimum length, **validate incoming payloads and ignore invalid ones**. In `ProcessCommandCore`, if a report frame fails validation (e.g., invalid enum value, unexpected length), skip processing it rather than storing bad data. Log a warning if appropriate, but do not throw — invalid frames from misbehaving devices should not crash the driver.
+Validation is performed in the report command's static `Parse` method. The `Parse` method:
+
+1. **Validates** the frame (e.g., minimum payload length, field value ranges)
+2. **Logs a warning** via the `ILogger` parameter describing what's wrong
+3. **Throws `ZWaveException(ZWaveErrorCode.InvalidPayload, ...)`** with a concise message
+
+The base class handles exception propagation differently depending on the report path:
+
+- **Solicited reports**: The exception propagates naturally from `Parse` in `GetAsync` to the caller. The caller sees the exception.
+- **Unsolicited reports**: The base class wraps `ProcessUnsolicitedCommand` in a try/catch and swallows the exception. Since `Parse` already logged a warning before throwing, no information is lost.
+
+This means `Parse` methods should always log-then-throw on validation failure — they do not need to worry about which path is calling them.
+
+**Multi-stage validation for variable-length payloads:** Some reports contain a length or size field that determines how many subsequent bytes to read (e.g., a `valueSize` field). In these cases, validate in stages:
+1. First validate the minimum fixed-length header
+2. Read the size/length field
+3. Validate that the remaining payload is large enough for the declared size
+4. Only then slice/access the variable-length data
+
+```csharp
+if (frame.CommandParameters.Length < 2)  // minimum header
+    throw ...;
+
+int valueSize = frame.CommandParameters.Span[1] & 0b0000_0111;
+
+if (frame.CommandParameters.Length < 2 + valueSize)  // header + declared data
+    throw ...;
+
+ReadOnlySpan<byte> valueBytes = frame.CommandParameters.Span.Slice(2, valueSize);
+```
 
 ### Command Naming
 
@@ -109,7 +149,7 @@ public async Task<IReadOnlyList<{Item}>> GetAllItemsAsync(CancellationToken canc
     do
     {
         CommandClassFrame reportFrame = await AwaitNextReportAsync<{Name}ReportCommand>(cancellationToken).ConfigureAwait(false);
-        {Name}ReportCommand report = new {Name}ReportCommand(reportFrame);
+        {Name}Report report = {Name}ReportCommand.Parse(reportFrame, Logger);
         allItems.AddRange(report.Items);
         reportsToFollow = report.ReportsToFollow;
     }
@@ -126,6 +166,8 @@ public async Task<IReadOnlyList<{Item}>> GetAllItemsAsync(CancellationToken canc
 Create a `byte`-backed enum with an entry for each command defined in the spec. Use the hex command IDs from the specification.
 
 ```csharp
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 public enum {Name}Command : byte
@@ -147,26 +189,33 @@ public enum {Name}Command : byte
 }
 ```
 
-### 2. Define Public Domain Types
+### 2. Define Public Report Types
 
-Define any enums, structs, or other types needed to represent the CC's data. These go at the top of the file, before the CC class.
+Define any enums and report record structs needed to represent the CC's data. These go at the top of the file, before the CC class.
 
-**State structs** follow this pattern — a `public readonly struct` with a constructor and properties:
+**Report structs** are `public readonly record struct` with positional (primary constructor) parameters:
 
 ```csharp
-public readonly struct {Name}State
-{
-    public {Name}State(/* parameters for each field */)
-    {
-        // assign all properties
-    }
-
+/// <summary>
+/// Represents a {Name} Report received from a device.
+/// </summary>
+public readonly record struct {Name}Report(
     /// <summary>
     /// {Description}
     /// </summary>
-    public {Type} {PropertyName} { get; }
-}
+    {Type} {PropertyName},
+
+    /// <summary>
+    /// {Description of optional field}
+    /// </summary>
+    {Type}? {OptionalPropertyName});
 ```
+
+Key points:
+- Use `readonly record struct` with positional parameters — not manual constructors and properties.
+- Name the type `{Name}Report` (not `{Name}State`). The CC class property is `LastReport` (not `State`).
+- For fields added in later CC versions, make the type nullable (e.g., `GenericValue?`).
+- XML doc comments go on each positional parameter.
 
 ### 3. Implement the CC Class
 
@@ -174,13 +223,19 @@ public readonly struct {Name}State
 [CommandClass(CommandClassId.{Name})]
 public sealed class {Name}CommandClass : CommandClass<{Name}Command>
 {
-    internal {Name}CommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    internal {Name}CommandClass(
+        CommandClassInfo info,
+        IDriver driver,
+        INode node,
+        ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
-    // Public state properties (nullable, set from reports)
-    public {Name}State? State { get; private set; }
+    /// <summary>
+    /// Gets the last report received from the device.
+    /// </summary>
+    public {Name}Report? LastReport { get; private set; }
 
     // IsCommandSupported — return true/false/null based on version
     public override bool? IsCommandSupported({Name}Command command)
@@ -202,8 +257,8 @@ public sealed class {Name}CommandClass : CommandClass<{Name}Command>
     // Public API methods (Get, Set, etc.)
     // ... see patterns below ...
 
-    // ProcessCommandCore — handle incoming report frames
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    // ProcessUnsolicitedCommand — handle unsolicited incoming report frames
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         // ... see pattern below ...
     }
@@ -216,29 +271,31 @@ public sealed class {Name}CommandClass : CommandClass<{Name}Command>
 #### Key Points for the CC Class
 
 - **`[CommandClass(CommandClassId.{Name})]` attribute**: This is required. A Roslyn source generator scans for this attribute and auto-generates the `CommandClassFactory` mapping. No other registration is needed.
-- **Constructor**: Always `internal`, takes `(CommandClassInfo info, IDriver driver, INode node)`, calls `base(info, driver, node)`.
+- **Constructor**: Always `internal`, takes `(CommandClassInfo info, IDriver driver, INode node, ILogger logger)`, calls `base(info, driver, node, logger)`.
 - **`IsCommandSupported`**: Return `true` for always-available commands, `false` for report-only/unsupported commands, and use `Version.HasValue ? Version >= N : null` for version-gated commands. Use `null` when it's unknown whether the command is supported.
 - **`Dependencies`**: Only override if this CC does NOT depend on the Version CC. The default is `{ CommandClassId.Version }`. The Version CC itself overrides this to `Array.Empty<CommandClassId>()`.
 
 ### 4. Implement Public API Methods
 
-There are two patterns depending on whether the result is cached state or returned directly.
+There are two patterns depending on whether the result is cached state or returned directly. In both patterns, the `GetAsync` method receives the raw frame from `AwaitNextReportAsync` and calls `Parse` directly — `ProcessUnsolicitedCommand` is NOT called for solicited reports.
 
-#### Get with Cached State (state property updated by `ProcessCommandCore`)
+#### Get with Cached State
 
 Use when the value is ongoing device state (see "State vs. Direct API" above).
 
 ```csharp
-public async Task<{Name}State> GetAsync(CancellationToken cancellationToken)
+public async Task<{Name}Report> GetAsync(CancellationToken cancellationToken)
 {
-    var command = {Name}GetCommand.Create();
+    {Name}GetCommand command = {Name}GetCommand.Create();
     await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-    await AwaitNextReportAsync<{Name}ReportCommand>(cancellationToken).ConfigureAwait(false);
-    return State!.Value;
+    CommandClassFrame reportFrame = await AwaitNextReportAsync<{Name}ReportCommand>(cancellationToken).ConfigureAwait(false);
+    {Name}Report report = {Name}ReportCommand.Parse(reportFrame, Logger);
+    LastReport = report;
+    return report;
 }
 ```
 
-The pattern is: create command → `SendCommandAsync` → `AwaitNextReportAsync<TReport>` → return the state property that `ProcessCommandCore` populated.
+The pattern is: create command → `SendCommandAsync` → `AwaitNextReportAsync<TReport>` → `Parse` the returned frame → update `LastReport` → return.
 
 #### Get with Direct Return (no cached state)
 
@@ -247,21 +304,35 @@ Use when the value is device data queried on demand. Parse the report frame dire
 ```csharp
 public async Task<byte> GetCommandClassVersionAsync(CommandClassId commandClassId, CancellationToken cancellationToken)
 {
-    var command = {Name}CommandClassGetCommand.Create(commandClassId);
+    var command = VersionCommandClassGetCommand.Create(commandClassId);
     await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-    CommandClassFrame reportFrame = await AwaitNextReportAsync<{Name}CommandClassReportCommand>(
+    CommandClassFrame reportFrame = await AwaitNextReportAsync<VersionCommandClassReportCommand>(
         predicate: frame =>
         {
-            {Name}CommandClassReportCommand report = new {Name}CommandClassReportCommand(frame);
-            return report.RequestedCommandClass == commandClassId;
+            return frame.CommandParameters.Length > 0
+                && (CommandClassId)frame.CommandParameters.Span[0] == commandClassId;
         },
         cancellationToken).ConfigureAwait(false);
-    {Name}CommandClassReportCommand reportCommand = new {Name}CommandClassReportCommand(reportFrame);
-    return reportCommand.CommandClassVersion;
+    (CommandClassId _, byte commandClassVersion) = VersionCommandClassReportCommand.Parse(reportFrame, Logger);
+    return commandClassVersion;
 }
 ```
 
 Use the predicate overload of `AwaitNextReportAsync` when you need to match a specific report (e.g., by a key field in the response).
+
+**IMPORTANT: Predicate functions must NOT call `Parse`.** Predicates run on every incoming frame for this CC, including non-matching frames that may be malformed. Calling `Parse` in a predicate would:
+1. Log spurious warnings for non-matching frames
+2. Throw exceptions that break the awaiter matching loop
+3. Parse the same frame twice (once in predicate, once after match)
+
+Instead, predicates should read the raw `frame.CommandParameters.Span` bytes directly with bounds checks:
+```csharp
+predicate: frame =>
+{
+    return frame.CommandParameters.Length > 0
+        && (SomeEnum)frame.CommandParameters.Span[0] == expectedValue;
+}
+```
 
 #### Set (fire and forget)
 
@@ -275,48 +346,34 @@ public async Task SetAsync({parameters}, CancellationToken cancellationToken)
 
 Pass `EffectiveVersion` when the command payload varies by version (see "Version vs EffectiveVersion" above).
 
-### 5. Implement `ProcessCommandCore`
+### 5. Implement `ProcessUnsolicitedCommand`
 
-This method handles all incoming report frames. It updates cached state properties and completes awaited report tasks.
+This method handles **unsolicited** incoming report frames only (device-initiated, not responses to Get commands). It updates cached state properties. The base class calls this only when no awaiter matched the frame.
 
 ```csharp
-protected override void ProcessCommandCore(CommandClassFrame frame)
+protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
 {
     switch (({Name}Command)frame.CommandId)
     {
         case {Name}Command.Set:
         case {Name}Command.Get:
         {
-            // We don't expect to recieve these commands
             break;
         }
         case {Name}Command.Report:
         {
-            // Validate payload length per spec requirements
-            if (frame.CommandParameters.Length < 1)
-            {
-                break;
-            }
-
-            var command = new {Name}ReportCommand(frame, EffectiveVersion);
-
-            // Validate field values per spec MUST constraints
-            // (e.g., skip if an enum value is outside the defined range)
-
-            State = new {Name}State(
-                command.Property1,
-                command.Property2);
+            LastReport = {Name}ReportCommand.Parse(frame, Logger);
             break;
         }
     }
 }
 ```
 
-- Group all outbound-only commands (Set, Get) in a single case with a comment: `// We don't expect to recieve these commands`
-- For each report, construct the inner command struct, then update the state property.
-- Pass `EffectiveVersion` to report commands that have version-dependent fields.
-- **Validate payloads**: If the spec defines MUST constraints on field values or frame lengths, check them before storing. Silently ignore (break out of the case) if a frame is invalid. Do not throw.
-- Reports that map to direct API methods (no cached state) still need a case here — even if the case body is empty, because `ProcessCommand` in the base class handles completing the awaited report task after calling `ProcessCommandCore`.
+Key points:
+- Group outbound-only commands (Set, Get) in a single case that breaks. No comment needed.
+- For each report, call the static `Parse` method and assign the result to the cached state property.
+- **Do NOT validate payloads here** — validation belongs in `Parse`. If `Parse` throws, the base class catches and swallows the exception (Parse already logged a warning).
+- Reports that map only to direct API methods (no cached state) do **not** need a case here — they are only received as solicited reports in `GetAsync`.
 
 ### 6. Implement Private Inner Command Structs
 
@@ -386,17 +443,14 @@ bool includeDuration = version >= 2 && duration.HasValue;
 Span<byte> commandParameters = stackalloc byte[1 + (includeDuration ? 1 : 0)];
 ```
 
-#### Report Command (parsing received frame)
+#### Report Command (with static Parse method)
 
 ```csharp
 private readonly struct {Name}ReportCommand : ICommand
 {
-    private readonly byte _version;
-
-    public {Name}ReportCommand(CommandClassFrame frame, byte version)
+    public {Name}ReportCommand(CommandClassFrame frame)
     {
         Frame = frame;
-        _version = version;
     }
 
     public static CommandClassId CommandClassId => CommandClassId.{Name};
@@ -405,25 +459,38 @@ private readonly struct {Name}ReportCommand : ICommand
 
     public CommandClassFrame Frame { get; }
 
-    /// <summary>
-    /// {Description}
-    /// </summary>
-    public {Type} {Property} => Frame.CommandParameters.Span[0];
+    public static {Name}Report Parse(CommandClassFrame frame, ILogger logger)
+    {
+        // Validate minimum payload length
+        if (frame.CommandParameters.Length < 1)
+        {
+            logger.LogWarning("{Name} Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+            throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "{Name} Report frame is too short");
+        }
 
-    // For fields added in later versions, check payload length (NOT version) for presence:
-    public {Type}? {OptionalProperty} => Frame.CommandParameters.Length > 1
-        ? Frame.CommandParameters.Span[1]
-        : null;
+        ReadOnlySpan<byte> span = frame.CommandParameters.Span;
+
+        {Type} requiredField = span[0];
+
+        // For fields added in later versions, check payload length (NOT version):
+        {Type}? optionalField = span.Length > 1
+            ? span[1]
+            : null;
+
+        return new {Name}Report(requiredField, optionalField);
+    }
 }
 ```
 
-- Report structs take `(CommandClassFrame frame, byte version)` when they have version-dependent fields, or just `(CommandClassFrame frame)` if all fields exist in V1.
-- Parse bytes directly from `Frame.CommandParameters.Span[index]`.
+Key points for report commands:
+- Report commands have a **static `Parse` method** that takes `(CommandClassFrame frame, ILogger logger)` and returns the public report record struct. They do NOT store version or have instance properties for parsed fields.
+- `Parse` validates the frame, logs warnings, and throws on validation errors. Both `GetAsync` and `ProcessUnsolicitedCommand` call `Parse` — the base class handles exception propagation appropriately for each path.
+- Parse bytes directly from `frame.CommandParameters.Span[index]`.
 - For multi-byte values, use extension methods: `.ToUInt16BE()`, `.ToUInt32BE()`, `.ToInt32BE()`.
-- For bitmask fields, use bit manipulation: `(Frame.CommandParameters.Span[N] & 0b0000_1111)`.
+- For bitmask fields, use bit manipulation: `(span[N] & 0b0000_1111)`.
 - **Do NOT mask reserved bits.** If a field has reserved bits in one version but they are defined in a later version, parse all bits unconditionally. This ensures forward compatibility.
-- For optional fields added in later versions, check **payload length** to determine if the field is present. This is the forward-compatible approach — a V1 device sends a shorter payload, a V2+ device sends a longer one.
-- Report commands do **not** have a `Create` method — they are only constructed from received frames.
+- For optional fields added in later versions, check **payload length** to determine if the field is present. Never use version checks for this.
+- Report commands do **not** have a `Create` method — they are only used to identify the command ID for `AwaitNextReportAsync<T>` dispatch.
 
 ## Common Patterns
 
@@ -459,7 +526,7 @@ Use the extension methods in `BinaryExtensions.cs`:
 
 ```csharp
 HashSet<{EnumType}> supported = new HashSet<{EnumType}>();
-ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span.Slice(offset, length);
+ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span.Slice(offset, length);
 for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
 {
     for (int bitNum = 0; bitNum < 8; bitNum++)

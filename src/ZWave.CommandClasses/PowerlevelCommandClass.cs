@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 /// <summary>
@@ -79,20 +81,13 @@ public enum PowerlevelCommand : byte
 }
 
 /// <summary>
-/// Represents the current power level state of a device.
+/// Represents a Powerlevel Report received from a device.
 /// </summary>
-public readonly struct PowerlevelState
-{
-    public PowerlevelState(Powerlevel powerlevel, byte? timeoutInSeconds)
-    {
-        Powerlevel = powerlevel;
-        TimeoutInSeconds = timeoutInSeconds;
-    }
-
+public readonly record struct PowerlevelReport(
     /// <summary>
     /// The current power level indicator value in effect on the node
     /// </summary>
-    public Powerlevel Powerlevel { get; }
+    Powerlevel Powerlevel,
 
     /// <summary>
     /// The time in seconds the node has back at Power level before resetting to normal Power level.
@@ -100,49 +95,39 @@ public readonly struct PowerlevelState
     /// <remarks>
     /// May be null when <see cref="Powerlevel"/> is <see cref="Powerlevel.Normal"/>.
     /// </remarks>
-    public byte? TimeoutInSeconds { get; }
-}
+    byte? TimeoutInSeconds);
 
 /// <summary>
 /// Represents the result of a powerlevel test.
 /// </summary>
-public readonly struct PowerlevelTestResult
-{
-    public PowerlevelTestResult(byte nodeId, PowerlevelTestStatus status, ushort frameAcknowledgedCount)
-    {
-        NodeId = nodeId;
-        Status = status;
-        FrameAcknowledgedCount = frameAcknowledgedCount;
-    }
-
+public readonly record struct PowerlevelTestResult(
     /// <summary>
     /// The node ID of the node which is or has been under test.
     /// </summary>
-    public byte NodeId { get; }
+    byte NodeId,
 
     /// <summary>
     /// The result of the test
     /// </summary>
-    public PowerlevelTestStatus Status { get;}
+    PowerlevelTestStatus Status,
 
     /// <summary>
     /// The number of test frames transmitted which the Test NodeID has acknowledged.
     /// </summary>
-    public ushort FrameAcknowledgedCount { get; }
-}
+    ushort FrameAcknowledgedCount);
 
 [CommandClass(CommandClassId.Powerlevel)]
 public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
 {
-    public PowerlevelCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    public PowerlevelCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
     /// <summary>
-    /// Gets the last reported power level state.
+    /// Gets the last report received from the device.
     /// </summary>
-    public PowerlevelState? State { get; private set; }
+    public PowerlevelReport? LastReport { get; private set; }
 
     /// <summary>
     /// Gets the last powerlevel test result.
@@ -178,12 +163,14 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
     /// <summary>
     /// Request the current power level value.
     /// </summary>
-    public async Task<PowerlevelState> GetAsync(CancellationToken cancellationToken)
+    public async Task<PowerlevelReport> GetAsync(CancellationToken cancellationToken)
     {
         var command = PowerlevelGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<PowerlevelReportCommand>(cancellationToken).ConfigureAwait(false);
-        return State!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<PowerlevelReportCommand>(cancellationToken).ConfigureAwait(false);
+        PowerlevelReport report = PowerlevelReportCommand.Parse(reportFrame, Logger);
+        LastReport = report;
+        return report;
     }
 
     /// <summary>
@@ -218,7 +205,9 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
 
         var command = PowerlevelTestNodeSetCommand.Create(testNodeId, powerlevel, testFrameCount);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<PowerlevelTestNodeReportCommand>(cancellationToken).ConfigureAwait(false);
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<PowerlevelTestNodeReportCommand>(cancellationToken).ConfigureAwait(false);
+        PowerlevelTestResult? result = PowerlevelTestNodeReportCommand.Parse(reportFrame, Logger);
+        LastTestResult = result;
         return LastTestResult!.Value;
     }
 
@@ -229,13 +218,15 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
     {
         var command = PowerlevelTestNodeGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<PowerlevelTestNodeReportCommand>(cancellationToken).ConfigureAwait(false);
-        return LastTestResult;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<PowerlevelTestNodeReportCommand>(cancellationToken).ConfigureAwait(false);
+        PowerlevelTestResult? result = PowerlevelTestNodeReportCommand.Parse(reportFrame, Logger);
+        LastTestResult = result;
+        return result;
     }
 
     internal override Task InterviewAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((PowerlevelCommand)frame.CommandId)
         {
@@ -244,31 +235,16 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
             case PowerlevelCommand.TestNodeSet:
             case PowerlevelCommand.TestNodeGet:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case PowerlevelCommand.Report:
             {
-                var command = new PowerlevelReportCommand(frame);
-                State = new PowerlevelState(command.Powerlevel, command.TimeoutInSeconds);
+                LastReport = PowerlevelReportCommand.Parse(frame, Logger);
                 break;
             }
             case PowerlevelCommand.TestNodeReport:
             {
-                var command = new PowerlevelTestNodeReportCommand(frame);
-                if (command.TestNodeId.HasValue)
-                {
-                    LastTestResult = new PowerlevelTestResult(
-                        command.TestNodeId.Value,
-                        command.TestStatus!.Value,
-                        command.TestFrameAcknowledgedCount!.Value);
-                }
-                else
-                {
-                    // If we got a report with no results, clear the value to avoid confusion.
-                    LastTestResult = null;
-                }
-
+                LastTestResult = PowerlevelTestNodeReportCommand.Parse(frame, Logger);
                 break;
             }
         }
@@ -328,17 +304,20 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The current power level indicator value in effect on the node
-        /// </summary>
-        public Powerlevel Powerlevel => (Powerlevel)Frame.CommandParameters.Span[0];
+        public static PowerlevelReport Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 1)
+            {
+                logger.LogWarning("Powerlevel Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Powerlevel Report frame is too short");
+            }
 
-        /// <summary>
-        /// The time in seconds the node has back at Power level before resetting to normal Power level.
-        /// </summary>
-        public byte? TimeoutInSeconds => Powerlevel != Powerlevel.Normal
-            ? Frame.CommandParameters.Span[1]
-            : null;
+            Powerlevel powerlevel = (Powerlevel)frame.CommandParameters.Span[0];
+            byte? timeoutInSeconds = powerlevel != Powerlevel.Normal && frame.CommandParameters.Length > 1
+                ? frame.CommandParameters.Span[1]
+                : null;
+            return new PowerlevelReport(powerlevel, timeoutInSeconds);
+        }
     }
 
     private readonly struct PowerlevelTestNodeSetCommand : ICommand
@@ -402,30 +381,29 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The node ID of the node which is or has been under test.
-        /// </summary>
-        public byte? TestNodeId
+        public static PowerlevelTestResult? Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 1)
             {
-                byte nodeId = Frame.CommandParameters.Span[0];
-                return nodeId == 0 ? null : nodeId;
+                logger.LogWarning("Powerlevel Test Node Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Powerlevel Test Node Report frame is too short");
             }
+
+            byte nodeId = frame.CommandParameters.Span[0];
+            if (nodeId == 0)
+            {
+                return null;
+            }
+
+            if (frame.CommandParameters.Length < 4)
+            {
+                logger.LogWarning("Powerlevel Test Node Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Powerlevel Test Node Report frame is too short");
+            }
+
+            PowerlevelTestStatus status = (PowerlevelTestStatus)frame.CommandParameters.Span[1];
+            ushort frameAcknowledgedCount = frame.CommandParameters.Span[2..4].ToUInt16BE();
+            return new PowerlevelTestResult(nodeId, status, frameAcknowledgedCount);
         }
-
-        /// <summary>
-        /// The result of the last test initiated with the Powerlevel Test Node Set Command
-        /// </summary>
-        public PowerlevelTestStatus? TestStatus => TestNodeId.HasValue
-            ? (PowerlevelTestStatus)Frame.CommandParameters.Span[1]
-            : null;
-
-        /// <summary>
-        /// The number of test frames transmitted which the Test NodeID has acknowledged.
-        /// </summary>
-        public ushort? TestFrameAcknowledgedCount => TestNodeId.HasValue
-            ? Frame.CommandParameters.Span[2..4].ToUInt16BE()
-            : null;
     }
 }

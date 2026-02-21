@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 /// <summary>
@@ -75,41 +77,29 @@ public enum ColorSwitchCommand : byte
 /// <summary>
 /// Represents the state of a single color component.
 /// </summary>
-public readonly struct ColorSwitchColorComponentState
-{
-    public ColorSwitchColorComponentState(
-        byte currentValue,
-        byte? targetValue,
-        DurationReport? duration)
-    {
-        CurrentValue = currentValue;
-        TargetValue = targetValue;
-        Duration = duration;
-    }
-
+public readonly record struct ColorSwitchColorComponentState(
     /// <summary>
     /// The current value of the color component identified by the Color Component ID
     /// </summary>
-    public byte CurrentValue { get; }
+    byte CurrentValue,
 
     /// <summary>
     /// The target value of an ongoing transition or the most recent transition for the advertised Color Component ID.
     /// </summary>
-    public byte? TargetValue { get; }
+    byte? TargetValue,
 
     /// <summary>
     /// The time needed to reach the Target Value at the actual transition rate.
     /// </summary>
-    public DurationReport? Duration { get; }
-}
+    DurationReport? Duration);
 
 [CommandClass(CommandClassId.ColorSwitch)]
 public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
 {
     private Dictionary<ColorSwitchColorComponent, ColorSwitchColorComponentState?>? _colorComponents;
 
-    public ColorSwitchCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    public ColorSwitchCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
@@ -139,8 +129,27 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
     {
         var command = ColorSwitchSupportedGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<ColorSwitchSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
-        return SupportedComponents!;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<ColorSwitchSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
+        IReadOnlySet<ColorSwitchColorComponent> supportedComponents = ColorSwitchSupportedReportCommand.Parse(reportFrame, Logger);
+
+        SupportedComponents = supportedComponents;
+
+        var newColorComponents = new Dictionary<ColorSwitchColorComponent, ColorSwitchColorComponentState?>();
+        foreach (ColorSwitchColorComponent colorComponent in supportedComponents)
+        {
+            // Persist any existing known state.
+            if (ColorComponents == null
+                || !ColorComponents.TryGetValue(colorComponent, out ColorSwitchColorComponentState? colorComponentState))
+            {
+                colorComponentState = null;
+            }
+
+            newColorComponents.Add(colorComponent, colorComponentState);
+        }
+
+        _colorComponents = newColorComponents;
+
+        return supportedComponents;
     }
 
     public async Task<ColorSwitchColorComponentState> GetAsync(
@@ -149,8 +158,10 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
     {
         var command = ColorSwitchGetCommand.Create(colorComponent);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<ColorSwitchReportCommand>(cancellationToken).ConfigureAwait(false);
-        return ColorComponents![colorComponent]!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<ColorSwitchReportCommand>(cancellationToken).ConfigureAwait(false);
+        (ColorSwitchColorComponent reportedComponent, ColorSwitchColorComponentState state) = ColorSwitchReportCommand.Parse(reportFrame, Logger);
+        _colorComponents![reportedComponent] = state;
+        return state;
     }
 
     public async Task SetAsync(
@@ -194,7 +205,7 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
         }
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((ColorSwitchCommand)frame.CommandId)
         {
@@ -204,16 +215,15 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
             case ColorSwitchCommand.StartLevelChange:
             case ColorSwitchCommand.StopLevelChange:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case ColorSwitchCommand.SupportedReport:
             {
-                var command = new ColorSwitchSupportedReportCommand(frame);
-                SupportedComponents = command.SupportedComponents;
+                IReadOnlySet<ColorSwitchColorComponent> supportedComponents = ColorSwitchSupportedReportCommand.Parse(frame, Logger);
+                SupportedComponents = supportedComponents;
 
                 var newColorComponents = new Dictionary<ColorSwitchColorComponent, ColorSwitchColorComponentState?>();
-                foreach (ColorSwitchColorComponent colorComponent in SupportedComponents)
+                foreach (ColorSwitchColorComponent colorComponent in supportedComponents)
                 {
                     // Persist any existing known state.
                     if (ColorComponents == null
@@ -231,11 +241,8 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
             }
             case ColorSwitchCommand.Report:
             {
-                var command = new ColorSwitchReportCommand(frame, EffectiveVersion);
-                _colorComponents![command.ColorComponent] = new ColorSwitchColorComponentState(
-                    command.CurrentValue,
-                    command.TargetValue,
-                    command.Duration);
+                (ColorSwitchColorComponent reportedComponent, ColorSwitchColorComponentState state) = ColorSwitchReportCommand.Parse(frame, Logger);
+                _colorComponents![reportedComponent] = state;
                 break;
             }
         }
@@ -274,30 +281,30 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The color components supported by the device
-        /// </summary>
-        public IReadOnlySet<ColorSwitchColorComponent> SupportedComponents
+        public static IReadOnlySet<ColorSwitchColorComponent> Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 2)
             {
-                var supportedComponents = new HashSet<ColorSwitchColorComponent>();
+                logger.LogWarning("Color Switch Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Color Switch Supported Report frame is too short");
+            }
 
-                ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span.Slice(0, 2);
-                for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            var supportedComponents = new HashSet<ColorSwitchColorComponent>();
+
+            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span.Slice(0, 2);
+            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            {
+                for (int bitNum = 0; bitNum < 8; bitNum++)
                 {
-                    for (int bitNum = 0; bitNum < 8; bitNum++)
+                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
                     {
-                        if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                        {
-                            ColorSwitchColorComponent colorComponent = (ColorSwitchColorComponent)((byteNum << 3) + bitNum);
-                            supportedComponents.Add(colorComponent);
-                        }
+                        ColorSwitchColorComponent colorComponent = (ColorSwitchColorComponent)((byteNum << 3) + bitNum);
+                        supportedComponents.Add(colorComponent);
                     }
                 }
-
-                return supportedComponents;
             }
+
+            return supportedComponents;
         }
     }
 
@@ -324,12 +331,9 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
 
     private readonly struct ColorSwitchReportCommand : ICommand
     {
-        private readonly byte _version;
-
-        public ColorSwitchReportCommand(CommandClassFrame frame, byte version)
+        public ColorSwitchReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.ColorSwitch;
@@ -338,29 +342,25 @@ public sealed class ColorSwitchCommandClass : CommandClass<ColorSwitchCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The color component covered by this report
-        /// </summary>
-        public ColorSwitchColorComponent ColorComponent => (ColorSwitchColorComponent)Frame.CommandParameters.Span[0];
+        public static (ColorSwitchColorComponent ColorComponent, ColorSwitchColorComponentState State) Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 2)
+            {
+                logger.LogWarning("Color Switch Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Color Switch Report frame is too short");
+            }
 
-        /// <summary>
-        /// The current value of the color component identified by the Color Component ID
-        /// </summary>
-        public byte CurrentValue => Frame.CommandParameters.Span[1];
-
-        /// <summary>
-        /// The target value of an ongoing transition or the most recent transition for the advertised Color Component ID.
-        /// </summary>
-        public byte? TargetValue => _version >= 3 && Frame.CommandParameters.Length > 2
-            ? Frame.CommandParameters.Span[2]
-            : null;
-
-        /// <summary>
-        /// The time needed to reach the Target Value at the actual transition rate.
-        /// </summary>
-        public DurationReport? Duration => _version >= 3 && Frame.CommandParameters.Length > 3
-            ? Frame.CommandParameters.Span[3]
-            : null;
+            ColorSwitchColorComponent colorComponent = (ColorSwitchColorComponent)frame.CommandParameters.Span[0];
+            byte currentValue = frame.CommandParameters.Span[1];
+            byte? targetValue = frame.CommandParameters.Length > 2
+                ? frame.CommandParameters.Span[2]
+                : null;
+            DurationReport? duration = frame.CommandParameters.Length > 3
+                ? frame.CommandParameters.Span[3]
+                : null;
+            ColorSwitchColorComponentState state = new ColorSwitchColorComponentState(currentValue, targetValue, duration);
+            return (colorComponent, state);
+        }
     }
 
     private readonly struct ColorSwitchSetCommand : ICommand

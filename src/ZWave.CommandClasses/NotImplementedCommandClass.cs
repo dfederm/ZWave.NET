@@ -1,4 +1,6 @@
-﻿namespace ZWave.CommandClasses;
+using Microsoft.Extensions.Logging;
+
+namespace ZWave.CommandClasses;
 
 /// <summary>
 /// Placeholder command enum for command classes that have not been implemented.
@@ -12,7 +14,7 @@ public enum NotImplementedCommand : byte
 /// </summary>
 public sealed class NotImplementedCommandClass : CommandClass<NotImplementedCommand>
 {
-    internal NotImplementedCommandClass(CommandClassInfo info, IDriver driver, INode node) : base(info, driver, node)
+    internal NotImplementedCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger) : base(info, driver, node, logger)
     {
     }
 
@@ -21,7 +23,7 @@ public sealed class NotImplementedCommandClass : CommandClass<NotImplementedComm
 
     internal override Task InterviewAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
     }
 }

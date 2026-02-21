@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 public enum BasicCommand : byte
@@ -19,35 +21,23 @@ public enum BasicCommand : byte
 }
 
 /// <summary>
-/// Represents the state reported by a Basic Command Class device.
+/// Represents a Basic Report received from a device.
 /// </summary>
-public readonly struct BasicState
-{
-    public BasicState(
-        GenericValue currentValue,
-        GenericValue? targetValue,
-        DurationReport? duration)
-    {
-        CurrentValue = currentValue;
-        TargetValue = targetValue;
-        Duration = duration;
-    }
-
+public readonly record struct BasicReport(
     /// <summary>
     /// The current value of the device hardware
     /// </summary>
-    public GenericValue CurrentValue { get; }
+    GenericValue CurrentValue,
 
     /// <summary>
     /// The target value of an ongoing transition or the most recent transition.
     /// </summary>
-    public GenericValue? TargetValue { get; }
+    GenericValue? TargetValue,
 
     /// <summary>
     /// The time needed to reach the Target Value at the actual transition rate.
     /// </summary>
-    public DurationReport? Duration { get; }
-}
+    DurationReport? Duration);
 
 [CommandClass(CommandClassId.Basic)]
 public sealed class BasicCommandClass : CommandClass<BasicCommand>
@@ -55,15 +45,16 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
     internal BasicCommandClass(
         CommandClassInfo info,
         IDriver driver,
-        INode node)
-        : base(info, driver, node)
+        INode node,
+        ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
     /// <summary>
-    /// Gets the last reported state of the device.
+    /// Gets the last report received from the device.
     /// </summary>
-    public BasicState? State { get; private set; }
+    public BasicReport? LastReport { get; private set; }
 
     /// <inheritdoc />
     public override bool? IsCommandSupported(BasicCommand command)
@@ -82,12 +73,14 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
     /// <summary>
     /// Request the status of a supporting device
     /// </summary>
-    public async Task<BasicState> GetAsync(CancellationToken cancellationToken)
+    public async Task<BasicReport> GetAsync(CancellationToken cancellationToken)
     {
-        var command = BasicGetCommand.Create();
+        BasicGetCommand command = BasicGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<BasicReportCommand>(cancellationToken).ConfigureAwait(false);
-        return State!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<BasicReportCommand>(cancellationToken).ConfigureAwait(false);
+        BasicReport report = BasicReportCommand.Parse(reportFrame, Logger);
+        LastReport = report;
+        return report;
     }
 
     /// <summary>
@@ -99,23 +92,18 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((BasicCommand)frame.CommandId)
         {
             case BasicCommand.Set:
             case BasicCommand.Get:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case BasicCommand.Report:
             {
-                var command = new BasicReportCommand(frame, EffectiveVersion);
-                State = new BasicState(
-                    command.CurrentValue,
-                    command.TargetValue,
-                    command.Duration);
+                LastReport = BasicReportCommand.Parse(frame, Logger);
                 break;
             }
         }
@@ -166,12 +154,9 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
 
     private readonly struct BasicReportCommand : ICommand
     {
-        private readonly byte _version;
-
-        public BasicReportCommand(CommandClassFrame frame, byte version)
+        public BasicReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.Basic;
@@ -180,23 +165,22 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The current value of the device hardware
-        /// </summary>
-        public GenericValue CurrentValue => Frame.CommandParameters.Span[0];
+        public static BasicReport Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 1)
+            {
+                logger.LogWarning("Basic Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Basic Report frame is too short");
+            }
 
-        /// <summary>
-        /// The target value of an ongoing transition or the most recent transition.
-        /// </summary>
-        public GenericValue? TargetValue => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? Frame.CommandParameters.Span[1]
-            : null;
-
-        /// <summary>
-        /// The time needed to reach the Target Value at the actual transition rate.
-        /// </summary>
-        public DurationReport? Duration => _version >= 2 && Frame.CommandParameters.Length > 2
-            ? Frame.CommandParameters.Span[2]
-            : null;
+            GenericValue currentValue = frame.CommandParameters.Span[0];
+            GenericValue? targetValue = frame.CommandParameters.Length > 1
+                ? frame.CommandParameters.Span[1]
+                : null;
+            DurationReport? duration = frame.CommandParameters.Length > 2
+                ? frame.CommandParameters.Span[2]
+                : null;
+            return new BasicReport(currentValue, targetValue, duration);
+        }
     }
 }

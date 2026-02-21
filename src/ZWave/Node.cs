@@ -275,7 +275,7 @@ public sealed class Node : INode
                     }
                     else
                     {
-                        CommandClass commandClass = CommandClassFactory.Create(commandClassInfo, _driver, this);
+                        CommandClass commandClass = CommandClassFactory.Create(commandClassInfo, _driver, this, _logger);
                         newDict.Add(commandClassInfo.CommandClass, commandClass);
                     }
                 }

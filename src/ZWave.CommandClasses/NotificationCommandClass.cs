@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 /// <summary>
@@ -71,68 +73,46 @@ public enum NotificationCommand : byte
 /// <summary>
 /// Represents a notification received from a device.
 /// </summary>
-public readonly struct Notification
-{
-    public Notification(
-        byte? v1AlarmType,
-        byte? v1AlarmLevel,
-        byte? zensorNetSourceNodeId,
-        bool? notificationStatus,
-        byte? notificationType,
-        byte? notificationEvent,
-        ReadOnlyMemory<byte>? eventParameters,
-        byte? sequenceNumber)
-    {
-        V1AlarmType = v1AlarmType;
-        V1AlarmLevel = v1AlarmLevel;
-        ZensorNetSourceNodeId = zensorNetSourceNodeId;
-        NotificationStatus = notificationStatus;
-        NotificationType = notificationType;
-        NotificationEvent = notificationEvent;
-        EventParameters = eventParameters;
-        SequenceNumber = sequenceNumber;
-    }
-
+public readonly record struct Notification(
     /// <summary>
     /// Gets the legacy V1 alarm type.
     /// </summary>
-    public byte? V1AlarmType { get; }
+    byte? V1AlarmType,
 
     /// <summary>
     /// Gets the legacy V1 alarm level.
     /// </summary>
-    public byte? V1AlarmLevel { get; }
+    byte? V1AlarmLevel,
 
     /// <summary>
     /// Zensor Net Source Node ID, which detected the alarm condition.
     /// </summary>
-    public byte? ZensorNetSourceNodeId { get; }
+    byte? ZensorNetSourceNodeId,
 
     /// <summary>
     /// Gets the notification status.
     /// </summary>
-    public bool? NotificationStatus { get; }
+    bool? NotificationStatus,
 
     /// <summary>
     /// Gets the notification type.
     /// </summary>
-    public byte? NotificationType { get; }
+    byte? NotificationType,
 
     /// <summary>
     /// Gets the notification event.
     /// </summary>
-    public byte? NotificationEvent { get; }
+    byte? NotificationEvent,
 
     /// <summary>
     /// Gets the event parameters.
     /// </summary>
-    public ReadOnlyMemory<byte>? EventParameters { get; }
+    ReadOnlyMemory<byte>? EventParameters,
 
     /// <summary>
     /// Gets the sequence number.
     /// </summary>
-    public byte? SequenceNumber { get; }
-}
+    byte? SequenceNumber);
 
 /// <summary>
 /// Represents the supported notification types of a device.
@@ -176,8 +156,8 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 {
     private Dictionary<NotificationType, SupportedNotificationEvents?>? _supportedNotificationEvents;
 
-    internal NotificationCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    internal NotificationCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
@@ -233,44 +213,68 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
     public async Task<Notification> GetV1Async(byte alarmType, CancellationToken cancellationToken)
     {
-        var command = NotificationGetV1Command.Create(alarmType);
+        NotificationGetV1Command command = NotificationGetV1Command.Create(alarmType);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<NotificationReportCommand>(cancellationToken).ConfigureAwait(false);
-        return LastNotification!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<NotificationReportCommand>(cancellationToken).ConfigureAwait(false);
+        Notification notification = NotificationReportCommand.Parse(reportFrame, Logger);
+        LastNotification = notification;
+        return notification;
     }
 
     public async Task<Notification> GetAsync(NotificationType notificationType, byte? notificationEvent, CancellationToken cancellationToken)
     {
-        var command = NotificationGetCommand.Create(EffectiveVersion, notificationType, notificationEvent);
+        NotificationGetCommand command = NotificationGetCommand.Create(EffectiveVersion, notificationType, notificationEvent);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<NotificationReportCommand>(cancellationToken).ConfigureAwait(false);
-        return LastNotification!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<NotificationReportCommand>(cancellationToken).ConfigureAwait(false);
+        Notification notification = NotificationReportCommand.Parse(reportFrame, Logger);
+        LastNotification = notification;
+        return notification;
     }
 
     public async Task SetAsync(NotificationType notificationType, bool notificationStatus, CancellationToken cancellationToken)
     {
-        var command = NotificationSetCommand.Create(notificationType, notificationStatus);
+        NotificationSetCommand command = NotificationSetCommand.Create(notificationType, notificationStatus);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
         // No report is expected from this command.
     }
 
     public async Task<SupportedNotifications> GetSupportedAsync(CancellationToken cancellationToken)
     {
-        var command = NotificationSupportedGetCommand.Create();
+        NotificationSupportedGetCommand command = NotificationSupportedGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<NotificationSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
-        return SupportedNotifications!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<NotificationSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
+        SupportedNotifications supportedNotifications = NotificationSupportedReportCommand.Parse(reportFrame, Logger);
+        SupportedNotifications = supportedNotifications;
+
+        Dictionary<NotificationType, SupportedNotificationEvents?> newSupportedNotificationEvents =
+            new Dictionary<NotificationType, SupportedNotificationEvents?>(supportedNotifications.SupportedNotificationTypes.Count);
+        foreach (NotificationType notificationType in supportedNotifications.SupportedNotificationTypes)
+        {
+            if (SupportedNotificationEvents == null
+                || !SupportedNotificationEvents.TryGetValue(notificationType, out SupportedNotificationEvents? existing))
+            {
+                existing = null;
+            }
+
+            newSupportedNotificationEvents.Add(notificationType, existing);
+        }
+
+        _supportedNotificationEvents = newSupportedNotificationEvents;
+
+        return supportedNotifications;
     }
 
     public async Task<SupportedNotificationEvents> GetEventSupportedAsync(NotificationType notificationType, CancellationToken cancellationToken)
     {
-        var command = NotificationEventSupportedGetCommand.Create(notificationType);
+        NotificationEventSupportedGetCommand command = NotificationEventSupportedGetCommand.Create(notificationType);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<NotificationEventSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
-        return _supportedNotificationEvents![notificationType]!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<NotificationEventSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
+        SupportedNotificationEvents supportedEvents = NotificationEventSupportedReportCommand.Parse(reportFrame, Logger);
+        _supportedNotificationEvents![supportedEvents.NotificationType] = supportedEvents;
+        return supportedEvents;
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((NotificationCommand)frame.CommandId)
         {
@@ -279,33 +283,21 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
             case NotificationCommand.SupportedGet:
             case NotificationCommand.EventSupportedGet:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case NotificationCommand.Report:
             {
-                var command = new NotificationReportCommand(frame, Version);
-                LastNotification = new Notification(
-                    command.V1AlarmType,
-                    command.V1AlarmLevel,
-                    command.ZensorNetSourceNodeId,
-                    command.NotificationStatus,
-                    command.NotificationType,
-                    command.NotificationEvent,
-                    command.EventParameters,
-                    command.SequenceNumber);
+                LastNotification = NotificationReportCommand.Parse(frame, Logger);
                 break;
             }
             case NotificationCommand.SupportedReport:
             {
-                var command = new NotificationSupportedReportCommand(frame);
-                IReadOnlySet<NotificationType> supportedNotificationTypes = command.SupportedNotificationTypes;
-                SupportedNotifications = new SupportedNotifications(
-                    command.SupportsV1Alarm,
-                    supportedNotificationTypes);
+                SupportedNotifications supportedNotifications = NotificationSupportedReportCommand.Parse(frame, Logger);
+                SupportedNotifications = supportedNotifications;
 
-                var newSupportedNotificationEvents = new Dictionary<NotificationType, SupportedNotificationEvents?>(supportedNotificationTypes.Count);
-                foreach (NotificationType notificationType in supportedNotificationTypes)
+                Dictionary<NotificationType, SupportedNotificationEvents?> newSupportedNotificationEvents =
+                    new Dictionary<NotificationType, SupportedNotificationEvents?>(supportedNotifications.SupportedNotificationTypes.Count);
+                foreach (NotificationType notificationType in supportedNotifications.SupportedNotificationTypes)
                 {
                     // Persist any existing known state.
                     if (SupportedNotificationEvents == null
@@ -322,10 +314,8 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
             }
             case NotificationCommand.EventSupportedReport:
             {
-                var command = new NotificationEventSupportedReportCommand(frame);
-                _supportedNotificationEvents![command.NotificationType] = new SupportedNotificationEvents(
-                    command.NotificationType,
-                    command.SupportedNotificationEvents);
+                SupportedNotificationEvents supportedEvents = NotificationEventSupportedReportCommand.Parse(frame, Logger);
+                _supportedNotificationEvents![supportedEvents.NotificationType] = supportedEvents;
                 break;
             }
         }
@@ -388,14 +378,9 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
     private readonly struct NotificationReportCommand : ICommand
     {
-        // Note: Notifications describe point-in-time events, so avoid version checking if we don't have the version
-        // since we don't want to lose any events before the version is determined.
-        private readonly byte? _version;
-
-        public NotificationReportCommand(CommandClassFrame frame, byte? version)
+        public NotificationReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.Notification;
@@ -404,102 +389,76 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
         public CommandClassFrame Frame { get; }
 
-        public byte? V1AlarmType
+        public static Notification Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 2)
             {
-                if (!ShouldUseV1Values)
+                logger.LogWarning("Notification Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Notification Report frame is too short");
+            }
+
+            ReadOnlySpan<byte> parameters = frame.CommandParameters.Span;
+            int length = frame.CommandParameters.Length;
+
+            // Determine notification event first (needed for V1 fallback logic)
+            byte? notificationEvent = length > 5 ? parameters[5] : null;
+
+            // V1 values are used when there's no notification event or event indicates V1 fallback (0xFE)
+            bool shouldUseV1Values = !notificationEvent.HasValue || notificationEvent.Value == 0xfe;
+
+            byte? v1AlarmType = null;
+            byte? v1AlarmLevel = null;
+            if (shouldUseV1Values)
+            {
+                if (length > 0 && parameters[0] != 0)
                 {
-                    return null;
+                    v1AlarmType = parameters[0];
                 }
 
-                var value = Frame.CommandParameters.Span[0];
-                return value == 0 ? null : value;
-            }
-        }
-
-        public byte? V1AlarmLevel
-        {
-            get
-            {
-                if (!ShouldUseV1Values)
+                if (length > 1 && parameters[1] != 0)
                 {
-                    return null;
+                    v1AlarmLevel = parameters[1];
                 }
-
-                var value = Frame.CommandParameters.Span[1];
-                return value == 0 ? null : value;
             }
-        }
 
-        private bool ShouldUseV1Values
-        {
-            get
-            {
-                byte? notificationEvent = NotificationEvent;
-                return !notificationEvent.HasValue || notificationEvent.Value == 0xfe;
-            }
-        }
+            byte? zensorNetSourceNodeId = length > 2 ? parameters[2] : null;
 
-        /// <summary>
-        /// Zensor Net Source Node ID, which detected the alarm condition.
-        /// </summary>
-        // Discontinued as of V4
-        public byte? ZensorNetSourceNodeId => (_version == 2 || _version == 3) && Frame.CommandParameters.Length > 2
-            ? Frame.CommandParameters.Span[2]
-            : null;
-
-        public bool? NotificationStatus => (!_version.HasValue || _version >= 2) && Frame.CommandParameters.Length > 3
-            ? Frame.CommandParameters.Span[3] switch
-            {
-                0x00 => false,
-                0xff => true,
-                _ => null,
-            }
-            : null;
-
-        public byte? NotificationType => (!_version.HasValue || _version >= 2) && Frame.CommandParameters.Length > 4
-            ? Frame.CommandParameters.Span[4]
-            : null;
-
-        public byte? NotificationEvent => (!_version.HasValue || _version >= 2) && Frame.CommandParameters.Length > 5
-            ? Frame.CommandParameters.Span[5]
-            : null;
-
-        private int NumEventParameters => (!_version.HasValue || _version >= 2) && Frame.CommandParameters.Length > 6
-            ? Frame.CommandParameters.Span[6] & 0b0001_1111
-            : 0;
-
-        // TODO: Parse this. According to docs:
-        //       Parameters for each Event/State Notification are defined in [18]. 
-        //       This field MAY carry an encapsulated command.In this case, the field MUST include the complete
-        //       command structure, i.e.Command Class, Command and all mandatory command field
-        public ReadOnlyMemory<byte>? EventParameters => (!_version.HasValue || _version >= 2) && Frame.CommandParameters.Length > 7
-            ? Frame.CommandParameters.Slice(7, NumEventParameters)
-            : null;
-
-        public byte? SequenceNumber
-        {
-            get
-            {
-                if (_version.HasValue && _version < 3)
+            bool? notificationStatus = length > 3
+                ? parameters[3] switch
                 {
-                    return null;
+                    0x00 => false,
+                    0xff => true,
+                    _ => null,
                 }
+                : null;
 
-                if (Frame.CommandParameters.Length < 7)
+            byte? notificationType = length > 4 ? parameters[4] : null;
+
+            int numEventParameters = length > 6 ? (parameters[6] & 0b0001_1111) : 0;
+
+            ReadOnlyMemory<byte>? eventParameters = numEventParameters > 0 && length >= 7 + numEventParameters
+                ? frame.CommandParameters.Slice(7, numEventParameters)
+                : null;
+
+            byte? sequenceNumber = null;
+            if (length > 6 && (parameters[6] & 0b1000_0000) != 0)
+            {
+                int seqIndex = 7 + numEventParameters;
+                if (length > seqIndex)
                 {
-                    return null;
+                    sequenceNumber = parameters[seqIndex];
                 }
-
-                var hasSequenceNumber = (Frame.CommandParameters.Span[6] & 0b1000_0000) != 0;
-                if (!hasSequenceNumber)
-                {
-                    return null;
-                }
-
-                return Frame.CommandParameters.Span[7 + NumEventParameters];
             }
+
+            return new Notification(
+                v1AlarmType,
+                v1AlarmLevel,
+                zensorNetSourceNodeId,
+                notificationStatus,
+                notificationType,
+                notificationEvent,
+                eventParameters,
+                sequenceNumber);
         }
     }
 
@@ -557,30 +516,32 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
         public CommandClassFrame Frame { get; }
 
-        public bool SupportsV1Alarm => (Frame.CommandParameters.Span[0] & 0b1000_0000) != 0;
-
-        public IReadOnlySet<NotificationType> SupportedNotificationTypes
+        public static SupportedNotifications Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 1)
             {
-                var supportedNotificationTypes = new HashSet<NotificationType>();
+                logger.LogWarning("Notification Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Notification Supported Report frame is too short");
+            }
 
-                int numBitMasks = (Frame.CommandParameters.Span[0] & 0b0001_1111);
-                ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span.Slice(1, numBitMasks);
-                for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            bool supportsV1Alarm = (frame.CommandParameters.Span[0] & 0b1000_0000) != 0;
+
+            HashSet<NotificationType> supportedNotificationTypes = new HashSet<NotificationType>();
+            int numBitMasks = (frame.CommandParameters.Span[0] & 0b0001_1111);
+            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span.Slice(1, numBitMasks);
+            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            {
+                for (int bitNum = 0; bitNum < 8; bitNum++)
                 {
-                    for (int bitNum = 0; bitNum < 8; bitNum++)
+                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
                     {
-                        if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                        {
-                            NotificationType notificationType = (NotificationType)((byteNum << 3) + bitNum);
-                            supportedNotificationTypes.Add(notificationType);
-                        }
+                        NotificationType notificationType = (NotificationType)((byteNum << 3) + bitNum);
+                        supportedNotificationTypes.Add(notificationType);
                     }
                 }
-
-                return supportedNotificationTypes;
             }
+
+            return new SupportedNotifications(supportsV1Alarm, supportedNotificationTypes);
         }
     }
 
@@ -618,30 +579,32 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 
         public CommandClassFrame Frame { get; }
 
-        public NotificationType NotificationType => (NotificationType)Frame.CommandParameters.Span[0];
-
-        public IReadOnlySet<byte> SupportedNotificationEvents
+        public static SupportedNotificationEvents Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 2)
             {
-                var supportedNotificationEvents = new HashSet<byte>();
+                logger.LogWarning("Notification Event Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Notification Event Supported Report frame is too short");
+            }
 
-                int numBitMasks = (Frame.CommandParameters.Span[1] & 0b0001_1111);
-                ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span.Slice(2, numBitMasks);
-                for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            NotificationType notificationType = (NotificationType)frame.CommandParameters.Span[0];
+
+            HashSet<byte> supportedNotificationEvents = new HashSet<byte>();
+            int numBitMasks = (frame.CommandParameters.Span[1] & 0b0001_1111);
+            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span.Slice(2, numBitMasks);
+            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            {
+                for (int bitNum = 0; bitNum < 8; bitNum++)
                 {
-                    for (int bitNum = 0; bitNum < 8; bitNum++)
+                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
                     {
-                        if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                        {
-                            byte notificationEvent = (byte)((byteNum << 3) + bitNum);
-                            supportedNotificationEvents.Add(notificationEvent);
-                        }
+                        byte notificationEvent = (byte)((byteNum << 3) + bitNum);
+                        supportedNotificationEvents.Add(notificationEvent);
                     }
                 }
-
-                return supportedNotificationEvents;
             }
+
+            return new SupportedNotificationEvents(notificationType, supportedNotificationEvents);
         }
     }
 }

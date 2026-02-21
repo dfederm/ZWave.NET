@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 public enum BinarySwitchCommand : byte
@@ -19,48 +21,36 @@ public enum BinarySwitchCommand : byte
 }
 
 /// <summary>
-/// Represents the state reported by a Binary Switch Command Class device.
+/// Represents a Binary Switch Report received from a device.
 /// </summary>
-public readonly struct BinarySwitchState
-{
-    public BinarySwitchState(
-        bool? currentValue,
-        bool? targetValue,
-        DurationReport? duration)
-    {
-        CurrentValue = currentValue;
-        TargetValue = targetValue;
-        Duration = duration;
-    }
-
+public readonly record struct BinarySwitchReport(
     /// <summary>
     /// The current On/Off state at the sending node
     /// </summary>
-    public bool? CurrentValue { get; }
+    bool? CurrentValue,
 
     /// <summary>
     /// The target value of an ongoing transition or the most recent transition.
     /// </summary>
-    public bool? TargetValue { get; }
+    bool? TargetValue,
 
     /// <summary>
     /// Advertise the duration of a transition from the Current Value to the Target Value.
     /// </summary>
-    public DurationReport? Duration { get; }
-}
+    DurationReport? Duration);
 
 [CommandClass(CommandClassId.BinarySwitch)]
 public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
 {
-    internal BinarySwitchCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    internal BinarySwitchCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
     /// <summary>
-    /// Gets the last reported switch state.
+    /// Gets the last report received from the device.
     /// </summary>
-    public BinarySwitchState? State { get; private set; }
+    public BinarySwitchReport? LastReport { get; private set; }
 
     /// <inheritdoc />
     public override bool? IsCommandSupported(BinarySwitchCommand command)
@@ -79,12 +69,14 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
     /// <summary>
     /// Request the current On/Off state from a node
     /// </summary>
-    public async Task<BinarySwitchState> GetAsync(CancellationToken cancellationToken)
+    public async Task<BinarySwitchReport> GetAsync(CancellationToken cancellationToken)
     {
-        var command = BinarySwitchGetCommand.Create();
+        BinarySwitchGetCommand command = BinarySwitchGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<BinarySwitchReportCommand>(cancellationToken).ConfigureAwait(false);
-        return State!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<BinarySwitchReportCommand>(cancellationToken).ConfigureAwait(false);
+        BinarySwitchReport report = BinarySwitchReportCommand.Parse(reportFrame, Logger);
+        LastReport = report;
+        return report;
     }
 
     /// <summary>
@@ -99,23 +91,18 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((BinarySwitchCommand)frame.CommandId)
         {
             case BinarySwitchCommand.Set:
             case BinarySwitchCommand.Get:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case BinarySwitchCommand.Report:
             {
-                var command = new BinarySwitchReportCommand(frame, EffectiveVersion);
-                State = new BinarySwitchState(
-                    command.CurrentValue,
-                    command.TargetValue,
-                    command.Duration);
+                LastReport = BinarySwitchReportCommand.Parse(frame, Logger);
                 break;
             }
         }
@@ -171,12 +158,9 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
 
     private readonly struct BinarySwitchReportCommand : ICommand
     {
-        private readonly byte _version;
-
-        public BinarySwitchReportCommand(CommandClassFrame frame, byte version)
+        public BinarySwitchReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.BinarySwitch;
@@ -185,24 +169,23 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The current On/Off state at the sending node
-        /// </summary>
-        public bool? CurrentValue => ParseBool(Frame.CommandParameters.Span[0]);
+        public static BinarySwitchReport Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 1)
+            {
+                logger.LogWarning("Binary Switch Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Binary Switch Report frame is too short");
+            }
 
-        /// <summary>
-        /// The target value of an ongoing transition or the most recent transition.
-        /// </summary>
-        public bool? TargetValue => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? ParseBool(Frame.CommandParameters.Span[1])
-            : null;
-
-        /// <summary>
-        /// The time needed to reach the Target Value at the actual transition rate.
-        /// </summary>
-        public DurationReport? Duration => _version >= 2 && Frame.CommandParameters.Length > 2
-            ? Frame.CommandParameters.Span[2]
-            : null;
+            bool? currentValue = ParseBool(frame.CommandParameters.Span[0]);
+            bool? targetValue = frame.CommandParameters.Length > 1
+                ? ParseBool(frame.CommandParameters.Span[1])
+                : null;
+            DurationReport? duration = frame.CommandParameters.Length > 2
+                ? frame.CommandParameters.Span[2]
+                : null;
+            return new BinarySwitchReport(currentValue, targetValue, duration);
+        }
 
         private static bool? ParseBool(byte b)
             => b switch
