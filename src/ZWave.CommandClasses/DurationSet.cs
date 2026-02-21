@@ -4,7 +4,7 @@
 /// The duration for reaching the target value.
 /// </summary>
 /// <remarks>
-/// As defined by SDS13781 Table 7
+/// As defined by the Z-Wave Application Specification, Table 7.
 /// </remarks>
 public struct DurationSet
 {

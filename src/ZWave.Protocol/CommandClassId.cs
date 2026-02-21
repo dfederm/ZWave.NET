@@ -4,7 +4,7 @@
 /// Identifies a Z-Wave command class.
 /// </summary>
 /// <remarks>
-/// As defined by SDS13781.
+/// As defined by the Z-Wave Application Specification.
 /// </remarks>
 public enum CommandClassId : byte
 {

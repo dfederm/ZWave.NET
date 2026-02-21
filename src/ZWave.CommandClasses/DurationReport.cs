@@ -4,7 +4,7 @@
 /// The duration left to reach the target value advertised in a report.
 /// </summary>
 /// <remarks>
-/// As defined by SDS13781 Table 8
+/// As defined by the Z-Wave Application Specification, Table 8.
 /// </remarks>
 public readonly struct DurationReport
 {

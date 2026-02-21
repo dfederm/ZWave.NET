@@ -4,7 +4,7 @@
 /// An interpreted value from or for a node
 /// </summary>
 /// <remarks>
-/// As defined by SDS13781 Table 21, Table 82
+/// As defined by the Z-Wave Application Specification, Table 21, Table 82.
 /// </remarks>
 public struct GenericValue
 {

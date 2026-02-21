@@ -62,7 +62,7 @@ The foundational layer contains Z-Wave domain types shared across all projects, 
 
 ### Serial API Layer (`src/ZWave.Serial/`)
 
-Implements the Z-Wave Serial API (INS12350) frame-level protocol:
+Implements the Z-Wave Serial API frame-level protocol (as defined by the Z-Wave Host API Specification):
 - **`Frame`** / **`DataFrame`** — Wire-level frame types (SOF/ACK/NAK/CAN). `DataFrame` handles the SOF-framed data with checksum.
 - **`FrameParser`** — Parses frames from a byte stream using `System.IO.Pipelines`.
 - **`ZWaveSerialPortCoordinator`** — Manages the serial port, frame send/receive channels, ACK handshake, and retransmission.
@@ -71,7 +71,7 @@ Implements the Z-Wave Serial API (INS12350) frame-level protocol:
 
 ### Command Classes Layer (`src/ZWave.CommandClasses/`)
 
-Implements Z-Wave Command Classes (SDS13781). This project references `ZWave.Protocol` but **not** `ZWave.Serial`, enabling mock driver implementations without a serial dependency.
+Implements Z-Wave Command Classes (Z-Wave Application Specification). This project references `ZWave.Protocol` but **not** `ZWave.Serial`, enabling mock driver implementations without a serial dependency.
 - **`CommandClass`** / **`CommandClass<TCommand>`** — Abstract base classes. Each CC (e.g. `BinarySwitchCommandClass`) inherits from `CommandClass<TEnum>` where `TEnum` is a byte-backed enum of commands. Takes `IDriver` and `INode` interfaces (not concrete types).
 - **`IDriver`** / **`INode`** — Interfaces defined here that abstract the driver layer. `Driver` and `Node` implement these in the ZWave project.
 - **`[CommandClass(CommandClassId.X)]` attribute** — Applied to each CC class. The source generator `CommandClassFactoryGenerator` scans for this attribute and generates `CommandClassFactory` with a mapping from `CommandClassId` → constructor.
@@ -118,9 +118,13 @@ Uses `Microsoft.Extensions.Logging` with source-generated `[LoggerMessage]` attr
 
 ## Protocol References
 
-- Serial API: [INS12350 Programming Guide](https://www.silabs.com/documents/public/user-guides/INS12350-Serial-API-Host-Appl.-Prg.-Guide.pdf), [Silicon Labs Serial API Docs](https://docs.silabs.com/z-wave/latest/zwave-api/serial-api)
-- Command Classes: [SDS13781 Specification](https://www.zwavepublic.com/files/sds13781-z-wave-application-command-class-specificationpdf)
-- Full spec collection: [zwave-js/specs](https://github.com/zwave-js/specs)
+The official Z-Wave specification package can be downloaded from the [Z-Wave Alliance](https://z-wavealliance.org/development-resources-overview/specification-for-developers/). The two most relevant specs are:
+- **Z-Wave Host API Specification** — Serial API frame format, handshake, initialization, command definitions (replaces the old INS12350 document)
+- **Z-Wave Application Specification** — Command Class message formats, versioning, required fields
+
+Additional resources:
+- [Silicon Labs Serial API Reference](https://docs.silabs.com/z-wave/latest/zwave-api/serial-api)
+- [zwave-js/specs](https://github.com/zwave-js/specs) — Community-maintained specification collection
 
 ---
 
