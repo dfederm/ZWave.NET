@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 public enum MultilevelSensorCommand : byte
@@ -36,30 +38,21 @@ public enum MultilevelSensorCommand : byte
 /// <summary>
 /// Represents a multilevel sensor reading.
 /// </summary>
-public readonly struct MultilevelSensorState
-{
-    public MultilevelSensorState(MultilevelSensorType sensorType, MultilevelSensorScale scale, double value)
-    {
-        SensorType = sensorType;
-        Scale = scale;
-        Value = value;
-    }
-
+public readonly record struct MultilevelSensorState(
     /// <summary>
     /// The sensor type of the actual sensor reading.
     /// </summary>
-    public MultilevelSensorType SensorType { get; }
+    MultilevelSensorType SensorType,
 
     /// <summary>
     /// Indicates what scale is used for the actual sensor reading.
     /// </summary>
-    public MultilevelSensorScale Scale { get; }
+    MultilevelSensorScale Scale,
 
     /// <summary>
     /// Advertise the value of the actual sensor reading.
     /// </summary>
-    public double Value { get; }
-}
+    double Value);
 
 [CommandClass(CommandClassId.MultilevelSensor)]
 public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensorCommand>
@@ -68,8 +61,8 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
     private Dictionary<MultilevelSensorType, MultilevelSensorState?>? _sensorValues;
 
-    public MultilevelSensorCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    public MultilevelSensorCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
@@ -131,27 +124,56 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         var command = MultilevelSensorGetCommand.Create(EffectiveVersion, sensorType, scaleId);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
 
-        var reportFrame = await AwaitNextReportAsync<MultilevelSensorReportCommand>(
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<MultilevelSensorReportCommand>(
             predicate: frame =>
             {
                 // Ensure the sensor type matches. If one wasn't provided, we don't know the default sensor type, so just
                 // return the next report. We can't know for sure whether this is the reply to this command as we don't
                 // know the device's default sensor type, but this overload is really just here for back-compat and the
                 // caller should really always provide a sensor type.
-                var command = new MultilevelSensorReportCommand(frame);
-                return !sensorType.HasValue || command.SensorType == sensorType.Value;
+                return !sensorType.HasValue
+                    || (frame.CommandParameters.Length > 0 && (MultilevelSensorType)frame.CommandParameters.Span[0] == sensorType.Value);
             },
             cancellationToken).ConfigureAwait(false);
-        var reportCommand = new MultilevelSensorReportCommand(reportFrame);
-        return SensorValues![reportCommand.SensorType]!.Value;
+        MultilevelSensorState sensorState = MultilevelSensorReportCommand.Parse(reportFrame, Logger);
+        _sensorValues![sensorState.SensorType] = sensorState;
+        return sensorState;
     }
 
     public async Task<IReadOnlySet<MultilevelSensorType>> GetSupportedSensorsAsync(CancellationToken cancellationToken)
     {
         var command = MultilevelSensorSupportedSensorGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<MultilevelSensorSupportedSensorReportCommand>(cancellationToken).ConfigureAwait(false);
-        return SupportedSensorTypes!;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<MultilevelSensorSupportedSensorReportCommand>(cancellationToken).ConfigureAwait(false);
+        IReadOnlySet<MultilevelSensorType> supportedSensorTypes = MultilevelSensorSupportedSensorReportCommand.Parse(reportFrame, Logger);
+
+        SupportedSensorTypes = supportedSensorTypes;
+
+        var newSupportedScales = new Dictionary<MultilevelSensorType, IReadOnlySet<MultilevelSensorScale>?>();
+        var newSensorValues = new Dictionary<MultilevelSensorType, MultilevelSensorState?>();
+        foreach (MultilevelSensorType st in supportedSensorTypes)
+        {
+            // Persist any existing known values.
+            if (SupportedScales == null
+                || !SupportedScales.TryGetValue(st, out IReadOnlySet<MultilevelSensorScale>? scales))
+            {
+                scales = null;
+            }
+
+            if (SensorValues == null
+                || !SensorValues.TryGetValue(st, out MultilevelSensorState? sensorValue))
+            {
+                sensorValue = null;
+            }
+
+            newSupportedScales.Add(st, scales);
+            newSensorValues.Add(st, sensorValue);
+        }
+
+        _supportedScales = newSupportedScales;
+        _sensorValues = newSensorValues;
+
+        return supportedSensorTypes;
     }
 
     public async Task<IReadOnlySet<MultilevelSensorScale>> GetSupportedScalesAsync(
@@ -184,8 +206,10 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
         var command = MultilevelSensorSupportedScaleGetCommand.Create(sensorType);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<MultilevelSensorSupportedSensorReportCommand>(cancellationToken).ConfigureAwait(false);
-        return SupportedScales![sensorType]!;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<MultilevelSensorSupportedScaleReportCommand>(cancellationToken).ConfigureAwait(false);
+        (MultilevelSensorType reportedType, IReadOnlySet<MultilevelSensorScale> supportedScales) = MultilevelSensorSupportedScaleReportCommand.Parse(reportFrame, Logger);
+        _supportedScales![reportedType] = supportedScales;
+        return supportedScales;
     }
 
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
@@ -209,7 +233,7 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
         }
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((MultilevelSensorCommand)frame.CommandId)
         {
@@ -217,17 +241,16 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
             case MultilevelSensorCommand.SupportedScaleGet:
             case MultilevelSensorCommand.Get:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case MultilevelSensorCommand.SupportedSensorReport:
             {
-                var command = new MultilevelSensorSupportedSensorReportCommand(frame);
-                SupportedSensorTypes = command.SupportedSensorTypes;
+                IReadOnlySet<MultilevelSensorType> supportedSensorTypes = MultilevelSensorSupportedSensorReportCommand.Parse(frame, Logger);
+                SupportedSensorTypes = supportedSensorTypes;
 
                 var newSupportedScales = new Dictionary<MultilevelSensorType, IReadOnlySet<MultilevelSensorScale>?>();
                 var newSensorValues = new Dictionary<MultilevelSensorType, MultilevelSensorState?>();
-                foreach (MultilevelSensorType sensorType in SupportedSensorTypes)
+                foreach (MultilevelSensorType sensorType in supportedSensorTypes)
                 {
                     // Persist any existing known values.
                     if (SupportedScales == null
@@ -252,18 +275,14 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
             }
             case MultilevelSensorCommand.SupportedScaleReport:
             {
-                var command = new MultilevelSensorSupportedScaleReportCommand(frame);
-                _supportedScales![command.SensorType] = command.SupportedScales;
+                (MultilevelSensorType reportedType, IReadOnlySet<MultilevelSensorScale> supportedScales) = MultilevelSensorSupportedScaleReportCommand.Parse(frame, Logger);
+                _supportedScales![reportedType] = supportedScales;
                 break;
             }
             case MultilevelSensorCommand.Report:
             {
-                var command = new MultilevelSensorReportCommand(frame);
-                var sensorState = new MultilevelSensorState(
-                    command.SensorType,
-                    command.Scale,
-                    command.Value);
-                _sensorValues![command.SensorType] = sensorState;
+                MultilevelSensorState sensorState = MultilevelSensorReportCommand.Parse(frame, Logger);
+                _sensorValues![sensorState.SensorType] = sensorState;
                 break;
             }
         }
@@ -317,44 +336,41 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The sensor type of the actual sensor reading.
-        /// </summary>
-        public MultilevelSensorType SensorType => (MultilevelSensorType)Frame.CommandParameters.Span[0];
-
-        /// <summary>
-        /// Indicates what scale is used for the actual sensor reading.
-        /// </summary>
-        public MultilevelSensorScale Scale
+        public static MultilevelSensorState Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 3)
             {
-                var scaleId = (byte)((Frame.CommandParameters.Span[1] & 0b0001_1000) >> 3);
-                return SensorType.GetScale(scaleId);
+                logger.LogWarning("Multilevel Sensor Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Report frame is too short");
             }
-        }
 
-        /// <summary>
-        /// Advertise the value of the actual sensor reading.
-        /// </summary>
-        public double Value
-        {
-            get
+            MultilevelSensorType sensorType = (MultilevelSensorType)frame.CommandParameters.Span[0];
+            byte scaleId = (byte)((frame.CommandParameters.Span[1] & 0b0001_1000) >> 3);
+            MultilevelSensorScale scale = sensorType.GetScale(scaleId);
+
+            int precision = (frame.CommandParameters.Span[1] & 0b1110_0000) >> 5;
+            int valueSize = frame.CommandParameters.Span[1] & 0b0000_0111;
+
+            if (frame.CommandParameters.Length < 2 + valueSize)
             {
-                int precision = (Frame.CommandParameters.Span[1] & 0b1110_0000) >> 5;
-
-                int valueSize = Frame.CommandParameters.Span[1] & 0b0000_0111;
-                var valueBytes = Frame.CommandParameters.Span.Slice(2, valueSize);
-
-                if (valueBytes.Length > sizeof(int))
-                {
-                    throw new InvalidOperationException($"The value's size was more than {sizeof(int)} bytes, and currently we can't handle that");
-                }
-
-                int rawValue = valueBytes.ToInt32BE();
-
-                return rawValue / Math.Pow(10, precision);
+                logger.LogWarning(
+                    "Multilevel Sensor Report frame value size ({ValueSize}) exceeds remaining bytes ({Remaining})",
+                    valueSize,
+                    frame.CommandParameters.Length - 2);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Report frame is too short for declared value size");
             }
+
+            ReadOnlySpan<byte> valueBytes = frame.CommandParameters.Span.Slice(2, valueSize);
+
+            if (valueBytes.Length > sizeof(int))
+            {
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, $"The value's size was more than {sizeof(int)} bytes, and currently we can't handle that");
+            }
+
+            int rawValue = valueBytes.ToInt32BE();
+            double value = rawValue / Math.Pow(10, precision);
+
+            return new MultilevelSensorState(sensorType, scale, value);
         }
     }
 
@@ -391,31 +407,31 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The supported sensor types.
-        /// </summary>
-        public IReadOnlySet<MultilevelSensorType> SupportedSensorTypes
+        public static IReadOnlySet<MultilevelSensorType> Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 1)
             {
-                var supportedSensorTypes = new HashSet<MultilevelSensorType>();
+                logger.LogWarning("Multilevel Sensor Supported Sensor Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Supported Sensor Report frame is too short");
+            }
 
-                ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span;
-                for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            var supportedSensorTypes = new HashSet<MultilevelSensorType>();
+
+            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span;
+            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
+            {
+                for (int bitNum = 0; bitNum < 8; bitNum++)
                 {
-                    for (int bitNum = 0; bitNum < 8; bitNum++)
+                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
                     {
-                        if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                        {
-                            // As per the spec, bit 0 corresponds to Sensor Type 0x01, so we need to add 1.
-                            MultilevelSensorType sensorType = (MultilevelSensorType)((byteNum << 3) + bitNum + 1);
-                            supportedSensorTypes.Add(sensorType);
-                        }
+                        // As per the spec, bit 0 corresponds to Sensor Type 0x01, so we need to add 1.
+                        MultilevelSensorType sensorType = (MultilevelSensorType)((byteNum << 3) + bitNum + 1);
+                        supportedSensorTypes.Add(sensorType);
                     }
                 }
-
-                return supportedSensorTypes;
             }
+
+            return supportedSensorTypes;
         }
     }
 
@@ -453,34 +469,29 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The actual Sensor Type for which the supported scales are being advertised
-        /// </summary>
-        public MultilevelSensorType SensorType => (MultilevelSensorType)Frame.CommandParameters.Span[0];
-
-        /// <summary>
-        /// The supported scales for the actual sensor type.
-        /// </summary>
-        public IReadOnlySet<MultilevelSensorScale> SupportedScales
+        public static (MultilevelSensorType SensorType, IReadOnlySet<MultilevelSensorScale> SupportedScales) Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 2)
             {
-                var supportedScales = new HashSet<MultilevelSensorScale>();
-
-                var sensorType = SensorType;
-                byte bitMask = (byte)(Frame.CommandParameters.Span[1] & 0b0000_1111);
-                for (int bitNum = 0; bitNum < 4; bitNum++)
-                {
-                    if ((bitMask & (1 << bitNum)) != 0)
-                    {
-                        byte scaleId = (byte)bitNum;
-                        MultilevelSensorScale scale = sensorType.GetScale(scaleId);
-                        supportedScales.Add(scale);
-                    }
-                }
-
-                return supportedScales;
+                logger.LogWarning("Multilevel Sensor Supported Scale Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Supported Scale Report frame is too short");
             }
+
+            MultilevelSensorType sensorType = (MultilevelSensorType)frame.CommandParameters.Span[0];
+
+            var supportedScales = new HashSet<MultilevelSensorScale>();
+            byte bitMask = (byte)(frame.CommandParameters.Span[1] & 0b0000_1111);
+            for (int bitNum = 0; bitNum < 4; bitNum++)
+            {
+                if ((bitMask & (1 << bitNum)) != 0)
+                {
+                    byte scaleId = (byte)bitNum;
+                    MultilevelSensorScale scale = sensorType.GetScale(scaleId);
+                    supportedScales.Add(scale);
+                }
+            }
+
+            return (sensorType, supportedScales);
         }
     }
 }

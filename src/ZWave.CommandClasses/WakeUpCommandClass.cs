@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 public enum WakeUpCommand : byte
@@ -38,85 +40,58 @@ public enum WakeUpCommand : byte
     IntervalCapabilitiesReport = 0x0a,
 }
 
-public readonly struct WakeUpInterval
-{
-    public WakeUpInterval(
-        uint wakeupIntervalInSeconds,
-        uint wakeupDestinationNodeId)
-    {
-        WakeupIntervalInSeconds = wakeupIntervalInSeconds;
-        WakeupDestinationNodeId = wakeupDestinationNodeId;
-    }
-
+public readonly record struct WakeUpInterval(
     /// <summary>
     /// The time in seconds between Wake Up periods at the sending node
     /// </summary>
-    public uint WakeupIntervalInSeconds { get; }
+    uint WakeupIntervalInSeconds,
 
     /// <summary>
     /// The Wake Up destination NodeID configured at the sending node
     /// </summary>
-    public uint WakeupDestinationNodeId { get; }
-}
+    uint WakeupDestinationNodeId);
 
 /// <summary>
 /// Represents the wake up interval capabilities of a device.
 /// </summary>
-public readonly struct WakeUpIntervalCapabilities
-{
-    public WakeUpIntervalCapabilities(
-        uint minimumWakeupIntervalInSeconds,
-        uint maximumWakeupIntervalInSeconds,
-        uint defaultWakeupIntervalInSeconds,
-        uint wakeupIntervalStepInSeconds,
-        bool? supportsWakeUpOnDemand)
-    {
-        MinimumWakeupIntervalInSeconds = minimumWakeupIntervalInSeconds;
-        MaximumWakeupIntervalInSeconds = maximumWakeupIntervalInSeconds;
-        DefaultWakeupIntervalInSeconds = defaultWakeupIntervalInSeconds;
-        WakeupIntervalStepInSeconds = wakeupIntervalStepInSeconds;
-        SupportsWakeUpOnDemand = supportsWakeUpOnDemand;
-    }
-
+public readonly record struct WakeUpIntervalCapabilities(
     /// <summary>
     /// The minimum Wake Up Interval supported by the sending node
     /// </summary>
-    public uint MinimumWakeupIntervalInSeconds { get; }
+    uint MinimumWakeupIntervalInSeconds,
 
     /// <summary>
     /// The maximum Wake Up Interval supported by the sending node
     /// </summary>
-    public uint MaximumWakeupIntervalInSeconds { get; }
+    uint MaximumWakeupIntervalInSeconds,
 
     /// <summary>
     /// The default Wake Up Interval for the sending node
     /// </summary>
-    public uint DefaultWakeupIntervalInSeconds { get; }
+    uint DefaultWakeupIntervalInSeconds,
 
     /// <summary>
     /// The resolution of valid Wake Up Intervals values for the sending node.
     /// </summary>
-    public uint WakeupIntervalStepInSeconds { get; }
+    uint WakeupIntervalStepInSeconds,
 
     /// <summary>
     /// Whther the supporting node supports the Wake Up On Demand functionality
     /// </summary>
-    public bool? SupportsWakeUpOnDemand { get; }
-
-}
+    bool? SupportsWakeUpOnDemand);
 
 [CommandClass(CommandClassId.WakeUp)]
 public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
 {
-    public WakeUpCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    public WakeUpCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
     /// <summary>
     /// Gets the current wake up interval configuration.
     /// </summary>
-    public WakeUpInterval? Interval { get; private set; }
+    public WakeUpInterval? LastInterval { get; private set; }
 
     /// <summary>
     /// Gets the wake up interval capabilities.
@@ -139,10 +114,12 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
     /// </summary>
     public async Task<WakeUpInterval> GetIntervalAsync(CancellationToken cancellationToken)
     {
-        var command = WakeUpIntervalGetCommand.Create();
+        WakeUpIntervalGetCommand command = WakeUpIntervalGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<WakeUpIntervalReportCommand>(cancellationToken).ConfigureAwait(false);
-        return Interval!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<WakeUpIntervalReportCommand>(cancellationToken).ConfigureAwait(false);
+        WakeUpInterval interval = WakeUpIntervalReportCommand.Parse(reportFrame, Logger);
+        LastInterval = interval;
+        return interval;
     }
 
     /// <summary>
@@ -159,10 +136,12 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
     /// </summary>
     public async Task<WakeUpIntervalCapabilities> GetIntervalCapabilitiesAsync(CancellationToken cancellationToken)
     {
-        var command = WakeUpIntervalCapabilitiesGetCommand.Create();
+        WakeUpIntervalCapabilitiesGetCommand command = WakeUpIntervalCapabilitiesGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<WakeUpIntervalCapabilitiesReportCommand>(cancellationToken).ConfigureAwait(false);
-        return IntervalCapabilities!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<WakeUpIntervalCapabilitiesReportCommand>(cancellationToken).ConfigureAwait(false);
+        WakeUpIntervalCapabilities capabilities = WakeUpIntervalCapabilitiesReportCommand.Parse(reportFrame, Logger);
+        IntervalCapabilities = capabilities;
+        return capabilities;
     }
 
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
@@ -175,7 +154,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         }
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((WakeUpCommand)frame.CommandId)
         {
@@ -184,30 +163,21 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
             case WakeUpCommand.NoMoreInformation:
             case WakeUpCommand.IntervalCapabilitiesGet:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case WakeUpCommand.IntervalReport:
             {
-                var command = new WakeUpIntervalReportCommand(frame);
-                Interval = new WakeUpInterval(command.WakeupIntervalInSeconds, command.WakeupDestinationNodeId);
+                LastInterval = WakeUpIntervalReportCommand.Parse(frame, Logger);
                 break;
             }
             case WakeUpCommand.Notification:
             {
                 // TODO: Manage node asleep/awake
-                _ = new WakeUpNotificationCommand(frame);
                 break;
             }
             case WakeUpCommand.IntervalCapabilitiesReport:
             {
-                var command = new WakeUpIntervalCapabilitiesReportCommand(frame, EffectiveVersion);
-                IntervalCapabilities = new WakeUpIntervalCapabilities(
-                    command.MinimumWakeupIntervalInSeconds,
-                    command.MaximumWakeupIntervalInSeconds,
-                    command.DefaultWakeupIntervalInSeconds,
-                    command.WakeupIntervalStepInSeconds,
-                    command.SupportsWakeUpOnDemand);
+                IntervalCapabilities = WakeUpIntervalCapabilitiesReportCommand.Parse(frame, Logger);
                 break;
             }
         }
@@ -282,15 +252,18 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The time in seconds between Wake Up periods at the sending node
-        /// </summary>
-        public uint WakeupIntervalInSeconds => Frame.CommandParameters.Span[0..3].ToUInt32BE();
+        public static WakeUpInterval Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 4)
+            {
+                logger.LogWarning("Wake Up Interval Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Wake Up Interval Report frame is too short");
+            }
 
-        /// <summary>
-        /// The Wake Up destination NodeID configured at the sending node
-        /// </summary>
-        public uint WakeupDestinationNodeId => Frame.CommandParameters.Span[3];
+            uint wakeupIntervalInSeconds = frame.CommandParameters.Span[0..3].ToUInt32BE();
+            uint wakeupDestinationNodeId = frame.CommandParameters.Span[3];
+            return new WakeUpInterval(wakeupIntervalInSeconds, wakeupDestinationNodeId);
+        }
     }
 
     private readonly struct WakeUpNotificationCommand : ICommand
@@ -340,21 +313,18 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
 
         public CommandClassFrame Frame { get; }
 
-        public static WakeUpIntervalGetCommand Create()
+        public static WakeUpIntervalCapabilitiesGetCommand Create()
         {
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId);
-            return new WakeUpIntervalGetCommand(frame);
+            return new WakeUpIntervalCapabilitiesGetCommand(frame);
         }
     }
 
-    private readonly struct WakeUpIntervalCapabilitiesReportCommand : ICommand
+    private readonly struct WakeUpIntervalCapabilitiesReportCommand: ICommand
     {
-        private readonly byte _version;
-
-        public WakeUpIntervalCapabilitiesReportCommand(CommandClassFrame frame, byte version)
+        public WakeUpIntervalCapabilitiesReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.WakeUp;
@@ -363,31 +333,27 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The minimum Wake Up Interval supported by the sending node
-        /// </summary>
-        public uint MinimumWakeupIntervalInSeconds => Frame.CommandParameters.Span[0..3].ToUInt32BE();
+        public static WakeUpIntervalCapabilities Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 12)
+            {
+                logger.LogWarning("Wake Up Interval Capabilities Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Wake Up Interval Capabilities Report frame is too short");
+            }
 
-        /// <summary>
-        /// The maximum Wake Up Interval supported by the sending node
-        /// </summary>
-        public uint MaximumWakeupIntervalInSeconds => Frame.CommandParameters.Span[3..6].ToUInt32BE();
-
-        /// <summary>
-        /// The default Wake Up Interval for the sending node
-        /// </summary>
-        public uint DefaultWakeupIntervalInSeconds => Frame.CommandParameters.Span[6..9].ToUInt32BE();
-
-        /// <summary>
-        /// The resolution of valid Wake Up Intervals values for the sending node.
-        /// </summary>
-        public uint WakeupIntervalStepInSeconds => Frame.CommandParameters.Span[9..12].ToUInt32BE();
-
-        /// <summary>
-        /// Whther the supporting node supports the Wake Up On Demand functionality
-        /// </summary>
-        public bool? SupportsWakeUpOnDemand => _version >= 3 && Frame.CommandParameters.Length > 12
-            ? Frame.CommandParameters.Span[12] == 1
-            : null;
+            uint minimumWakeupIntervalInSeconds = frame.CommandParameters.Span[0..3].ToUInt32BE();
+            uint maximumWakeupIntervalInSeconds = frame.CommandParameters.Span[3..6].ToUInt32BE();
+            uint defaultWakeupIntervalInSeconds = frame.CommandParameters.Span[6..9].ToUInt32BE();
+            uint wakeupIntervalStepInSeconds = frame.CommandParameters.Span[9..12].ToUInt32BE();
+            bool? supportsWakeUpOnDemand = frame.CommandParameters.Length > 12
+                ? frame.CommandParameters.Span[12] == 1
+                : null;
+            return new WakeUpIntervalCapabilities(
+                minimumWakeupIntervalInSeconds,
+                maximumWakeupIntervalInSeconds,
+                defaultWakeupIntervalInSeconds,
+                wakeupIntervalStepInSeconds,
+                supportsWakeUpOnDemand);
+        }
     }
 }

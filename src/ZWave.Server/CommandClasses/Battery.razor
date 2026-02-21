@@ -7,9 +7,9 @@
 @if (CommandClass != null)
 {
     <table class="table table-striped">
-        @if (CommandClass.State.HasValue)
+        @if (CommandClass.LastReport.HasValue)
         {
-            var state = CommandClass.State.Value;
+            var state = CommandClass.LastReport.Value;
 
             <tbody>
                 <tr>
@@ -86,9 +86,9 @@
             </tbody>
         }
 
-        @if (CommandClass.Health.HasValue)
+        @if (CommandClass.LastHealthReport.HasValue)
         {
-            var health = CommandClass.Health.Value;
+            var health = CommandClass.LastHealthReport.Value;
 
             <tbody>
                 <tr>

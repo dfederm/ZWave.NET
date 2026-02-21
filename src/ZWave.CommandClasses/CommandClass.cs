@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -8,8 +9,8 @@ namespace ZWave.CommandClasses;
 public abstract class CommandClass<TCommand> : CommandClass
     where TCommand : struct, Enum
 {
-    internal CommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    internal CommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
         if (Unsafe.SizeOf<TCommand>() != Unsafe.SizeOf<byte>())
         {
@@ -51,11 +52,13 @@ public abstract class CommandClass
     internal CommandClass(
         CommandClassInfo info,
         IDriver driver,
-        INode node)
+        INode node,
+        ILogger logger)
     {
         Info = info;
         Driver = driver;
         Node = node;
+        Logger = logger;
     }
 
     /// <summary>
@@ -72,6 +75,11 @@ public abstract class CommandClass
     /// Gets the node this command class belongs to.
     /// </summary>
     public INode Node { get; }
+
+    /// <summary>
+    /// Gets the logger for this command class.
+    /// </summary>
+    protected ILogger Logger { get; }
 
     /// <summary>
     /// Gets the version of this command class, or null if not yet determined.
@@ -115,8 +123,8 @@ public abstract class CommandClass
             throw new ArgumentException($"Frame is for the wrong command class. Expected {Info.CommandClass} but found {frame.CommandClassId}.", nameof(frame));
         }
 
-        ProcessCommandCore(frame);
-
+        // Check for awaiting solicited reports first.
+        bool solicited = false;
         lock (_awaitedReports)
         {
             int i = 0;
@@ -128,6 +136,7 @@ public abstract class CommandClass
                 {
                     awaitedReport.TaskCompletionSource.TrySetResult(frame);
                     _awaitedReports.RemoveAt(i);
+                    solicited = true;
                 }
                 else
                 {
@@ -135,9 +144,23 @@ public abstract class CommandClass
                 }
             }
         }
+
+        // For unsolicited reports, update state via ProcessUnsolicitedCommand.
+        if (!solicited)
+        {
+            try
+            {
+                ProcessUnsolicitedCommand(frame);
+            }
+            catch (Exception)
+            {
+                // Parse methods log before throwing. Swallow here to avoid
+                // crashing the frame processing loop for malformed unsolicited reports.
+            }
+        }
     }
 
-    protected abstract void ProcessCommandCore(CommandClassFrame frame);
+    protected abstract void ProcessUnsolicitedCommand(CommandClassFrame frame);
 
     internal async Task SendCommandAsync<TRequest>(
         TRequest command,

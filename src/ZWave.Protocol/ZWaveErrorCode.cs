@@ -44,4 +44,9 @@ public enum ZWaveErrorCode
     /// The command was called with an invalid argument.
     /// </summary>
     CommandInvalidArgument,
+
+    /// <summary>
+    /// A received command frame had an invalid or malformed payload.
+    /// </summary>
+    InvalidPayload,
 }

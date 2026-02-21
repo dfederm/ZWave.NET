@@ -9,9 +9,9 @@
 @if (CommandClass != null)
 {
     <table class="table table-striped">
-        @if (CommandClass.State.HasValue)
-        {
-            PowerlevelState state = CommandClass.State.Value;
+        @if (CommandClass.LastReport.HasValue)
+    {
+            PowerlevelReport report = CommandClass.LastReport.Value;
 
             <tbody>
                 <tr>
@@ -19,14 +19,14 @@
                 </tr>
                 <tr>
                     <th scope="row">Power Level</th>
-                    <td>@state.Powerlevel</td>
+                    <td>@report.Powerlevel</td>
                 </tr>
 
-                @if (state.TimeoutInSeconds.HasValue)
+                @if (report.TimeoutInSeconds.HasValue)
                 {
                     <tr>
                         <th scope="row">Timeout in Seconds</th>
-                        <td>@state.TimeoutInSeconds.Value</td>
+                        <td>@report.TimeoutInSeconds.Value</td>
                     </tr>
                 }
             </tbody>

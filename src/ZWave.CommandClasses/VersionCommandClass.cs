@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 /// <summary>
@@ -77,40 +79,26 @@ public enum VersionCommand : byte
 /// <summary>
 /// Represents the hardware version information of a Z-Wave device.
 /// </summary>
-public readonly struct VersionHardwareInfo
-{
-    public VersionHardwareInfo(
-        ZWaveLibraryType libraryType,
-        Version protocolVersion,
-        IReadOnlyList<Version> firmwareVersions,
-        byte? hardwareVersion)
-    {
-        LibraryType = libraryType;
-        ProtocolVersion = protocolVersion;
-        FirmwareVersions = firmwareVersions;
-        HardwareVersion = hardwareVersion;
-    }
-
+public readonly record struct VersionHardwareInfo(
     /// <summary>
     /// The Z-Wave Protocol Library Type
     /// </summary>
-    public ZWaveLibraryType LibraryType { get; }
+    ZWaveLibraryType LibraryType,
 
     /// <summary>
     /// Advertise information specific to Software Development Kits (SDK) provided by Silicon Labs
     /// </summary>
-    public Version ProtocolVersion { get; }
+    Version ProtocolVersion,
 
     /// <summary>
     /// The firmware versions of the device.
     /// </summary>
-    public IReadOnlyList<Version> FirmwareVersions { get; }
+    IReadOnlyList<Version> FirmwareVersions,
 
     /// <summary>
     /// A value which is unique to this particular version of the product
     /// </summary>
-    public byte? HardwareVersion { get; }
-}
+    byte? HardwareVersion);
 
 /// <summary>
 /// Identifies version capabilities supported by the device.
@@ -144,82 +132,57 @@ public enum VersionCapabilities : byte
 /// <summary>
 /// Represents the software version information of a Z-Wave device.
 /// </summary>
-public readonly struct VersionSoftwareInfo
-{
-    public VersionSoftwareInfo(
-        Version? sdkVersion,
-        Version? applicationFrameworkVersion,
-        ushort? applicationFrameworkBuildNumber,
-        Version? hostInterfaceVersion,
-        ushort? hostInterfaceBuildNumber,
-        Version? zwaveProtocolVersion,
-        ushort? zwaveProtocolBuildNumber,
-        Version? applicationVersion,
-        ushort? applicationBuildNumber)
-    {
-        SdkVersion = sdkVersion;
-        ApplicationFrameworkApiVersion = applicationFrameworkVersion;
-        ApplicationFramworkBuildNumber = applicationFrameworkBuildNumber;
-        HostInterfaceVersion = hostInterfaceVersion;
-        HostInterfaceBuildNumber = hostInterfaceBuildNumber;
-        ZWaveProtocolVersion = zwaveProtocolVersion;
-        ZWaveProtocolBuildNumber = zwaveProtocolBuildNumber;
-        ApplicationVersion = applicationVersion;
-        ApplicationBuildNumber = applicationBuildNumber;
-    }
-
+public readonly record struct VersionSoftwareInfo(
     /// <summary>
     /// The SDK version used for building the Z-Wave chip software components for the node.
     /// </summary>
-    public Version? SdkVersion { get; }
+    Version? SdkVersion,
 
     /// <summary>
     /// The Z-Wave Application Framework API version used by the node
     /// </summary>
-    public Version? ApplicationFrameworkApiVersion { get; }
+    Version? ApplicationFrameworkApiVersion,
 
     /// <summary>
     /// The Z-Wave Application Framework build number running on the node.
     /// </summary>
-    public ushort? ApplicationFramworkBuildNumber { get; }
+    ushort? ApplicationFramworkBuildNumber,
 
     /// <summary>
     /// The version of the Serial API exposed to a host CPU or a second Chip
     /// </summary>
-    public Version? HostInterfaceVersion { get; }
+    Version? HostInterfaceVersion,
 
     /// <summary>
     /// The build number of the Serial API software exposed to a host CPU or second Chip.
     /// </summary>
-    public ushort? HostInterfaceBuildNumber { get; }
+    ushort? HostInterfaceBuildNumber,
 
     /// <summary>
     /// The Z-Wave protocol version used by the node.
     /// </summary>
-    public Version? ZWaveProtocolVersion { get; }
+    Version? ZWaveProtocolVersion,
 
     /// <summary>
     /// The actual build number of the Z-Wave protocol software used by the node.
     /// </summary>
-    public ushort? ZWaveProtocolBuildNumber { get; }
+    ushort? ZWaveProtocolBuildNumber,
 
     /// <summary>
     /// The version of application software used by the node on its Z-Wave chip.
     /// </summary>
-    public Version? ApplicationVersion { get; }
+    Version? ApplicationVersion,
 
     /// <summary>
-    /// The actual build of the application software used by the node on its ZWave chip.
+    /// The actual build of the application software used by the node on its ZWave chip.
     /// </summary>
-    public ushort? ApplicationBuildNumber { get; }
-
-}
+    ushort? ApplicationBuildNumber);
 
 [CommandClass(CommandClassId.Version)]
 public sealed class VersionCommandClass : CommandClass<VersionCommand>
 {
-    public VersionCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    public VersionCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
@@ -260,8 +223,10 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     {
         var command = VersionGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<VersionReportCommand>(cancellationToken).ConfigureAwait(false);
-        return HardwareInfo!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<VersionReportCommand>(cancellationToken).ConfigureAwait(false);
+        VersionHardwareInfo hardwareInfo = VersionReportCommand.Parse(reportFrame, Logger);
+        HardwareInfo = hardwareInfo;
+        return hardwareInfo;
     }
 
     /// <summary>
@@ -274,12 +239,13 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
         CommandClassFrame reportFrame = await AwaitNextReportAsync<VersionCommandClassReportCommand>(
             predicate: frame =>
             {
-                var report = new VersionCommandClassReportCommand(frame);
-                return report.RequestedCommandClass == commandClassId;
+                return frame.CommandParameters.Length > 0
+                    && (CommandClassId)frame.CommandParameters.Span[0] == commandClassId;
             },
             cancellationToken).ConfigureAwait(false);
-        var reportCommand = new VersionCommandClassReportCommand(reportFrame);
-        return reportCommand.CommandClassVersion;
+        (CommandClassId _, byte commandClassVersion) = VersionCommandClassReportCommand.Parse(reportFrame, Logger);
+        Node.GetCommandClass(commandClassId).SetVersion(commandClassVersion);
+        return commandClassVersion;
     }
 
     /// <summary>
@@ -289,8 +255,10 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     {
         var command = VersionCapabilitiesGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<VersionCapabilitiesReportCommand>(cancellationToken).ConfigureAwait(false);
-        return Capabilities!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<VersionCapabilitiesReportCommand>(cancellationToken).ConfigureAwait(false);
+        VersionCapabilities capabilities = VersionCapabilitiesReportCommand.Parse(reportFrame, Logger);
+        Capabilities = capabilities;
+        return capabilities;
     }
 
     /// <summary>
@@ -300,8 +268,10 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     {
         var command = VersionZWaveSoftwareGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<VersionZWaveSoftwareReportCommand>(cancellationToken).ConfigureAwait(false);
-        return SoftwareInfo!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<VersionZWaveSoftwareReportCommand>(cancellationToken).ConfigureAwait(false);
+        VersionSoftwareInfo softwareInfo = VersionZWaveSoftwareReportCommand.Parse(reportFrame, Logger);
+        SoftwareInfo = softwareInfo;
+        return softwareInfo;
     }
 
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
@@ -326,7 +296,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
         }
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((VersionCommand)frame.CommandId)
         {
@@ -335,45 +305,28 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
             case VersionCommand.CapabilitiesGet:
             case VersionCommand.ZWaveSoftwareGet:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case VersionCommand.Report:
             {
-                var command = new VersionReportCommand(frame, EffectiveVersion);
-                HardwareInfo = new VersionHardwareInfo(
-                    command.ZWaveLibraryType,
-                    command.ZWaveProtocolVersion,
-                    command.FirmwareVersions,
-                    command.HardwareVersion);
+                HardwareInfo = VersionReportCommand.Parse(frame, Logger);
                 break;
             }
             case VersionCommand.CommandClassReport:
             {
-                var command = new VersionCommandClassReportCommand(frame);
-                var commandClass = Node.GetCommandClass(command.RequestedCommandClass);
-                commandClass.SetVersion(command.CommandClassVersion);
+                (CommandClassId requestedCommandClass, byte commandClassVersion) = VersionCommandClassReportCommand.Parse(frame, Logger);
+                CommandClass commandClass = Node.GetCommandClass(requestedCommandClass);
+                commandClass.SetVersion(commandClassVersion);
                 break;
             }
             case VersionCommand.CapabilitiesReport:
             {
-                var command = new VersionCapabilitiesReportCommand(frame);
-                Capabilities = command.Capabilities;
+                Capabilities = VersionCapabilitiesReportCommand.Parse(frame, Logger);
                 break;
             }
             case VersionCommand.ZWaveSoftwareReport:
             {
-                var command = new VersionZWaveSoftwareReportCommand(frame);
-                SoftwareInfo = new VersionSoftwareInfo(
-                    command.SdkVersion,
-                    command.ApplicationFrameworkApiVersion,
-                    command.ApplicationFramworkBuildNumber,
-                    command.HostInterfaceVersion,
-                    command.HostInterfaceBuildNumber,
-                    command.ZWaveProtocolVersion,
-                    command.ZWaveProtocolBuildNumber,
-                    command.ApplicationVersion,
-                    command.ApplicationBuildNumber);
+                SoftwareInfo = VersionZWaveSoftwareReportCommand.Parse(frame, Logger);
                 break;
             }
         }
@@ -401,12 +354,9 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
 
     private readonly struct VersionReportCommand : ICommand
     {
-        private readonly byte _version;
-
-        public VersionReportCommand(CommandClassFrame frame, byte version)
+        public VersionReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.Version;
@@ -415,52 +365,38 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The Z-Wave Protocol Library Type
-        /// </summary>
-        public ZWaveLibraryType ZWaveLibraryType => (ZWaveLibraryType)Frame.CommandParameters.Span[0];
-
-        /// <summary>
-        /// Advertise information specific to Software Development Kits (SDK) provided by Silicon Labs
-        /// </summary>
-        public Version ZWaveProtocolVersion => new Version(Frame.CommandParameters.Span[1], Frame.CommandParameters.Span[2]);
-
-        /// <summary>
-        /// The firmware versions of the device.
-        /// </summary>
-        public IReadOnlyList<Version> FirmwareVersions
+        public static VersionHardwareInfo Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 5)
             {
-                int numFirmwareVersions = 1;
-                if (_version >= 2 && Frame.CommandParameters.Length > 6)
-                {
-                    numFirmwareVersions += Frame.CommandParameters.Span[6];
-                }
-
-                var firmwareVersions = new Version[numFirmwareVersions];
-                firmwareVersions[0] = new Version(Frame.CommandParameters.Span[3], Frame.CommandParameters.Span[4]);
-
-                for (int i = 1; i < numFirmwareVersions; i++)
-                {
-                    // THe starting offset should be 7, but account for i starting at 1
-                    var versionOffset = 5 + (2 * i);
-                    firmwareVersions[i] = new Version(
-                        Frame.CommandParameters.Span[versionOffset],
-                        Frame.CommandParameters.Span[versionOffset + 1]);
-                }
-
-                return firmwareVersions;
+                logger.LogWarning("Version Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Report frame is too short");
             }
-        }
 
-        /// <summary>
-        /// A value which is unique to this particular version of the product
-        /// </summary>
-        public byte? HardwareVersion
-            => _version >= 2 && Frame.CommandParameters.Length > 5
-                ? Frame.CommandParameters.Span[5]
-                : null;
+            ReadOnlySpan<byte> span = frame.CommandParameters.Span;
+            ZWaveLibraryType libraryType = (ZWaveLibraryType)span[0];
+            Version protocolVersion = new Version(span[1], span[2]);
+
+            byte? hardwareVersion = span.Length > 5 ? span[5] : null;
+
+            int numFirmwareVersions = 1;
+            if (span.Length > 6)
+            {
+                numFirmwareVersions += span[6];
+            }
+
+            Version[] firmwareVersions = new Version[numFirmwareVersions];
+            firmwareVersions[0] = new Version(span[3], span[4]);
+
+            for (int i = 1; i < numFirmwareVersions; i++)
+            {
+                // The starting offset should be 7, but account for i starting at 1
+                int versionOffset = 5 + (2 * i);
+                firmwareVersions[i] = new Version(span[versionOffset], span[versionOffset + 1]);
+            }
+
+            return new VersionHardwareInfo(libraryType, protocolVersion, firmwareVersions, hardwareVersion);
+        }
     }
 
     private readonly struct VersionCommandClassGetCommand : ICommand
@@ -497,15 +433,16 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// What Command Class the returned version belongs to.
-        /// </summary>
-        public CommandClassId RequestedCommandClass => (CommandClassId)Frame.CommandParameters.Span[0];
+        public static (CommandClassId RequestedCommandClass, byte CommandClassVersion) Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 2)
+            {
+                logger.LogWarning("Version Command Class Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Command Class Report frame is too short");
+            }
 
-        /// <summary>
-        /// The Command Class Version.
-        /// </summary>
-        public byte CommandClassVersion => Frame.CommandParameters.Span[1];
+            return ((CommandClassId)frame.CommandParameters.Span[0], frame.CommandParameters.Span[1]);
+        }
     }
 
     private readonly struct VersionCapabilitiesGetCommand : ICommand
@@ -541,10 +478,16 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// Advertise support for commands
-        /// </summary>
-        public VersionCapabilities Capabilities => (VersionCapabilities)Frame.CommandParameters.Span[0];
+        public static VersionCapabilities Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 1)
+            {
+                logger.LogWarning("Version Capabilities Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Capabilities Report frame is too short");
+            }
+
+            return (VersionCapabilities)frame.CommandParameters.Span[0];
+        }
     }
 
     private readonly struct VersionZWaveSoftwareGetCommand : ICommand
@@ -580,61 +523,37 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The SDK version used for building the Z-Wave chip software components for the node.
-        /// </summary>
-        public Version? SdkVersion => ParseVersion(Frame.CommandParameters.Span[0..3]);
+        public static VersionSoftwareInfo Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 23)
+            {
+                logger.LogWarning("Version Z-Wave Software Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Z-Wave Software Report frame is too short");
+            }
 
-        /// <summary>
-        /// The Z-Wave Application Framework API version used by the node
-        /// </summary>
-        public Version? ApplicationFrameworkApiVersion => ParseVersion(Frame.CommandParameters.Span[3..6]);
-
-        /// <summary>
-        /// The Z-Wave Application Framework build number running on the node.
-        /// </summary>
-        public ushort? ApplicationFramworkBuildNumber => ParseBuildNumber(Frame.CommandParameters.Span[6..8]);
-
-        /// <summary>
-        /// The version of the Serial API exposed to a host CPU or a second Chip
-        /// </summary>
-        public Version? HostInterfaceVersion => ParseVersion(Frame.CommandParameters.Span[8..11]);
-
-        /// <summary>
-        /// The build number of the Serial API software exposed to a host CPU or second Chip.
-        /// </summary>
-        public ushort? HostInterfaceBuildNumber => ParseBuildNumber(Frame.CommandParameters.Span[11..13]);
-
-        /// <summary>
-        /// The Z-Wave protocol version used by the node.
-        /// </summary>
-        public Version? ZWaveProtocolVersion => ParseVersion(Frame.CommandParameters.Span[13..16]);
-
-        /// <summary>
-        /// The actual build number of the Z-Wave protocol software used by the node.
-        /// </summary>
-        public ushort? ZWaveProtocolBuildNumber => ParseBuildNumber(Frame.CommandParameters.Span[16..18]);
-
-        /// <summary>
-        /// The version of application software used by the node on its Z-Wave chip.
-        /// </summary>
-        public Version? ApplicationVersion => ParseVersion(Frame.CommandParameters.Span[18..21]);
-
-        /// <summary>
-        /// The actual build of the application software used by the node on its ZWave chip.
-        /// </summary>
-        public ushort? ApplicationBuildNumber => ParseBuildNumber(Frame.CommandParameters.Span[21..23]);
+            ReadOnlySpan<byte> span = frame.CommandParameters.Span;
+            return new VersionSoftwareInfo(
+                ParseVersion(span[0..3]),
+                ParseVersion(span[3..6]),
+                ParseBuildNumber(span[6..8]),
+                ParseVersion(span[8..11]),
+                ParseBuildNumber(span[11..13]),
+                ParseVersion(span[13..16]),
+                ParseBuildNumber(span[16..18]),
+                ParseVersion(span[18..21]),
+                ParseBuildNumber(span[21..23]));
+        }
 
         private static Version? ParseVersion(ReadOnlySpan<byte> bytes)
         {
             if (bytes.Length != 3)
             {
-                throw new ArgumentException("Expected exacly 3 bytes", nameof(bytes));
+                throw new ArgumentException("Expected exactly 3 bytes", nameof(bytes));
             }
 
-            var major = bytes[0];
-            var minor = bytes[1];
-            var patch = bytes[2];
+            byte major = bytes[0];
+            byte minor = bytes[1];
+            byte patch = bytes[2];
 
             // The value 0 MUST indicate that this field is unused.
             return major == 0 && minor == 0 && patch == 0
@@ -646,7 +565,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
         {
             if (bytes.Length != 2)
             {
-                throw new ArgumentException("Expected exacly 2 bytes", nameof(bytes));
+                throw new ArgumentException("Expected exactly 2 bytes", nameof(bytes));
             }
 
             ushort buildNum = bytes.ToUInt16BE();

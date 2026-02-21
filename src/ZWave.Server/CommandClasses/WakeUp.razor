@@ -9,9 +9,9 @@
 @if (CommandClass != null)
 {
     <table class="table table-striped">
-        @if (CommandClass.Interval != null)
+        @if (CommandClass.LastInterval != null)
         {
-            WakeUpInterval wakeUpInterval = CommandClass.Interval.Value;
+            WakeUpInterval wakeUpInterval = CommandClass.LastInterval.Value;
 
             <tbody>
                 <tr>

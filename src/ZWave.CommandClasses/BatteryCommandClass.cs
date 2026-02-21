@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 /// <summary>
@@ -94,118 +96,88 @@ public enum BatteryCommand : byte
     HealthReport = 0x05,
 }
 
-public readonly struct BatteryState
-{
-    public BatteryState(
-        BatteryLevel batteryLevel,
-        BatteryChargingStatus? chargingStatus,
-        bool? isRechargeable,
-        bool? isBackupBattery,
-        bool? isOverheating,
-        bool? hasLowFluid,
-        BatterRechargeOrReplaceStatus? replaceRechargeStatus,
-        bool? isLowTemperature,
-        bool? disconnected)
-    {
-        BatteryLevel = batteryLevel;
-        ChargingStatus = chargingStatus;
-        IsRechargeable = isRechargeable;
-        IsBackupBattery = isBackupBattery;
-        IsOverheating = isOverheating;
-        HasLowFluid = hasLowFluid;
-        ReplaceRechargeStatus = replaceRechargeStatus;
-        IsLowTemperature = isLowTemperature;
-        Disconnected = disconnected;
-    }
-
+/// <summary>
+/// Represents a Battery Report received from a device.
+/// </summary>
+public readonly record struct BatteryReport(
     /// <summary>
     /// The percentage indicating the battery level
     /// </summary>
-    public BatteryLevel BatteryLevel { get; }
+    BatteryLevel BatteryLevel,
 
     /// <summary>
     /// The charging status of a battery.
     /// </summary>
-    public BatteryChargingStatus? ChargingStatus { get; }
+    BatteryChargingStatus? ChargingStatus,
 
     /// <summary>
     /// Indicates if the battery is rechargeable or not
     /// </summary>
-    public bool? IsRechargeable { get; }
+    bool? IsRechargeable,
 
     /// <summary>
     /// Illustrate if the battery is utilized for back-up purposes of a mains powered connected device.
     /// </summary>
-    public bool? IsBackupBattery { get; }
+    bool? IsBackupBattery,
 
     /// <summary>
     /// Indicate if overheating is detected at the battery.
     /// </summary>
-    public bool? IsOverheating { get; }
+    bool? IsOverheating,
 
     /// <summary>
     /// Indicate if the battery fluid is low and should be refilled
     /// </summary>
-    public bool? HasLowFluid { get; }
+    bool? HasLowFluid,
 
     /// <summary>
     /// Indicate if the battery needs to be recharged or replaced.
     /// </summary>
-    public BatterRechargeOrReplaceStatus? ReplaceRechargeStatus { get; }
+    BatterRechargeOrReplaceStatus? ReplaceRechargeStatus,
 
     /// <summary>
     /// Advertise if the battery of a device has stopped charging due to low temperature
     /// </summary>
-    public bool? IsLowTemperature { get; }
+    bool? IsLowTemperature,
 
     /// <summary>
     /// Indicate if the battery is currently disconnected or removed from the node.
     /// </summary>
-    public bool? Disconnected { get; }
-}
+    bool? Disconnected);
 
-public readonly struct BatteryHealth
-{
-    public BatteryHealth(byte? maximumCapacity, BatteryTemperatureScale batteryTemperatureScale, double? batteryTemperature)
-    {
-        MaximumCapacity = maximumCapacity;
-        BatteryTemperatureScale = batteryTemperatureScale;
-        BatteryTemperature = batteryTemperature;
-    }
-
+public readonly record struct BatteryHealth(
     /// <summary>
     /// Report the percentage indicating the maximum capacity of the battery
     /// </summary>
-    public byte? MaximumCapacity { get; }
+    byte? MaximumCapacity,
 
     /// <summary>
     /// The scale used for the battery temperature value
     /// </summary>
-    public BatteryTemperatureScale BatteryTemperatureScale { get; }
+    BatteryTemperatureScale BatteryTemperatureScale,
 
     /// <summary>
     /// The temperature of the battery
     /// </summary>
-    public double? BatteryTemperature { get; }
-}
+    double? BatteryTemperature);
 
 [CommandClass(CommandClassId.Battery)]
 public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
 {
-    public BatteryCommandClass(CommandClassInfo info, IDriver driver, INode node)
-        : base(info, driver, node)
+    public BatteryCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        : base(info, driver, node, logger)
     {
     }
 
     /// <summary>
-    /// Gets the last reported battery state.
+    /// Gets the last report received from the device.
     /// </summary>
-    public BatteryState? State { get; private set; }
+    public BatteryReport? LastReport { get; private set; }
 
     /// <summary>
     /// Gets the last reported battery health.
     /// </summary>
-    public BatteryHealth? Health { get; private set; }
+    public BatteryHealth? LastHealthReport { get; private set; }
 
     /// <inheritdoc />
     public override bool? IsCommandSupported(BatteryCommand command)
@@ -216,20 +188,24 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
             _ => false,
         };
 
-    public async Task<BatteryState> GetAsync(CancellationToken cancellationToken)
+    public async Task<BatteryReport> GetAsync(CancellationToken cancellationToken)
     {
-        var command = BatteryGetCommand.Create();
+        BatteryGetCommand command = BatteryGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<BatteryReportCommand>(cancellationToken).ConfigureAwait(false);
-        return State!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<BatteryReportCommand>(cancellationToken).ConfigureAwait(false);
+        BatteryReport report = BatteryReportCommand.Parse(reportFrame, Logger);
+        LastReport = report;
+        return report;
     }
 
     public async Task<BatteryHealth> GetHealthAsync(CancellationToken cancellationToken)
     {
-        var command = BatteryHealthGetCommand.Create();
+        BatteryHealthGetCommand command = BatteryHealthGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        await AwaitNextReportAsync<BatteryHealthReportCommand>(cancellationToken).ConfigureAwait(false);
-        return Health!.Value;
+        CommandClassFrame reportFrame = await AwaitNextReportAsync<BatteryHealthReportCommand>(cancellationToken).ConfigureAwait(false);
+        BatteryHealth report = BatteryHealthReportCommand.Parse(reportFrame, Logger);
+        LastHealthReport = report;
+        return report;
     }
 
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
@@ -242,38 +218,23 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
         }
     }
 
-    protected override void ProcessCommandCore(CommandClassFrame frame)
+    protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((BatteryCommand)frame.CommandId)
         {
             case BatteryCommand.Get:
             case BatteryCommand.HealthGet:
             {
-                // We don't expect to recieve these commands
                 break;
             }
             case BatteryCommand.Report:
             {
-                var command = new BatteryReportCommand(frame, EffectiveVersion);
-                State = new BatteryState(
-                    command.BatteryLevel,
-                    command.ChargingStatus,
-                    command.IsRechargeable,
-                    command.IsBackupBattery,
-                    command.IsOverheating,
-                    command.HasLowFluid,
-                    command.ReplaceRechargeStatus,
-                    command.IsLowTemperature,
-                    command.Disconnected);
+                LastReport = BatteryReportCommand.Parse(frame, Logger);
                 break;
             }
             case BatteryCommand.HealthReport:
             {
-                var command = new BatteryHealthReportCommand(frame);
-                Health = new BatteryHealth(
-                    command.MaximumCapacity,
-                    command.BatteryTemperatureScale,
-                    command.BatteryTemperature);
+                LastHealthReport = BatteryHealthReportCommand.Parse(frame, Logger);
                 break;
             }
         }
@@ -301,12 +262,9 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
 
     private readonly struct BatteryReportCommand : ICommand
     {
-        private readonly byte _version;
-
-        public BatteryReportCommand(CommandClassFrame frame, byte version)
+        public BatteryReportCommand(CommandClassFrame frame)
         {
             Frame = frame;
-            _version = version;
         }
 
         public static CommandClassId CommandClassId => CommandClassId.Battery;
@@ -315,67 +273,54 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// The percentage indicating the battery level
-        /// </summary>
-        public BatteryLevel BatteryLevel => Frame.CommandParameters.Span[0];
+        public static BatteryReport Parse(CommandClassFrame frame, ILogger logger)
+        {
+            if (frame.CommandParameters.Length < 1)
+            {
+                logger.LogWarning("Battery Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Battery Report frame is too short");
+            }
 
-        /// <summary>
-        /// The charging status of a battery.
-        /// </summary>
-        public BatteryChargingStatus? ChargingStatus => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? (BatteryChargingStatus)((Frame.CommandParameters.Span[1] & 0b1100_0000) >> 6)
-            : null;
+            BatteryLevel batteryLevel = frame.CommandParameters.Span[0];
 
-        /// <summary>
-        /// Indicates if the battery is rechargeable or not
-        /// </summary>
-        public bool? IsRechargeable => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? (Frame.CommandParameters.Span[1] & 0b0010_0000) != 0
-            : null;
-
-        /// <summary>
-        /// Illustrate if the battery is utilized for back-up purposes of a mains powered connected device.
-        /// </summary>
-        public bool? IsBackupBattery => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? (Frame.CommandParameters.Span[1] & 0b0001_0000) != 0
-            : null;
-
-        /// <summary>
-        /// Indicate if overheating is detected at the battery.
-        /// </summary>
-        public bool? IsOverheating => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? (Frame.CommandParameters.Span[1] & 0b0000_1000) != 0
-            : null;
-
-        /// <summary>
-        /// Indicate if the battery fluid is low and should be refilled
-        /// </summary>
-        public bool? HasLowFluid => _version >= 2 && Frame.CommandParameters.Length > 1
-            ? (Frame.CommandParameters.Span[1] & 0b0000_0100) != 0
-            : null;
-
-        /// <summary>
-        /// Indicate if the battery needs to be recharged or replaced.
-        /// </summary>
-        public BatterRechargeOrReplaceStatus? ReplaceRechargeStatus => _version >= 2 && Frame.CommandParameters.Length > 1
+            BatteryChargingStatus? chargingStatus = frame.CommandParameters.Length > 1
+                ? (BatteryChargingStatus)((frame.CommandParameters.Span[1] & 0b1100_0000) >> 6)
+                : null;
+            bool? isRechargeable = frame.CommandParameters.Length > 1
+                ? (frame.CommandParameters.Span[1] & 0b0010_0000) != 0
+                : null;
+            bool? isBackupBattery = frame.CommandParameters.Length > 1
+                ? (frame.CommandParameters.Span[1] & 0b0001_0000) != 0
+                : null;
+            bool? isOverheating = frame.CommandParameters.Length > 1
+                ? (frame.CommandParameters.Span[1] & 0b0000_1000) != 0
+                : null;
+            bool? hasLowFluid = frame.CommandParameters.Length > 1
+                ? (frame.CommandParameters.Span[1] & 0b0000_0100) != 0
+                : null;
             // This is spec'd as a bitmask but it's basically just an enum
-            ? (BatterRechargeOrReplaceStatus)(Frame.CommandParameters.Span[1] & 0b0000_0011)
-            : null;
+            BatterRechargeOrReplaceStatus? replaceRechargeStatus = frame.CommandParameters.Length > 1
+                ? (BatterRechargeOrReplaceStatus)(frame.CommandParameters.Span[1] & 0b0000_0011)
+                : null;
 
-        /// <summary>
-        /// Advertise if the battery of a device has stopped charging due to low temperature
-        /// </summary>
-        public bool? IsLowTemperature => _version >= 3 && Frame.CommandParameters.Length > 2
-            ? (Frame.CommandParameters.Span[2] & 0b0000_0010) != 0
-            : null;
+            bool? isLowTemperature = frame.CommandParameters.Length > 2
+                ? (frame.CommandParameters.Span[2] & 0b0000_0010) != 0
+                : null;
+            bool? disconnected = frame.CommandParameters.Length > 2
+                ? (frame.CommandParameters.Span[2] & 0b0000_0001) != 0
+                : null;
 
-        /// <summary>
-        /// Indicate if the battery is currently disconnected or removed from the node.
-        /// </summary>
-        public bool? Disconnected => _version >= 2 && Frame.CommandParameters.Length > 2
-            ? (Frame.CommandParameters.Span[2] & 0b0000_0001) != 0
-            : null;
+            return new BatteryReport(
+                batteryLevel,
+                chargingStatus,
+                isRechargeable,
+                isBackupBattery,
+                isOverheating,
+                hasLowFluid,
+                replaceRechargeStatus,
+                isLowTemperature,
+                disconnected);
+        }
     }
 
     private readonly struct BatteryHealthGetCommand : ICommand
@@ -391,10 +336,10 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
 
         public CommandClassFrame Frame { get; }
 
-        public static BatteryGetCommand Create()
+        public static BatteryHealthGetCommand Create()
         {
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId);
-            return new BatteryGetCommand(frame);
+            return new BatteryHealthGetCommand(frame);
         }
     }
 
@@ -411,52 +356,52 @@ public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
 
         public CommandClassFrame Frame { get; }
 
-        /// <summary>
-        /// Report the percentage indicating the maximum capacity of the battery
-        /// </summary>
-        public byte? MaximumCapacity
+        public static BatteryHealth Parse(CommandClassFrame frame, ILogger logger)
         {
-            get
+            if (frame.CommandParameters.Length < 2)
             {
-                // 0xff means unknown.
-                byte value = Frame.CommandParameters.Span[0];
-                return value == 0xff ? null : value;
+                logger.LogWarning("Battery Health Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Battery Health Report frame is too short");
             }
-        }
 
-        /// <summary>
-        /// The scale used for the battery temperature value
-        /// </summary>
-        public BatteryTemperatureScale BatteryTemperatureScale
-            => (BatteryTemperatureScale)((Frame.CommandParameters.Span[1] & 0b0001_1000) >> 3);
+            // 0xff means unknown.
+            byte rawCapacity = frame.CommandParameters.Span[0];
+            byte? maximumCapacity = rawCapacity == 0xff ? null : rawCapacity;
 
-        /// <summary>
-        /// The temperature of the battery
-        /// </summary>
-        public double? BatteryTemperature
-        {
-            get
+            BatteryTemperatureScale batteryTemperatureScale
+                = (BatteryTemperatureScale)((frame.CommandParameters.Span[1] & 0b0001_1000) >> 3);
+
+            int precision = (frame.CommandParameters.Span[1] & 0b1110_0000) >> 5;
+            int valueSize = frame.CommandParameters.Span[1] & 0b0000_0111;
+            double? batteryTemperature;
+            if (valueSize == 0)
             {
-                int precision = (Frame.CommandParameters.Span[1] & 0b1110_0000) >> 5;
-
-                int valueSize = Frame.CommandParameters.Span[1] & 0b0000_0111;
-                if (valueSize == 0)
+                // The battery temperature is unknown
+                batteryTemperature = null;
+            }
+            else
+            {
+                if (frame.CommandParameters.Length < 2 + valueSize)
                 {
-                    // THe battery temperature is unknown
-                    return null;
+                    logger.LogWarning(
+                        "Battery Health Report frame value size ({ValueSize}) exceeds remaining bytes ({Remaining})",
+                        valueSize,
+                        frame.CommandParameters.Length - 2);
+                    throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Battery Health Report frame is too short for declared value size");
                 }
 
-                var valueBytes = Frame.CommandParameters.Span.Slice(2, valueSize);
+                ReadOnlySpan<byte> valueBytes = frame.CommandParameters.Span.Slice(2, valueSize);
 
                 if (valueBytes.Length > sizeof(int))
                 {
-                    throw new InvalidOperationException($"The value's size was more than {sizeof(int)} bytes, and currently we can't handle that");
+                    throw new ZWaveException(ZWaveErrorCode.InvalidPayload, $"The value's size was more than {sizeof(int)} bytes, and currently we can't handle that");
                 }
 
                 int rawValue = valueBytes.ToInt32BE();
-
-                return rawValue / Math.Pow(10, precision);
+                batteryTemperature = rawValue / Math.Pow(10, precision);
             }
+
+            return new BatteryHealth(maximumCapacity, batteryTemperatureScale, batteryTemperature);
         }
     }
 }

@@ -97,17 +97,19 @@ internal sealed class CommandClassAttribute: Attribute
         sb.Append(@"
 #nullable enable
 
+using Microsoft.Extensions.Logging;
+
 namespace ZWave.CommandClasses;
 
 internal static class CommandClassFactory
 {
-    private static readonly Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, INode, CommandClass>> Constructors = new Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, INode, CommandClass>>
+    private static readonly Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, INode, ILogger, CommandClass>> Constructors = new Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, INode, ILogger, CommandClass>>
     {
 ");
 
         foreach (KeyValuePair<string, string> pair in idToType)
         {
-            sb.AppendLine($"        {{ {pair.Key}, (info, driver, node) => new {pair.Value}(info, driver, node) }},");
+            sb.AppendLine($"        {{ {pair.Key}, (info, driver, node, logger) => new {pair.Value}(info, driver, node, logger) }},");
         }
 
         sb.Append(@"    };
@@ -123,10 +125,10 @@ internal static class CommandClassFactory
 
         sb.Append(@"    };
 
-    public static CommandClass Create(CommandClassInfo info, IDriver driver, INode node)
-        => Constructors.TryGetValue(info.CommandClass, out Func<CommandClassInfo, IDriver, INode, CommandClass>? constructor)
-            ? constructor(info, driver, node)
-            : new NotImplementedCommandClass(info, driver, node);
+    public static CommandClass Create(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
+        => Constructors.TryGetValue(info.CommandClass, out Func<CommandClassInfo, IDriver, INode, ILogger, CommandClass>? constructor)
+            ? constructor(info, driver, node, logger)
+            : new NotImplementedCommandClass(info, driver, node, logger);
 
     public static CommandClassId GetCommandClassId<TCommandClass>()
         where TCommandClass : CommandClass

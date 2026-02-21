@@ -7,29 +7,29 @@
 @if (CommandClass != null)
 {
     <table class="table table-striped">
-        @if (CommandClass.State.HasValue)
+        @if (CommandClass.LastReport.HasValue)
         {
-            BinarySwitchState state = CommandClass.State.Value;
+            BinarySwitchReport report = CommandClass.LastReport.Value;
 
             <tbody>
                 <tr>
                     <th scope="row">Current Value</th>
-                    <td>@(state.CurrentValue.HasValue ? state.CurrentValue.Value : "Unknown")</td>
+                    <td>@(report.CurrentValue.HasValue ? report.CurrentValue.Value : "Unknown")</td>
                 </tr>
 
-                @if (state.TargetValue.HasValue)
+                @if (report.TargetValue.HasValue)
                 {
                     <tr>
                         <th scope="row">Target Value</th>
-                        <td>@state.TargetValue.Value</td>
+                        <td>@report.TargetValue.Value</td>
                     </tr>
                 }
 
-                @if (state.Duration.HasValue)
+                @if (report.Duration.HasValue)
                 {
                     <tr>
                         <th scope="row">Duration</th>
-                        <td>@(state.Duration.Value.Duration?.ToString("c") ?? "Unknown")</td>
+                        <td>@(report.Duration.Value.Duration?.ToString("c") ?? "Unknown")</td>
                     </tr>
                 }
             </tbody>
