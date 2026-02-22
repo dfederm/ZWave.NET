@@ -139,23 +139,30 @@ public sealed class Controller
                 ProductId,
                 FormatCommandIds(SupportedCommandIds));
 
-            var versionRequest = GetLibraryVersionRequest.Create();
-            GetLibraryVersionResponse versionResponse = await _driver.SendCommandAsync<GetLibraryVersionRequest, GetLibraryVersionResponse>(
-                versionRequest,
-                cancellationToken).ConfigureAwait(false);
-            LibraryVersion = versionResponse.LibraryVersion;
-            LibraryType = versionResponse.LibraryType;
-            _logger.LogControllerLibraryVersion(LibraryVersion, LibraryType);
+            if (IsCommandSupported(GetLibraryVersionRequest.CommandId))
+            {
+                var versionRequest = GetLibraryVersionRequest.Create();
+                GetLibraryVersionResponse versionResponse = await _driver.SendCommandAsync<GetLibraryVersionRequest, GetLibraryVersionResponse>(
+                    versionRequest,
+                    cancellationToken).ConfigureAwait(false);
+                LibraryVersion = versionResponse.LibraryVersion;
+                LibraryType = versionResponse.LibraryType;
+                _logger.LogControllerLibraryVersion(LibraryVersion, LibraryType);
+            }
 
-            var getControllerCapabilitiesRequest = GetControllerCapabilitiesRequest.Create();
-            GetControllerCapabilitiesResponse getControllerCapabilitiesResponse = await _driver.SendCommandAsync<GetControllerCapabilitiesRequest, GetControllerCapabilitiesResponse>(
-                getControllerCapabilitiesRequest,
-                cancellationToken).ConfigureAwait(false);
-            ControllerCapabilities controllerCapabilities = getControllerCapabilitiesResponse.Capabilities;
-            IsPrimary = !controllerCapabilities.HasFlag(ControllerCapabilities.SecondaryController);
-            _logger.LogControllerCapabilities(controllerCapabilities);
+            ControllerCapabilities controllerCapabilities = default;
+            if (IsCommandSupported(GetControllerCapabilitiesRequest.CommandId))
+            {
+                var getControllerCapabilitiesRequest = GetControllerCapabilitiesRequest.Create();
+                GetControllerCapabilitiesResponse getControllerCapabilitiesResponse = await _driver.SendCommandAsync<GetControllerCapabilitiesRequest, GetControllerCapabilitiesResponse>(
+                    getControllerCapabilitiesRequest,
+                    cancellationToken).ConfigureAwait(false);
+                controllerCapabilities = getControllerCapabilitiesResponse.Capabilities;
+                IsPrimary = !controllerCapabilities.HasFlag(ControllerCapabilities.SecondaryController);
+                _logger.LogControllerCapabilities(controllerCapabilities);
+            }
 
-            if (SupportedCommandIds.Contains(SerialApiSetupRequest.CommandId))
+            if (IsCommandSupported(SerialApiSetupRequest.CommandId))
             {
                 var getSupportedSetupCommandsRequest = SerialApiSetupRequest.GetSupportedCommands();
                 SerialApiSetupGetSupportedCommandsResponse getSupportedSetupCommandsResponse = await _driver.SendCommandAsync<SerialApiSetupRequest, SerialApiSetupGetSupportedCommandsResponse>(
@@ -172,7 +179,7 @@ public sealed class Controller
             }
             else
             {
-                SupportedSerialApiSetupSubcommands = new HashSet<SerialApiSetupSubcommand>(0);
+                SupportedSerialApiSetupSubcommands = [];
             }
 
             _logger.LogControllerSupportedSerialApiSetupSubcommands(FormatSerialApiSetupSubcommands(SupportedSerialApiSetupSubcommands));
@@ -193,35 +200,41 @@ public sealed class Controller
                 _logger.LogEnableTxStatusReport(setTxStatusReportResponse.Success);
             }
 
-            var getSucNodeIdRequest = GetSucNodeIdRequest.Create();
-            GetSucNodeIdResponse getSucNodeIdResponse = await _driver.SendCommandAsync<GetSucNodeIdRequest, GetSucNodeIdResponse>(
-                getSucNodeIdRequest,
-                cancellationToken).ConfigureAwait(false);
-            SucNodeId = getSucNodeIdResponse.SucNodeId;
-            _logger.LogControllerSucNodeId(SucNodeId);
-
-            // If there is no SUC/SIS and we're not a SUC or secondard controller, promote ourselves
-            if (SucNodeId == 0
-                && !controllerCapabilities.HasFlag(ControllerCapabilities.SecondaryController)
-                && !controllerCapabilities.HasFlag(ControllerCapabilities.SucEnabled)
-                && !controllerCapabilities.HasFlag(ControllerCapabilities.SisIsPresent))
+            if (IsCommandSupported(GetSucNodeIdRequest.CommandId))
             {
-                var setSucNodeIdRequest = SetSucNodeIdRequest.Create(
-                    SucNodeId,
-                    enableSuc: true,
-                    SetSucNodeIdRequestCapabilities.SucFuncNodeIdServer,
-                    TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore,
-                    _driver.GetNextSessionId());
-                SetSucNodeIdCallback setSucNodeIdCallback = await _driver.SendCommandExpectingCallbackAsync<SetSucNodeIdRequest, SetSucNodeIdCallback>(
-                    setSucNodeIdRequest,
+                var getSucNodeIdRequest = GetSucNodeIdRequest.Create();
+                GetSucNodeIdResponse getSucNodeIdResponse = await _driver.SendCommandAsync<GetSucNodeIdRequest, GetSucNodeIdResponse>(
+                    getSucNodeIdRequest,
                     cancellationToken).ConfigureAwait(false);
+                SucNodeId = getSucNodeIdResponse.SucNodeId;
+                _logger.LogControllerSucNodeId(SucNodeId);
 
-                if (setSucNodeIdCallback.SetSucNodeIdStatus != SetSucNodeIdStatus.Succeeded)
+                // If there is no SUC/SIS and we're not a SUC or secondary controller, promote ourselves.
+                // Only attempt promotion if we could determine controller capabilities and SetSucNodeId is supported.
+                if (SucNodeId == 0
+                    && SupportedCommandIds.Contains(SetSucNodeIdRequest.CommandId)
+                    && SupportedCommandIds.Contains(GetControllerCapabilitiesRequest.CommandId)
+                    && !controllerCapabilities.HasFlag(ControllerCapabilities.SecondaryController)
+                    && !controllerCapabilities.HasFlag(ControllerCapabilities.SucEnabled)
+                    && !controllerCapabilities.HasFlag(ControllerCapabilities.SisIsPresent))
                 {
-                    throw new ZWaveException(ZWaveErrorCode.ControllerInitializationFailed, "SetSucNodeId failed");
-                }
+                    var setSucNodeIdRequest = SetSucNodeIdRequest.Create(
+                        SucNodeId,
+                        enableSuc: true,
+                        SetSucNodeIdRequestCapabilities.SucFuncNodeIdServer,
+                        TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore,
+                        _driver.GetNextSessionId());
+                    SetSucNodeIdCallback setSucNodeIdCallback = await _driver.SendCommandExpectingCallbackAsync<SetSucNodeIdRequest, SetSucNodeIdCallback>(
+                        setSucNodeIdRequest,
+                        cancellationToken).ConfigureAwait(false);
 
-                SucNodeId = NodeId;
+                    if (setSucNodeIdCallback.SetSucNodeIdStatus != SetSucNodeIdStatus.Succeeded)
+                    {
+                        throw new ZWaveException(ZWaveErrorCode.ControllerInitializationFailed, "SetSucNodeId failed");
+                    }
+
+                    SucNodeId = NodeId;
+                }
             }
 
             var getInitDataRequest = GetInitDataRequest.Create();
@@ -279,6 +292,20 @@ public sealed class Controller
 
         handler.AppendLiteral("]");
         return handler.ToStringAndClear();
+    }
+
+    /// <summary>
+    /// Checks whether the given command is supported by the controller and logs a warning if not.
+    /// </summary>
+    private bool IsCommandSupported(CommandId commandId)
+    {
+        if (SupportedCommandIds!.Contains(commandId))
+        {
+            return true;
+        }
+
+        _logger.LogCommandNotSupported(commandId);
+        return false;
     }
 
     private static string FormatSerialApiSetupSubcommands(HashSet<SerialApiSetupSubcommand> subcommands)

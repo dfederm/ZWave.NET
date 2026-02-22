@@ -182,6 +182,7 @@ Event ID ranges:
 - `CommandSendFailed` - Frame delivery failed after retransmissions
 - `CommandFailed` - Response indicated failure
 - `CommandClassNotImplemented` / `CommandNotSupported` - CC or command not available on a node
+- `SerialApiCommandNotSupported` - Serial API command not supported by the controller
 - `CommandNotReady` - CC not yet interviewed
 - `CommandInvalidArgument` - Invalid parameter
 

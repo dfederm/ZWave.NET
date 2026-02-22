@@ -458,6 +458,16 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
     private async Task SendFrameAsync(DataFrame request, CancellationToken cancellationToken)
     {
+        // Per the Z-Wave Host API Specification, the host MUST NOT send commands that are not
+        // indicated as supported in the GetSerialApiCapabilities response bitmask.
+        HashSet<CommandId>? supportedCommandIds = Controller.SupportedCommandIds;
+        if (supportedCommandIds != null && !supportedCommandIds.Contains(request.CommandId))
+        {
+            throw new ZWaveException(
+                ZWaveErrorCode.SerialApiCommandNotSupported,
+                $"The serial API command {request.CommandId} is not supported by the controller");
+        }
+
         var transmissionComplete = new TaskCompletionSource();
         var transmission = new DataFrameTransmission(request, transmissionComplete);
 
