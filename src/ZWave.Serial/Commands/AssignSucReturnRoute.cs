@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Notify presence of a SUC/SIS to a Routing Slave or Enhanced 232 Slave.
@@ -21,10 +21,10 @@ public readonly struct AssignSucReturnRouteRequest : IRequestWithCallback<Assign
     public byte SessionId => Frame.CommandParameters.Span[1];
 
     public static AssignSucReturnRouteRequest Create(
-        byte nodeId,
+        ushort nodeId,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AssignSucReturnRouteRequest(frame);
     }

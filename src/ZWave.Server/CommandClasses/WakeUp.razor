@@ -107,7 +107,7 @@
                     <th scope="row">Wakeup Destination Node Id</th>
                     <td>
                         <select @bind="_setIntervalWakeupDestinationNodeId">
-                            @foreach (KeyValuePair<byte, Node> kvp in Driver.Controller.Nodes)
+                            @foreach (KeyValuePair<ushort, Node> kvp in Driver.Controller.Nodes)
                             {
                                 <option value="@kvp.Key">@kvp.Key</option>
                             }
@@ -143,7 +143,7 @@
 @code {
     // SetInterval
     private uint _setIntervalWakeupIntervalInSeconds;
-    private byte _setIntervalWakeupDestinationNodeId;
+    private ushort _setIntervalWakeupDestinationNodeId;
 
     [Parameter]
     public WakeUpCommandClass? CommandClass { get; set; }

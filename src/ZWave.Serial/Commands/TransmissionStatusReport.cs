@@ -154,7 +154,7 @@ public readonly struct TransmissionStatusReport
     /// <summary>
     /// When a route failed, indicates the last functional NodeID in the last used route.
     /// </summary>
-    public byte? RouteFailedLastFunctionalNodeId
+    public ushort? RouteFailedLastFunctionalNodeId
         => _data.Length > 17
             ? _data.Span[17]
             : null;
@@ -162,7 +162,7 @@ public readonly struct TransmissionStatusReport
     /// <summary>
     /// When a route failed, indicates the first non-functional NodeID in the last used route.
     /// </summary>
-    public byte? RouteFailedFirstNonFunctionalNodeId
+    public ushort? RouteFailedFirstNonFunctionalNodeId
         => _data.Length > 18
             ? _data.Span[18]
             : null;

@@ -99,6 +99,10 @@ Each Z-Wave Serial API function is represented as a struct. These map to the fun
 
 **`CommandId` enum** - All Serial API function IDs (e.g. `SendData = 0x13`, `GetInitData = 0x02`).
 
+**`CommandDataParsingHelpers`** (`Commands/CommandDataParsingHelpers.cs`) - Internal shared utilities for parsing common serial API response patterns:
+- `ParseCommandClasses` — Parses a CC byte list with the support/control mark into `CommandClassInfo` records.
+- `ParseNodeBitmask` — Parses a node ID bitmask (each bit = one node) into a `HashSet<ushort>`. Takes a `baseNodeId` parameter (1 for classic nodes, 256+ for LR nodes).
+
 **Communication patterns:**
 - **Fire-and-forget:** Host sends a REQ with no response expected (e.g. `SoftReset`, `SendDataAbort`, `WatchdogKick`)
 - **Request → Response:** Host sends a REQ, chip replies with a RES (e.g. `MemoryGetId`, `GetLibraryVersion`, `GetRoutingInfo`, `IsFailedNode`)
@@ -106,6 +110,8 @@ Each Z-Wave Serial API function is represented as a struct. These map to the fun
 - **Request → Callback (no response):** Host sends a REQ, chip later sends an unsolicited REQ as a callback without an initial RES (e.g. `SetDefault`, `SetLearnMode`, `RequestNodeNeighborUpdate`)
 - **Set only:** Host sends a REQ to configure the chip with no response (e.g. `ApplicationNodeInformation`, `SetPromiscuousMode`)
 - **Unsolicited request:** Chip sends a REQ without the host asking (e.g. `ApplicationCommandHandler`, `ApplicationUpdate`, `ApplicationCommandHandlerBridge`, `SerialApiStarted`)
+
+**Node ID encoding:** All node ID parameters in the C# API are `ushort` to support both classic (1–232) and Long Range (256+) nodes. On the wire, node IDs are currently serialized as a single byte (8-bit mode, the default). The `Create()` methods cast `(byte)nodeId` when writing to the buffer.
 
 ### Command Classes (`src/ZWave.CommandClasses/`)
 
@@ -144,6 +150,7 @@ Implements Z-Wave Command Classes per the Z-Wave Application Specification. Thes
 - `IdentifyAsync()` queries the chip: home/node ID, serial API capabilities, library version, controller capabilities, supported setup subcommands, SUC node ID, and init data (node list)
 - Promotes itself to SUC/SIS if none exists on the network
 - Creates `Node` instances for every node in the network
+- Stores nodes in a `Dictionary<ushort, Node>` keyed by node ID
 
 **`Node`** (`Node.cs`) - Represents a Z-Wave network node. Implements `INode`.
 - `InterviewAsync()` queries protocol info, requests node info, discovers command classes, then interviews each CC in topological dependency order

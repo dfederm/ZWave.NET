@@ -9,7 +9,7 @@ public class RemoveNodeFromNetworkTests : CommandTestBase
     private record RemoveNodeFromNetworkCallbackData(
         byte SessionId,
         RemoveNodeStatus Status,
-        byte NodeId);
+        ushort NodeId);
 
     [TestMethod]
     public void Request()

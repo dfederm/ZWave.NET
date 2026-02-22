@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 public readonly struct MemoryGetIdRequest : ICommand<MemoryGetIdRequest>
 {
@@ -37,7 +37,7 @@ public readonly struct MemoryGetIdResponse : ICommand<MemoryGetIdResponse>
 
     public uint HomeId => Frame.CommandParameters.Span[0..4].ToUInt32BE();
 
-    public byte NodeId => Frame.CommandParameters.Span[4];
+    public ushort NodeId => Frame.CommandParameters.Span[4];
 
     public static MemoryGetIdResponse Create(DataFrame frame) => new MemoryGetIdResponse(frame);
 }

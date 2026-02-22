@@ -133,9 +133,9 @@
 
     protected override void OnInitialized()
     {
-        if (NodeId < byte.MinValue
-            || NodeId > byte.MaxValue
-            || !Driver.Controller.Nodes.TryGetValue((byte)NodeId, out Node? node))
+        if (NodeId < 0
+            || NodeId > ushort.MaxValue
+            || !Driver.Controller.Nodes.TryGetValue((ushort)NodeId, out Node? node))
         {
             NavigationManager.NavigateTo(string.Empty);
             return;

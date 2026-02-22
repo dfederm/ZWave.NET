@@ -6,7 +6,7 @@ namespace ZWave.Serial.Tests.Commands;
 [TestClass]
 public class GetSucNodeIdTests : CommandTestBase
 {
-    private record GetSucNodeIdResponseData(byte SucNodeId);
+    private record GetSucNodeIdResponseData(ushort SucNodeId);
 
     [TestMethod]
     public void Request()

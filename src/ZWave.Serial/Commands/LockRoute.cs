@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Locks or unlocks response route for a given node ID.
@@ -21,9 +21,9 @@ public readonly struct LockRouteRequest : ICommand<LockRouteRequest>
     /// </summary>
     /// <param name="nodeId">The node ID to lock or unlock.</param>
     /// <param name="locked">True to lock the route, false to unlock.</param>
-    public static LockRouteRequest Create(byte nodeId, bool locked)
+    public static LockRouteRequest Create(ushort nodeId, bool locked)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId, (byte)(locked ? 1 : 0)];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, (byte)(locked ? 1 : 0)];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new LockRouteRequest(frame);
     }

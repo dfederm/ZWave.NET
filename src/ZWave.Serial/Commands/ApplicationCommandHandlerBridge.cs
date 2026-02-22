@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// This command is used by a Z-Wave module to notify a host application that a Z-Wave frame has been received
@@ -25,12 +25,12 @@ public readonly struct ApplicationCommandHandlerBridge : ICommand<ApplicationCom
     /// <summary>
     /// The destination node ID.
     /// </summary>
-    public byte DestinationNodeId => Frame.CommandParameters.Span[1];
+    public ushort DestinationNodeId => Frame.CommandParameters.Span[1];
 
     /// <summary>
     /// The source node ID.
     /// </summary>
-    public byte SourceNodeId => Frame.CommandParameters.Span[2];
+    public ushort SourceNodeId => Frame.CommandParameters.Span[2];
 
     private byte PayloadLength => Frame.CommandParameters.Span[3];
 

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Transmit the data buffer to a list of Z-Wave Nodes (multicast frame) via Bridge Controller.
@@ -21,7 +21,7 @@ public readonly struct SendDataMultiBridgeRequest : IRequestWithCallback<SendDat
     public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static SendDataMultiBridgeRequest Create(
-        byte sourceNodeId,
+        ushort sourceNodeId,
         ReadOnlySpan<byte> nodeList,
         ReadOnlySpan<byte> data,
         TransmissionOptions txOptions,
@@ -29,7 +29,7 @@ public readonly struct SendDataMultiBridgeRequest : IRequestWithCallback<SendDat
     {
         byte nodeCount = (byte)nodeList.Length;
         Span<byte> commandParameters = stackalloc byte[3 + nodeCount + 1 + data.Length + 1 + 1];
-        commandParameters[0] = sourceNodeId;
+        commandParameters[0] = (byte)sourceNodeId;
         commandParameters[1] = nodeCount;
         nodeList.CopyTo(commandParameters.Slice(2, nodeCount));
         commandParameters[2 + nodeCount] = (byte)data.Length;

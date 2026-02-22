@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Send a test frame directly to nodeID without any routing.
@@ -21,11 +21,11 @@ public readonly struct SendTestFrameRequest : IRequestWithCallback<SendTestFrame
     public byte SessionId => Frame.CommandParameters.Span[2];
 
     public static SendTestFrameRequest Create(
-        byte nodeId,
+        ushort nodeId,
         byte powerLevel,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId, powerLevel, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, powerLevel, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendTestFrameRequest(frame);
     }

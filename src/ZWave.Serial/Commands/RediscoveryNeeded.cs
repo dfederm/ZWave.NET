@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Request a SUC/SIS controller to update the requesting nodes neighbors.
@@ -21,10 +21,10 @@ public readonly struct RediscoveryNeededRequest : IRequestWithCallback<Rediscove
     public byte SessionId => Frame.CommandParameters.Span[1];
 
     public static RediscoveryNeededRequest Create(
-        byte nodeId,
+        ushort nodeId,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new RediscoveryNeededRequest(frame);
     }

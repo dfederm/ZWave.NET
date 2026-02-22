@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Assign static return routes (up to 4) to a Routing Slave or Enhanced 232 Slave node.
@@ -21,11 +21,11 @@ public readonly struct AssignReturnRouteRequest : IRequestWithCallback<AssignRet
     public byte SessionId => Frame.CommandParameters.Span[2];
 
     public static AssignReturnRouteRequest Create(
-        byte sourceNodeId,
-        byte destinationNodeId,
+        ushort sourceNodeId,
+        ushort destinationNodeId,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [sourceNodeId, destinationNodeId, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)sourceNodeId, (byte)destinationNodeId, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AssignReturnRouteRequest(frame);
     }

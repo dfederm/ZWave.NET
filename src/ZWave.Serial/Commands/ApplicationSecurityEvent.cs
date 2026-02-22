@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Notify the application of security events.
@@ -24,7 +24,7 @@ public readonly struct ApplicationSecurityEventRequest : ICommand<ApplicationSec
     /// <summary>
     /// The node ID associated with the security event.
     /// </summary>
-    public byte NodeId => Frame.CommandParameters.Span[1];
+    public ushort NodeId => Frame.CommandParameters.Span[1];
 
     public static ApplicationSecurityEventRequest Create(DataFrame frame) => new ApplicationSecurityEventRequest(frame);
 }

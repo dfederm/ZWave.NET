@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The slave learn mode to set.
@@ -63,11 +63,11 @@ public readonly struct SetSlaveLearnModeRequest : IRequestWithCallback<SetSlaveL
     public byte SessionId => Frame.CommandParameters.Span[2];
 
     public static SetSlaveLearnModeRequest Create(
-        byte nodeId,
+        ushort nodeId,
         SlaveLearnMode mode,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId, (byte)mode, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, (byte)mode, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SetSlaveLearnModeRequest(frame);
     }
@@ -104,12 +104,12 @@ public readonly struct SetSlaveLearnModeCallback : ICommand<SetSlaveLearnModeCal
     /// <summary>
     /// The original node ID.
     /// </summary>
-    public byte OrgNodeId => Frame.CommandParameters.Span[2];
+    public ushort OrgNodeId => Frame.CommandParameters.Span[2];
 
     /// <summary>
     /// The new node ID.
     /// </summary>
-    public byte NewNodeId => Frame.CommandParameters.Span[3];
+    public ushort NewNodeId => Frame.CommandParameters.Span[3];
 
     public static SetSlaveLearnModeCallback Create(DataFrame frame) => new SetSlaveLearnModeCallback(frame);
 }

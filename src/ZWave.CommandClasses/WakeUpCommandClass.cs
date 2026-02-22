@@ -125,7 +125,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
     /// <summary>
     /// Configure the Wake Up interval and destination of a node.
     /// </summary>
-    public async Task SetIntervalAsync(uint wakeupIntervalInSeconds, byte wakeupDestinationNodeId, CancellationToken cancellationToken)
+    public async Task SetIntervalAsync(uint wakeupIntervalInSeconds, ushort wakeupDestinationNodeId, CancellationToken cancellationToken)
     {
         var command = WakeUpIntervalSetCommand.Create(wakeupIntervalInSeconds, wakeupDestinationNodeId);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
@@ -196,7 +196,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
 
         public CommandClassFrame Frame { get; }
 
-        public static WakeUpIntervalSetCommand Create(uint wakeupIntervalInSeconds, byte wakeupDestinationNodeId)
+        public static WakeUpIntervalSetCommand Create(uint wakeupIntervalInSeconds, ushort wakeupDestinationNodeId)
         {
             Span<byte> commandParameters = stackalloc byte[4];
 
@@ -212,7 +212,7 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
             wakeupIntervalInSeconds.WriteBytesBE(secondsBytes);
             secondsBytes[1..].CopyTo(commandParameters);
 
-            commandParameters[3] = wakeupDestinationNodeId;
+            commandParameters[3] = (byte)wakeupDestinationNodeId;
 
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new WakeUpIntervalSetCommand(frame);

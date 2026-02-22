@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 public enum SetSucNodeIdRequestCapabilities : byte
 {
@@ -42,7 +42,7 @@ public readonly struct SetSucNodeIdRequest : IRequestWithCallback<SetSucNodeIdRe
     public byte SessionId => Frame.CommandParameters.Span[4];
 
     public static SetSucNodeIdRequest Create(
-        byte nodeId,
+        ushort nodeId,
         bool enableSuc,
         SetSucNodeIdRequestCapabilities capabilities,
         TransmissionOptions transmissionOptions,
@@ -50,7 +50,7 @@ public readonly struct SetSucNodeIdRequest : IRequestWithCallback<SetSucNodeIdRe
     {
         ReadOnlySpan<byte> commandParameters =
         [
-            nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
             (byte)(enableSuc ? 1 : 0),
             (byte)transmissionOptions,
             (byte)capabilities,

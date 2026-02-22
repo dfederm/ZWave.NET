@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// This command is used by a Z-Wave module to notify a host application that a Z-Wave frame has been received
@@ -18,7 +18,7 @@ public readonly struct ApplicationCommandHandler : ICommand<ApplicationCommandHa
 
     public ReceivedStatus ReceivedStatus => (ReceivedStatus)Frame.CommandParameters.Span[0];
 
-    public byte NodeId => Frame.CommandParameters.Span[1];
+    public ushort NodeId => Frame.CommandParameters.Span[1];
 
     private byte PayloadLength => Frame.CommandParameters.Span[2];
 

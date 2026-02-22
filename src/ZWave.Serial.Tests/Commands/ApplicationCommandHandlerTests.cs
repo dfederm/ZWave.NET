@@ -8,7 +8,7 @@ public class ApplicationCommandHandlerTests : CommandTestBase
 {
     private record ApplicationCommandHandlerData(
         ReceivedStatus ReceivedStatus,
-        byte NodeId,
+        ushort NodeId,
         ReadOnlyMemory<byte> Payload,
         RssiMeasurement ReceivedRssi);
 

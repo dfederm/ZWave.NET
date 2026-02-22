@@ -9,7 +9,7 @@ public class GetInitDataTests : CommandTestBase
     private record GetInitDataResponseData(
         byte ApiVersion,
         GetInitDataCapabilities ApiCapabilities,
-        HashSet<byte> NodeIds,
+        HashSet<ushort> NodeIds,
         byte ChipType,
         byte ChipVersion);
 
@@ -42,7 +42,7 @@ public class GetInitDataTests : CommandTestBase
                     ExpectedData: new GetInitDataResponseData(
                         ApiVersion: 8,
                         ApiCapabilities: GetInitDataCapabilities.SisFunctionality,
-                        NodeIds: new HashSet<byte> { 1, 2, 3, 10, 12, 13, 15, 18, 19, 20, 22, 24, 25, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39, 42, 44, 45 },
+                        NodeIds: new HashSet<ushort> { 1, 2, 3, 10, 12, 13, 15, 18, 19, 20, 22, 24, 25, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39, 42, 44, 45 },
                         ChipType: 5,
                         ChipVersion: 0)
                 )

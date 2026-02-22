@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Returns a bitmask of security keys the node possesses.
@@ -20,9 +20,9 @@ public readonly struct GetSecurityKeysRequest : ICommand<GetSecurityKeysRequest>
     /// Create a request to get the security keys for a node.
     /// </summary>
     /// <param name="nodeId">The node ID to query.</param>
-    public static GetSecurityKeysRequest Create(byte nodeId)
+    public static GetSecurityKeysRequest Create(ushort nodeId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new GetSecurityKeysRequest(frame);
     }

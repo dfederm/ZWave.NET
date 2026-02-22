@@ -1,4 +1,4 @@
-using static ZWave.Serial.Commands.CommandDataParsingHelpers;
+﻿using static ZWave.Serial.Commands.CommandDataParsingHelpers;
 
 namespace ZWave.Serial.Commands;
 
@@ -207,7 +207,7 @@ public readonly struct AddNodeToNetworkCallback : ICommand<AddNodeToNetworkCallb
 
     public AddNodeStatus Status => (AddNodeStatus)Frame.CommandParameters.Span[1];
 
-    public byte AssignedNodeId => Frame.CommandParameters.Span[2];
+    public ushort AssignedNodeId => Frame.CommandParameters.Span[2];
 
     public byte BasicDeviceClass => Frame.CommandParameters.Span[4];
 

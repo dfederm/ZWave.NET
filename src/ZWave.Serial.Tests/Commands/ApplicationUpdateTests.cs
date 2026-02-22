@@ -7,14 +7,14 @@ namespace ZWave.Serial.Tests.Commands;
 public class ApplicationUpdateTests : CommandTestBase
 {
     private record ApplicationUpdateGenericData(
-        byte NodeId,
+        ushort NodeId,
         byte BasicDeviceClass,
         byte GenericDeviceClass,
         byte SpecificDeviceClass,
         IReadOnlyList<CommandClassInfo> CommandClasses);
 
     private record ApplicationUpdateSmartStartPrimeData(
-        byte NodeId,
+        ushort NodeId,
         ReceivedStatus ReceivedStatus,
         uint HomeId,
         byte BasicDeviceClass,
@@ -23,7 +23,7 @@ public class ApplicationUpdateTests : CommandTestBase
         IReadOnlyList<CommandClassInfo> CommandClasses);
 
     private record ApplicationUpdateSmartStartIncludedNodeInfoData(
-        byte NodeId,
+        ushort NodeId,
         ReceivedStatus ReceivedStatus,
         uint HomeId);
 

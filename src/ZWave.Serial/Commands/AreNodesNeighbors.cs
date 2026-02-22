@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Check if two nodes are marked as being within direct range of each other.
@@ -21,9 +21,9 @@ public readonly struct AreNodesNeighborsRequest : ICommand<AreNodesNeighborsRequ
     /// </summary>
     /// <param name="nodeId1">The first node ID.</param>
     /// <param name="nodeId2">The second node ID.</param>
-    public static AreNodesNeighborsRequest Create(byte nodeId1, byte nodeId2)
+    public static AreNodesNeighborsRequest Create(ushort nodeId1, ushort nodeId2)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId1, nodeId2];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId1, (byte)nodeId2];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AreNodesNeighborsRequest(frame);
     }

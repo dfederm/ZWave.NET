@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Test if a node ID is stored in the failed node ID list.
@@ -20,9 +20,9 @@ public readonly struct IsFailedNodeRequest : ICommand<IsFailedNodeRequest>
     /// Create a request to check if a node is in the failed node list.
     /// </summary>
     /// <param name="nodeId">The node ID to check.</param>
-    public static IsFailedNodeRequest Create(byte nodeId)
+    public static IsFailedNodeRequest Create(ushort nodeId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new IsFailedNodeRequest(frame);
     }

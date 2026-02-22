@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Transmit SUC/SIS node ID from a primary controller or static controller to the controller node ID specified.
@@ -21,11 +21,11 @@ public readonly struct SendSucIdRequest : IRequestWithCallback<SendSucIdRequest>
     public byte SessionId => Frame.CommandParameters.Span[2];
 
     public static SendSucIdRequest Create(
-        byte destinationNodeId,
+        ushort destinationNodeId,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [destinationNodeId, (byte)txOptions, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)destinationNodeId, (byte)txOptions, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendSucIdRequest(frame);
     }

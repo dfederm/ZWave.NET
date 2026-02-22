@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Get the number of neighbors the specified node has registered.
@@ -20,9 +20,9 @@ public readonly struct GetNeighborCountRequest : ICommand<GetNeighborCountReques
     /// Create a request to get the neighbor count for a node.
     /// </summary>
     /// <param name="nodeId">The node ID to query.</param>
-    public static GetNeighborCountRequest Create(byte nodeId)
+    public static GetNeighborCountRequest Create(ushort nodeId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new GetNeighborCountRequest(frame);
     }

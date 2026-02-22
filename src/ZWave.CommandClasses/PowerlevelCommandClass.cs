@@ -104,7 +104,7 @@ public readonly record struct PowerlevelTestResult(
     /// <summary>
     /// The node ID of the node which is or has been under test.
     /// </summary>
-    byte NodeId,
+    ushort NodeId,
 
     /// <summary>
     /// The result of the test
@@ -178,7 +178,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
     /// power level specified.
     /// </summary>
     public async Task<PowerlevelTestResult> TestNodeAsync(
-        byte testNodeId,
+        ushort testNodeId,
         Powerlevel powerlevel,
         ushort testFrameCount,
         CancellationToken cancellationToken)
@@ -334,12 +334,12 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         public CommandClassFrame Frame { get; }
 
         public static PowerlevelSetCommand Create(
-            byte testNodeId,
+            ushort testNodeId,
             Powerlevel powerlevel,
             ushort testFrameCount)
         {
             Span<byte> commandParameters = stackalloc byte[4];
-            commandParameters[0] = testNodeId;
+            commandParameters[0] = (byte)testNodeId;
             commandParameters[1] = (byte)powerlevel;
             testFrameCount.WriteBytesBE(commandParameters[2..4]);
 
@@ -389,7 +389,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
                 throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Powerlevel Test Node Report frame is too short");
             }
 
-            byte nodeId = frame.CommandParameters.Span[0];
+            ushort nodeId = frame.CommandParameters.Span[0];
             if (nodeId == 0)
             {
                 return null;

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Restore protocol node information from a backup.
@@ -21,10 +21,10 @@ public readonly struct StoreNodeInfoRequest : ICommand<StoreNodeInfoRequest>
     /// </summary>
     /// <param name="nodeId">The node ID to store information for.</param>
     /// <param name="nodeInfo">The node information data.</param>
-    public static StoreNodeInfoRequest Create(byte nodeId, ReadOnlySpan<byte> nodeInfo)
+    public static StoreNodeInfoRequest Create(ushort nodeId, ReadOnlySpan<byte> nodeInfo)
     {
         Span<byte> commandParameters = stackalloc byte[1 + nodeInfo.Length];
-        commandParameters[0] = nodeId;
+        commandParameters[0] = (byte)nodeId;
         nodeInfo.CopyTo(commandParameters[1..]);
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Create and transmit a Virtual Slave node "Node Information" frame.
@@ -21,15 +21,15 @@ public readonly struct SendSlaveNodeInformationRequest : IRequestWithCallback<Se
     public byte SessionId => Frame.CommandParameters.Span[3];
 
     public static SendSlaveNodeInformationRequest Create(
-        byte destinationNodeId,
-        byte slaveNodeId,
+        ushort destinationNodeId,
+        ushort slaveNodeId,
         TransmissionOptions txOptions,
         byte sessionId)
     {
         ReadOnlySpan<byte> commandParameters =
         [
-            destinationNodeId,
-            slaveNodeId,
+            (byte)destinationNodeId,
+            (byte)slaveNodeId,
             (byte)txOptions,
             sessionId,
         ];
