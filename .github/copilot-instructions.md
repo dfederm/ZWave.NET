@@ -68,6 +68,7 @@ Implements the Z-Wave Serial API frame-level protocol (as defined by the Z-Wave 
 - **`ZWaveSerialPortCoordinator`** — Manages the serial port, frame send/receive channels, ACK handshake, and retransmission.
 - **`Commands/`** — Each Serial API command (e.g. `SendData`, `GetInitData`, `SoftReset`) is a struct implementing `ICommand<T>` (defined in `Serial/Commands/ICommand.cs`). Commands that expect a callback implement `IRequestWithCallback<T>`.
 - **`CommandId` enum** — All Serial API function IDs.
+- **`CommandDataParsingHelpers`** — Internal shared utilities: `ParseCommandClasses` (CC byte list → `CommandClassInfo` records) and `ParseNodeBitmask` (bitmask → `HashSet<ushort>` node IDs).
 
 ### Command Classes Layer (`src/ZWave.CommandClasses/`)
 
@@ -82,7 +83,7 @@ Implements Z-Wave Command Classes (Z-Wave Application Specification). This proje
 
 - **`Driver`** — Entry point. Implements `IDriver`. Opens serial port, manages frame send/receive, processes unsolicited requests, coordinates request-response and callback flows.
 - **`Controller`** — Represents the Z-Wave USB controller. Runs identification sequence on startup.
-- **`Node`** — Represents a Z-Wave network node. Implements `INode`. Handles interviews and command class discovery.
+- **`Node`** — Represents a Z-Wave network node. Implements `INode`. Handles interviews and command class discovery. Node IDs are `ushort` throughout the codebase to support both classic (1–232) and Long Range (256+) nodes.
 
 ### Source Generators (`src/ZWave.BuildTools/`)
 
@@ -108,11 +109,12 @@ Uses `Microsoft.Extensions.Logging` with source-generated `[LoggerMessage]` attr
 - Tests use **MSTest** with the `MSTest.Sdk` project SDK and the **Microsoft.Testing.Platform** runner.
 - Tests run in parallel at method level.
 - Serial API command tests inherit from `CommandTestBase` and use `TestSendableCommand` / `TestReceivableCommand` helper methods that verify frame structure round-tripping.
+- `CommandDataParsingHelpersTests` covers the shared parsing helpers (`ParseCommandClasses`, `ParseNodeBitmask`).
 - Test files mirror the source structure: `src/ZWave.Serial.Tests/Commands/` contains tests for each serial command.
 
 ## Adding New Functionality
 
-**New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`.
+**New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`. Node ID parameters are `ushort`; cast to `(byte)nodeId` when writing to the buffer. Use `CommandDataParsingHelpers` for shared parsing (node bitmasks, command class lists).
 
 **New Command Class**: Create a class in `src/ZWave.CommandClasses/` inheriting `CommandClass<TEnum>`. Apply `[CommandClass(CommandClassId.X)]`. Define private inner structs for each command (Set/Get/Report) implementing `ICommand`. The source generator auto-registers it.
 

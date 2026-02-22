@@ -6,7 +6,7 @@ namespace ZWave.Serial.Tests.Commands;
 [TestClass]
 public class MemoryGetIdTests : CommandTestBase
 {
-    private record MemoryGetIdResponseData(uint HomeId, byte NodeId);
+    private record MemoryGetIdResponseData(uint HomeId, ushort NodeId);
 
     [TestMethod]
     public void Request()

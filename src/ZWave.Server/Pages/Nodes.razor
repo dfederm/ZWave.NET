@@ -14,7 +14,7 @@
 <h1>Nodes</h1>
 
 <ul>
-@foreach (KeyValuePair<byte, Node> kvp in Driver.Controller.Nodes)
+@foreach (KeyValuePair<ushort, Node> kvp in Driver.Controller.Nodes)
 {
     <li>
         <NavLink href="@($"/nodes/{@kvp.Key}")">

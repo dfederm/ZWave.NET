@@ -112,7 +112,7 @@
                     <th scope="row">Node Id</th>
                     <td>
                         <select @bind="_testNodeNodeId">
-                            @foreach (KeyValuePair<byte, Node> kvp in Driver.Controller.Nodes)
+                            @foreach (KeyValuePair<ushort, Node> kvp in Driver.Controller.Nodes)
                             {
                                 <option value="@kvp.Key">@kvp.Key</option>
                             }
@@ -168,7 +168,7 @@
     private byte _setTimeoutInSeconds;
 
     // TestNode
-    private byte _testNodeNodeId;
+    private ushort _testNodeNodeId;
     private ZWave.CommandClasses.Powerlevel _testNodePowerlevel;
     private ushort _testNodeFrameCount;
 

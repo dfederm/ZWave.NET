@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 public readonly struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfoRequest>
 {
@@ -13,11 +13,11 @@ public readonly struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfo
 
     public DataFrame Frame { get; }
 
-    public static GetNodeProtocolInfoRequest Create(byte nodeId)
+    public static GetNodeProtocolInfoRequest Create(ushort nodeId)
     {
         ReadOnlySpan<byte> commandParameters =
         [
-            nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
         ];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new GetNodeProtocolInfoRequest(frame);

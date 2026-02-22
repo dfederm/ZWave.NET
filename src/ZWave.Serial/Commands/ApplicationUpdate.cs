@@ -1,4 +1,4 @@
-using static ZWave.Serial.Commands.CommandDataParsingHelpers;
+﻿using static ZWave.Serial.Commands.CommandDataParsingHelpers;
 
 namespace ZWave.Serial.Commands;
 
@@ -123,7 +123,7 @@ public readonly struct ApplicationUpdateGeneric
 
     public ReadOnlyMemory<byte> Data { get; }
 
-    public byte NodeId => Data.Span[0];
+    public ushort NodeId => Data.Span[0];
 
     public byte BasicDeviceClass => Data.Span[2];
 
@@ -154,7 +154,7 @@ public readonly struct ApplicationUpdateSmartStartPrime
 
     public ReadOnlyMemory<byte> Data { get; }
 
-    public byte NodeId => Data.Span[0];
+    public ushort NodeId => Data.Span[0];
 
     public ReceivedStatus ReceivedStatus => (ReceivedStatus)Data.Span[1];
 
@@ -192,7 +192,7 @@ public readonly struct ApplicationUpdateSmartStartIncludedNodeInfo
 
     public ReadOnlyMemory<byte> Data { get; }
 
-    public byte NodeId => Data.Span[0];
+    public ushort NodeId => Data.Span[0];
 
     // Byte 1 is reserved
 

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Overwrite the current neighbor information for a given node ID in the protocol locally.
@@ -22,10 +22,10 @@ public readonly struct SetRoutingInfoRequest : ICommand<SetRoutingInfoRequest>
     /// <param name="nodeId">The node ID to update.</param>
     /// <param name="neighborMask">The 29-byte bitmask of neighbors (232 bits for 232 nodes).</param>
     /// <param name="speed">The speed setting for the node.</param>
-    public static SetRoutingInfoRequest Create(byte nodeId, ReadOnlySpan<byte> neighborMask, byte speed)
+    public static SetRoutingInfoRequest Create(ushort nodeId, ReadOnlySpan<byte> neighborMask, byte speed)
     {
         Span<byte> commandParameters = stackalloc byte[1 + neighborMask.Length + 1];
-        commandParameters[0] = nodeId;
+        commandParameters[0] = (byte)nodeId;
         neighborMask.CopyTo(commandParameters[1..]);
         commandParameters[1 + neighborMask.Length] = speed;
 

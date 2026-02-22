@@ -10,12 +10,12 @@ public interface IDriver
     /// </summary>
     Task SendCommandAsync<TCommand>(
         TCommand command,
-        byte nodeId,
+        ushort nodeId,
         CancellationToken cancellationToken)
         where TCommand : struct, ICommand;
 
     /// <summary>
     /// Gets a node by its ID, or null if the node is not found.
     /// </summary>
-    INode? GetNode(byte nodeId);
+    INode? GetNode(ushort nodeId);
 }

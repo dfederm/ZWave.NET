@@ -94,7 +94,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
     public Controller Controller { get; }
 
     /// <inheritdoc />
-    public INode? GetNode(byte nodeId)
+    public INode? GetNode(ushort nodeId)
         => Controller.Nodes.TryGetValue(nodeId, out Node? node) ? node : null;
 
     /// <summary>
@@ -278,7 +278,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
         // This is intentionally fire-and-forget
         _ = Task.Run(async () =>
         {
-            foreach (KeyValuePair<byte, Node> pair in Controller.Nodes)
+            foreach (KeyValuePair<ushort, Node> pair in Controller.Nodes)
             {
                 Node node = pair.Value;
                 if (node != controllerNode)
@@ -444,7 +444,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
     /// <inheritdoc />
     public async Task SendCommandAsync<TCommand>(
         TCommand request,
-        byte nodeId,
+        ushort nodeId,
         CancellationToken cancellationToken)
         where TCommand : struct, ICommand
     {

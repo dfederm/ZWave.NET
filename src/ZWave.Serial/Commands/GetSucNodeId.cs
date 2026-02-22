@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 public readonly struct GetSucNodeIdRequest : ICommand<GetSucNodeIdRequest>
 {
@@ -36,7 +36,7 @@ public readonly struct GetSucNodeIdResponse : ICommand<GetSucNodeIdResponse>
     public DataFrame Frame { get; }
 
     // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-    public byte SucNodeId => Frame.CommandParameters.Span[0];
+    public ushort SucNodeId => Frame.CommandParameters.Span[0];
 
     public static GetSucNodeIdResponse Create(DataFrame frame) => new GetSucNodeIdResponse(frame);
 }

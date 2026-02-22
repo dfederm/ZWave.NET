@@ -8,8 +8,8 @@ public class ApplicationCommandHandlerBridgeTests : CommandTestBase
 {
     private record ApplicationCommandHandlerBridgeData(
         ReceivedStatus ReceivedStatus,
-        byte DestinationNodeId,
-        byte SourceNodeId,
+        ushort DestinationNodeId,
+        ushort SourceNodeId,
         ReadOnlyMemory<byte> Payload,
         RssiMeasurement ReceivedRssi);
 

@@ -27,7 +27,7 @@ public sealed class Node : INode
 
     private CancellationTokenSource? _interviewCancellationTokenSource;
 
-    internal Node(byte id, Driver driver, ILogger logger)
+    internal Node(ushort id, Driver driver, ILogger logger)
     {
         Id = id;
         _driver = driver ?? throw new ArgumentNullException(nameof(driver));
@@ -37,7 +37,7 @@ public sealed class Node : INode
     /// <summary>
     /// Gets the node ID.
     /// </summary>
-    public byte Id { get; }
+    public ushort Id { get; }
 
     /// <summary>
     /// Gets the current interview status of the node.

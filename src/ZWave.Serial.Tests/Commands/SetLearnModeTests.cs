@@ -6,7 +6,7 @@ namespace ZWave.Serial.Tests.Commands;
 [TestClass]
 public class SetLearnModeTests : CommandTestBase
 {
-    private record SetLearnModeCallbackData(byte SessionId, LearnModeStatus Status, byte AssignedNodeId);
+    private record SetLearnModeCallbackData(byte SessionId, LearnModeStatus Status, ushort AssignedNodeId);
 
     [TestMethod]
     public void Request()

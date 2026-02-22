@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 [Flags]
 public enum GetInitDataCapabilities : byte
@@ -75,28 +75,13 @@ public readonly struct GetInitDataResponse : ICommand<GetInitDataResponse>
     /// <summary>
     /// List ids for nodes present in the current network.
     /// </summary>
-    public HashSet<byte> NodeIds
+    public HashSet<ushort> NodeIds
     {
         get
         {
             byte nodeListLength = Frame.CommandParameters.Span[2];
-            var nodeIds = new HashSet<byte>(nodeListLength * 8);
-
-            var bitMask = Frame.CommandParameters.Span.Slice(3, nodeListLength);
-            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                    {
-                        // As per the spec, bit 0 corresponds to NodeID 1, so we need to add 1.
-                        byte nodeId = (byte)((byteNum << 3) + bitNum + 1);
-                        nodeIds.Add(nodeId);
-                    }
-                }
-            }
-
-            return nodeIds;
+            ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span.Slice(3, nodeListLength);
+            return CommandDataParsingHelpers.ParseNodeBitmask(bitMask, baseNodeId: 1);
         }
     }
 

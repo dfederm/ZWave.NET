@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Obtain the list of Long Range nodes.
@@ -49,40 +49,32 @@ public readonly struct SerialApiGetLongRangeNodesResponse : ICommand<SerialApiGe
     public bool MoreNodes => Frame.CommandParameters.Span[0] != 0;
 
     /// <summary>
-    /// The node ID offset for the current segment.
+    /// The bitmask byte offset for the current segment (16-bit per spec).
+    /// Per the Z-Wave Host API Specification, supported values correspond to byte offsets 0, 128, 256, 384.
     /// </summary>
-    public byte NodeIdOffset => Frame.CommandParameters.Span[1];
+    public ushort BitmaskOffset => Frame.CommandParameters.Span[1..3].ToUInt16BE();
 
     /// <summary>
     /// The length of the node list bitmask.
     /// </summary>
-    public byte NodeListLength => Frame.CommandParameters.Span[2];
+    public byte NodeListLength => Frame.CommandParameters.Span[3];
 
     /// <summary>
     /// The set of Long Range node IDs parsed from the bitmask.
+    /// Per the Z-Wave Host API Specification, LR node IDs start at BASE=256.
+    /// Node ID = BASE + (BITMASK_OFFSET + J) * 8 + N, where J is the byte index and N is the bit index.
     /// </summary>
-    public HashSet<byte> NodeIds
+    public HashSet<ushort> NodeIds
     {
         get
         {
             byte nodeListLength = NodeListLength;
-            byte nodeIdOffset = NodeIdOffset;
-            var bitMask = Frame.CommandParameters.Span.Slice(3, nodeListLength);
-            var nodeIds = new HashSet<byte>(nodeListLength * 8);
+            ushort bitmaskOffset = BitmaskOffset;
+            ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span.Slice(4, nodeListLength);
 
-            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                    {
-                        byte nodeId = (byte)((byteNum << 3) + bitNum + 1 + nodeIdOffset);
-                        nodeIds.Add(nodeId);
-                    }
-                }
-            }
-
-            return nodeIds;
+            // LR nodes start at 256. The bitmask offset is in bytes, so multiply by 8 to get the node offset.
+            ushort baseNodeId = (ushort)(256 + bitmaskOffset * 8);
+            return CommandDataParsingHelpers.ParseNodeBitmask(bitMask, baseNodeId);
         }
     }
 

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 public enum RemoveNodeMode : byte
 {
@@ -123,7 +123,7 @@ public readonly struct RemoveNodeFromNetworkCallback : ICommand<RemoveNodeFromNe
 
     public RemoveNodeStatus Status => (RemoveNodeStatus)Frame.CommandParameters.Span[1];
 
-    public byte NodeId => Frame.CommandParameters.Span[2];
+    public ushort NodeId => Frame.CommandParameters.Span[2];
 
     public static RemoveNodeFromNetworkCallback Create(DataFrame frame) => new RemoveNodeFromNetworkCallback(frame);
 }

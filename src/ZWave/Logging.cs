@@ -38,7 +38,7 @@ internal static partial class Logging
         Message = "Controller identity:\n" +
         "Home ID = {homeId}\n" +
         "Node ID = {nodeId}")]
-    public static partial void LogControllerIdentity(this ILogger logger, uint homeId, byte nodeId);
+    public static partial void LogControllerIdentity(this ILogger logger, uint homeId, ushort nodeId);
 
     [LoggerMessage(
         EventId = 205,
@@ -87,7 +87,7 @@ internal static partial class Logging
         EventId = 210,
         Level = LogLevel.Debug,
         Message = "SUC Node Id: {sucNodeId}")]
-    public static partial void LogControllerSucNodeId(this ILogger logger, byte sucNodeId);
+    public static partial void LogControllerSucNodeId(this ILogger logger, ushort sucNodeId);
 
     [LoggerMessage(
         EventId = 211,

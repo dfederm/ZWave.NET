@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Create and transmit a "Node Information" frame.
@@ -21,11 +21,11 @@ public readonly struct SendNodeInformationRequest : IRequestWithCallback<SendNod
     public byte SessionId => Frame.CommandParameters.Span[2];
 
     public static SendNodeInformationRequest Create(
-        byte destinationNodeId,
+        ushort destinationNodeId,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [destinationNodeId, (byte)txOptions, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)destinationNodeId, (byte)txOptions, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendNodeInformationRequest(frame);
     }

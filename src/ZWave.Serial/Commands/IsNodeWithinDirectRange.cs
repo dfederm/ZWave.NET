@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Check if the supplied node ID is marked as being within direct range in any of the existing return routes.
@@ -20,9 +20,9 @@ public readonly struct IsNodeWithinDirectRangeRequest : ICommand<IsNodeWithinDir
     /// Create a request to check if a node is within direct range.
     /// </summary>
     /// <param name="nodeId">The node ID to check.</param>
-    public static IsNodeWithinDirectRangeRequest Create(byte nodeId)
+    public static IsNodeWithinDirectRangeRequest Create(ushort nodeId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new IsNodeWithinDirectRangeRequest(frame);
     }

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Assign an application defined Priority SUC Return Route to a routing or an enhanced slave.
@@ -21,13 +21,13 @@ public readonly struct AssignPrioritySucReturnRouteRequest : IRequestWithCallbac
     public byte SessionId => Frame.CommandParameters.Span[6];
 
     public static AssignPrioritySucReturnRouteRequest Create(
-        byte nodeId,
+        ushort nodeId,
         ReadOnlySpan<byte> route,
         byte routeSpeed,
         byte sessionId)
     {
         Span<byte> commandParameters = stackalloc byte[7];
-        commandParameters[0] = nodeId;
+        commandParameters[0] = (byte)nodeId;
         route.CopyTo(commandParameters.Slice(1, 4));
         commandParameters[5] = routeSpeed;
         commandParameters[6] = sessionId;

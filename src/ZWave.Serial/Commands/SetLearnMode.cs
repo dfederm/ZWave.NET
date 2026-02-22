@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The learn mode to set.
@@ -108,7 +108,7 @@ public readonly struct SetLearnModeCallback : ICommand<SetLearnModeCallback>
     /// <summary>
     /// The node ID assigned during the learn mode operation.
     /// </summary>
-    public byte AssignedNodeId => Frame.CommandParameters.Span[2];
+    public ushort AssignedNodeId => Frame.CommandParameters.Span[2];
 
     public static SetLearnModeCallback Create(DataFrame frame) => new SetLearnModeCallback(frame);
 }

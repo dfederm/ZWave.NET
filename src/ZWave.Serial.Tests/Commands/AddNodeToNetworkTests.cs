@@ -9,7 +9,7 @@ public class AddNodeToNetworkTests : CommandTestBase
     private record AddNodeToNetworkCallbackData(
         byte SessionId,
         AddNodeStatus Status,
-        byte AssignedNodeId,
+        ushort AssignedNodeId,
         byte BasicDeviceClass,
         byte GenericDeviceClass,
         byte SpecificDeviceClass,

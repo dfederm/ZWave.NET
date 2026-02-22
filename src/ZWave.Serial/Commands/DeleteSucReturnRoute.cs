@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Delete the return routes of the SUC/SIS node from a Routing Slave node or Enhanced 232 Slave node.
@@ -21,10 +21,10 @@ public readonly struct DeleteSucReturnRouteRequest : IRequestWithCallback<Delete
     public byte SessionId => Frame.CommandParameters.Span[1];
 
     public static DeleteSucReturnRouteRequest Create(
-        byte nodeId,
+        ushort nodeId,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [nodeId, sessionId];
+        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new DeleteSucReturnRouteRequest(frame);
     }

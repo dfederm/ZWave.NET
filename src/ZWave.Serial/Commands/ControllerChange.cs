@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The mode for the controller change operation.
@@ -105,7 +105,7 @@ public readonly struct ControllerChangeCallback : ICommand<ControllerChangeCallb
     /// <summary>
     /// The node ID assigned during the controller change operation.
     /// </summary>
-    public byte AssignedNodeId => Frame.CommandParameters.Span[2];
+    public ushort AssignedNodeId => Frame.CommandParameters.Span[2];
 
     public static ControllerChangeCallback Create(DataFrame frame) => new ControllerChangeCallback(frame);
 }

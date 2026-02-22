@@ -8,7 +8,7 @@ public interface INode
     /// <summary>
     /// Gets the node ID.
     /// </summary>
-    byte Id { get; }
+    ushort Id { get; }
 
     /// <summary>
     /// Gets the frequent listening mode of the node.

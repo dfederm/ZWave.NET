@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Assign an application defined Priority Return Route to a routing or an enhanced slave.
@@ -21,15 +21,15 @@ public readonly struct AssignPriorityReturnRouteRequest : IRequestWithCallback<A
     public byte SessionId => Frame.CommandParameters.Span[7];
 
     public static AssignPriorityReturnRouteRequest Create(
-        byte sourceNodeId,
-        byte destinationNodeId,
+        ushort sourceNodeId,
+        ushort destinationNodeId,
         ReadOnlySpan<byte> route,
         byte routeSpeed,
         byte sessionId)
     {
         Span<byte> commandParameters = stackalloc byte[8];
-        commandParameters[0] = sourceNodeId;
-        commandParameters[1] = destinationNodeId;
+        commandParameters[0] = (byte)sourceNodeId;
+        commandParameters[1] = (byte)destinationNodeId;
         route.CopyTo(commandParameters.Slice(2, 4));
         commandParameters[6] = routeSpeed;
         commandParameters[7] = sessionId;

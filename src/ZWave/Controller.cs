@@ -14,7 +14,7 @@ public sealed class Controller
 
     private readonly Driver _driver;
 
-    private readonly Dictionary<byte, Node> _nodes = new Dictionary<byte, Node>();
+    private readonly Dictionary<ushort, Node> _nodes = new Dictionary<ushort, Node>();
 
     public Controller(
         ILogger logger,
@@ -32,7 +32,7 @@ public sealed class Controller
     /// <summary>
     /// Gets the node ID of the controller.
     /// </summary>
-    public byte NodeId { get; private set; }
+    public ushort NodeId { get; private set; }
 
     /// <summary>
     /// Gets the firmware version of the controller.
@@ -77,7 +77,7 @@ public sealed class Controller
     /// <summary>
     /// Gets the node ID of the SUC/SIS node.
     /// </summary>
-    public byte SucNodeId { get; private set; }
+    public ushort SucNodeId { get; private set; }
 
     /// <summary>
     /// Gets the Serial API version.
@@ -102,7 +102,7 @@ public sealed class Controller
     /// <summary>
     /// Gets the nodes in the Z-Wave network.
     /// </summary>
-    public IReadOnlyDictionary<byte, Node> Nodes => _nodes;
+    public IReadOnlyDictionary<ushort, Node> Nodes => _nodes;
 
     /// <summary>
     /// Queries the controller to identify its properties and discover the network nodes.
@@ -247,8 +247,8 @@ public sealed class Controller
             ChipType = getInitDataResponse.ChipType;
             ChipVersion = getInitDataResponse.ChipVersion;
 
-            HashSet<byte> nodeIds = getInitDataResponse.NodeIds;
-            foreach (byte nodeId in nodeIds)
+            HashSet<ushort> nodeIds = getInitDataResponse.NodeIds;
+            foreach (ushort nodeId in nodeIds)
             {
                 _nodes.Add(nodeId, new Node(nodeId, _driver, _logger));
             }
@@ -332,7 +332,7 @@ public sealed class Controller
         return handler.ToStringAndClear();
     }
 
-    private static string FormatNodeIds(HashSet<byte> nodeIds)
+    private static string FormatNodeIds(HashSet<ushort> nodeIds)
     {
         int literalLength = nodeIds.Count * 2;
         int formattedCount = nodeIds.Count;
@@ -340,7 +340,7 @@ public sealed class Controller
         var handler = new DefaultInterpolatedStringHandler(literalLength, formattedCount);
         handler.AppendLiteral("[");
         bool isFirst = true;
-        foreach (byte nodeId in nodeIds)
+        foreach (ushort nodeId in nodeIds)
         {
             if (!isFirst)
             {

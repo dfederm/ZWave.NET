@@ -6,7 +6,7 @@ namespace ZWave.Serial.Tests.Commands;
 [TestClass]
 public class GetRoutingInfoTests : CommandTestBase
 {
-    private record GetRoutingInfoResponseData(HashSet<byte> NeighborNodeIds);
+    private record GetRoutingInfoResponseData(HashSet<ushort> NeighborNodeIds);
 
     [TestMethod]
     public void Request()
@@ -40,7 +40,7 @@ public class GetRoutingInfoTests : CommandTestBase
                         0x00, 0x00, 0x00, 0x00, 0x00
                     },
                     ExpectedData: new GetRoutingInfoResponseData(
-                        NeighborNodeIds: new HashSet<byte> { 2, 3 })
+                        NeighborNodeIds: new HashSet<ushort> { 2, 3 })
                 )
             });
 }

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 public readonly struct SendDataRequest : IRequestWithCallback<SendDataRequest>
 {
@@ -18,13 +18,13 @@ public readonly struct SendDataRequest : IRequestWithCallback<SendDataRequest>
     public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static SendDataRequest Create(
-        byte nodeId,
+        ushort nodeId,
         ReadOnlySpan<byte> data,
         TransmissionOptions transmissionOptions,
         byte sessionId)
     {
         Span<byte> commandParameters = stackalloc byte[4 + data.Length];
-        commandParameters[0] = nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+        commandParameters[0] = (byte)nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
         commandParameters[1] = (byte)data.Length;
         data.CopyTo(commandParameters.Slice(2, data.Length));
         commandParameters[2 + data.Length] = (byte)transmissionOptions;

@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Used when the controller is in replication mode. It sends the payload and expects the receiver to respond
@@ -22,13 +22,13 @@ public readonly struct ReplicationSendRequest : IRequestWithCallback<Replication
     public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static ReplicationSendRequest Create(
-        byte nodeId,
+        ushort nodeId,
         ReadOnlySpan<byte> data,
         TransmissionOptions txOptions,
         byte sessionId)
     {
         Span<byte> commandParameters = stackalloc byte[4 + data.Length];
-        commandParameters[0] = nodeId;
+        commandParameters[0] = (byte)nodeId;
         commandParameters[1] = (byte)data.Length;
         data.CopyTo(commandParameters.Slice(2, data.Length));
         commandParameters[2 + data.Length] = (byte)txOptions;

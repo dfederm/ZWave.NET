@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Set the Priority Route for a destination node.
@@ -22,10 +22,10 @@ public readonly struct SetPriorityRouteRequest : ICommand<SetPriorityRouteReques
     /// <param name="nodeId">The destination node ID.</param>
     /// <param name="repeaters">The 4-byte repeater list.</param>
     /// <param name="speed">The speed setting for the route.</param>
-    public static SetPriorityRouteRequest Create(byte nodeId, ReadOnlySpan<byte> repeaters, byte speed)
+    public static SetPriorityRouteRequest Create(ushort nodeId, ReadOnlySpan<byte> repeaters, byte speed)
     {
         Span<byte> commandParameters = stackalloc byte[6];
-        commandParameters[0] = nodeId;
+        commandParameters[0] = (byte)nodeId;
         repeaters.CopyTo(commandParameters[1..]);
         commandParameters[5] = speed;
 
