@@ -101,4 +101,10 @@ internal static partial class Logging
         Level = LogLevel.Warning,
         Message = "Serial API frame transmission failed (attempt #{attempt})")]
     public static partial void LogSerialApiFrameTransmissionRetry(this ILogger logger, int attempt);
+
+    [LoggerMessage(
+        EventId = 117,
+        Level = LogLevel.Trace,
+        Message = "Received CAN during frame delivery; deferring retransmission until the chip's data frame is processed")]
+    public static partial void LogSerialApiCanDuringFrameDelivery(this ILogger logger);
 }

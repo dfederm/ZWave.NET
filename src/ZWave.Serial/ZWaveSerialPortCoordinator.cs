@@ -45,6 +45,12 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
 
     private TaskCompletionSource<bool>? _frameDeliveryResultTaskSource;
 
+    // Tracks whether a CAN was received during the current frame delivery attempt.
+    // Per spec 3.4.3, on CAN the chip drops our frame but has its own data frame to send.
+    // We defer signaling delivery failure until the chip's data frame is processed, giving
+    // the chip retransmission priority. The 1600ms ACK timeout acts as a fallback.
+    private bool _pendingCanDeliveryFailure;
+
     public ZWaveSerialPortCoordinator(
         ILogger logger,
         string portName,
@@ -137,13 +143,33 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                         {
                             case FrameType.ACK:
                             case FrameType.NAK:
-                            case FrameType.CAN:
                             {
                                 _logger.LogSerialApiFrameReceived(frame);
 
                                 if (_frameDeliveryResultTaskSource != null)
                                 {
                                     _frameDeliveryResultTaskSource.SetResult(frame.Type == FrameType.ACK);
+                                }
+                                else
+                                {
+                                    // We received a frame delivery notification unexpectedly. Just ignore.
+                                    _logger.LogSerialApiUnexpectedFrame(frame);
+                                }
+
+                                break;
+                            }
+                            case FrameType.CAN:
+                            {
+                                _logger.LogSerialApiFrameReceived(frame);
+
+                                if (_frameDeliveryResultTaskSource != null)
+                                {
+                                    // Spec 3.4.3 (Figure 3.9): CAN means the chip detected a collision
+                                    // and dropped our frame. The chip has priority to retransmit its own
+                                    // data frame. Defer signaling delivery failure until we process and
+                                    // ACK the chip's data frame, then the host can retransmit.
+                                    _pendingCanDeliveryFailure = true;
+                                    _logger.LogSerialApiCanDuringFrameDelivery();
                                 }
                                 else
                                 {
@@ -165,6 +191,15 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                                     SendFrame(Frame.ACK);
 
                                     await _dataFrameReceiveChannelWriter.WriteAsync(dataFrame, cancellationToken);
+
+                                    // Spec 3.4.3 (Figure 3.9): After a CAN, the chip retransmits its
+                                    // data frame. Now that we've processed and ACKed it, signal delivery
+                                    // failure so the host can retransmit with backoff.
+                                    if (_pendingCanDeliveryFailure && _frameDeliveryResultTaskSource != null)
+                                    {
+                                        _frameDeliveryResultTaskSource.SetResult(false);
+                                        _pendingCanDeliveryFailure = false;
+                                    }
                                 }
                                 else
                                 {
@@ -248,6 +283,7 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                     await Task.Delay(waitTimeMillis, cancellationToken);
                 }
 
+                _pendingCanDeliveryFailure = false;
                 _frameDeliveryResultTaskSource = new TaskCompletionSource<bool>();
 
                 // While writing frames, lock to ensure no frames are read and processed.
@@ -295,7 +331,7 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                     break;
                 }
 
-                // In the case of a NAK or CAN, retransmit our data frame.
+                // In the case of a NAK or timeout, retransmit our data frame.
                 _logger.LogSerialApiFrameTransmissionRetry(transmissionAttempt + 1);
             }
 
