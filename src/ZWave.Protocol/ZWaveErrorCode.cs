@@ -54,4 +54,9 @@ public enum ZWaveErrorCode
     /// A received command frame had an invalid or malformed payload.
     /// </summary>
     InvalidPayload,
+
+    /// <summary>
+    /// A callback from the Z-Wave module was not received within the expected time.
+    /// </summary>
+    CallbackTimeout,
 }
