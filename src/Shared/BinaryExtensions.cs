@@ -6,7 +6,11 @@ internal static class BinaryExtensions
 {
     public static sbyte ToInt8(this byte b) => unchecked((sbyte)b);
 
+    public static short ToInt16BE(this ReadOnlySpan<byte> bytes) => BinaryPrimitives.ReadInt16BigEndian(bytes);
+
     public static ushort ToUInt16BE(this ReadOnlySpan<byte> bytes) => BinaryPrimitives.ReadUInt16BigEndian(bytes);
+
+    public static void WriteBytesBE(this short value, Span<byte> destination) => BinaryPrimitives.WriteInt16BigEndian(destination, value);
 
     public static void WriteBytesBE(this ushort value, Span<byte> destination) => BinaryPrimitives.WriteUInt16BigEndian(destination, value);
 

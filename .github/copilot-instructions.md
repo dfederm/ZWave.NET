@@ -118,6 +118,8 @@ Uses `Microsoft.Extensions.Logging` with source-generated `[LoggerMessage]` attr
 
 **New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`. Node ID parameters are `ushort`; cast to `(byte)nodeId` when writing to the buffer. Use `CommandDataParsingHelpers` for shared parsing (node bitmasks, command class lists).
 
+**New SerialApiSetup Sub-Command**: The `SerialApiSetupRequest` is a `partial struct`. Each sub-command adds a factory method in a separate file (e.g. `SerialApiSetupSetNodeIdBaseType.cs`) and defines its own response struct implementing `ICommand<T>` with `CommandId => CommandId.SerialApiSetup`. Add the sub-command value to `SerialApiSetupSubcommand` enum. The response's first byte is always a `WasSubcommandSupported` flag (0 = not supported). Tests go in `SerialApiSetupTests.cs`.
+
 **New Command Class**: Create a class in `src/ZWave.CommandClasses/` inheriting `CommandClass<TEnum>`. Apply `[CommandClass(CommandClassId.X)]`. Constructor takes `(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)`. Define private inner structs for each command (Set/Get/Report) implementing `ICommand`. The source generator auto-registers it. Use `Endpoint` property to access the endpoint (e.g. `Endpoint.NodeId`, `Endpoint.CommandClasses`).
 
 ## Protocol References
