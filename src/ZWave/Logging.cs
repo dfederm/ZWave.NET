@@ -141,4 +141,10 @@ internal static partial class Logging
         Level = LogLevel.Trace,
         Message = "Received Serial API data frame with unknown type `{dataFrameType}`")]
     public static partial void LogSerialApiDataFrameUnknownType(this ILogger logger, DataFrameType dataFrameType);
+
+    [LoggerMessage(
+        EventId = 218,
+        Level = LogLevel.Warning,
+        Message = "Skipping {commandId} as it is not supported by the controller")]
+    public static partial void LogCommandNotSupported(this ILogger logger, CommandId commandId);
 }

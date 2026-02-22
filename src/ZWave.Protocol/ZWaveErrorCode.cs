@@ -36,6 +36,11 @@ public enum ZWaveErrorCode
     CommandNotSupported,
 
     /// <summary>
+    /// The serial API command is not supported by the controller.
+    /// </summary>
+    SerialApiCommandNotSupported,
+
+    /// <summary>
     /// The command is not ready to execute yet as it relies on the interview process.
     /// </summary>
     CommandNotReady,
