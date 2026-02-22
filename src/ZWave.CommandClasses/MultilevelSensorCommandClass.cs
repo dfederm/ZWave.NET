@@ -61,8 +61,8 @@ public sealed class MultilevelSensorCommandClass : CommandClass<MultilevelSensor
 
     private Dictionary<MultilevelSensorType, MultilevelSensorState?>? _sensorValues;
 
-    public MultilevelSensorCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    public MultilevelSensorCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 

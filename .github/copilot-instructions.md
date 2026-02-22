@@ -73,8 +73,10 @@ Implements the Z-Wave Serial API frame-level protocol (as defined by the Z-Wave 
 ### Command Classes Layer (`src/ZWave.CommandClasses/`)
 
 Implements Z-Wave Command Classes (Z-Wave Application Specification). This project references `ZWave.Protocol` but **not** `ZWave.Serial`, enabling mock driver implementations without a serial dependency.
-- **`CommandClass`** / **`CommandClass<TCommand>`** — Abstract base classes. Each CC (e.g. `BinarySwitchCommandClass`) inherits from `CommandClass<TEnum>` where `TEnum` is a byte-backed enum of commands. Takes `IDriver` and `INode` interfaces (not concrete types).
-- **`IDriver`** / **`INode`** — Interfaces defined here that abstract the driver layer. `Driver` and `Node` implement these in the ZWave project.
+- **`IEndpoint`** — Interface representing a functional sub-unit of a node. Properties: `NodeId`, `EndpointIndex`, `CommandClasses`, `GetCommandClass()`. Endpoint 0 is the "Root Device" (the node itself); endpoints 1–127 are sub-devices discovered via Multi Channel CC.
+- **`INode`** — Extends `IEndpoint` with node-level properties (`FrequentListeningMode`). A node IS endpoint 0.
+- **`IDriver`** — Interface abstracting the driver layer. `SendCommandAsync` accepts `nodeId` and `endpointIndex` parameters.
+- **`CommandClass`** / **`CommandClass<TCommand>`** — Abstract base classes. Each CC (e.g. `BinarySwitchCommandClass`) inherits from `CommandClass<TEnum>` where `TEnum` is a byte-backed enum of commands. Takes `IDriver` and `IEndpoint` interfaces (not concrete types). The `Endpoint` property provides access to the endpoint this CC belongs to.
 - **`[CommandClass(CommandClassId.X)]` attribute** — Applied to each CC class. The source generator `CommandClassFactoryGenerator` scans for this attribute and generates `CommandClassFactory` with a mapping from `CommandClassId` → constructor.
 - **`ICommand` interface** (`CommandClasses/ICommand.cs`) — Different from the Serial API `ICommand`. Used for CC-level commands with `CommandClassId` and `CommandId`.
 - **`CommandClassFrame`** — Wraps CC payload bytes (CC ID + Command ID + parameters).
@@ -83,7 +85,7 @@ Implements Z-Wave Command Classes (Z-Wave Application Specification). This proje
 
 - **`Driver`** — Entry point. Implements `IDriver`. Opens serial port, manages frame send/receive, processes unsolicited requests, coordinates request-response and callback flows.
 - **`Controller`** — Represents the Z-Wave USB controller. Runs identification sequence on startup.
-- **`Node`** — Represents a Z-Wave network node. Implements `INode`. Handles interviews and command class discovery. Node IDs are `ushort` throughout the codebase to support both classic (1–232) and Long Range (256+) nodes.
+- **`Node`** — Represents a Z-Wave network node. Implements `INode` (and thus `IEndpoint` with `EndpointIndex = 0`). Handles interviews and command class discovery. Node IDs are `ushort` throughout the codebase to support both classic (1–232) and Long Range (256+) nodes.
 
 ### Source Generators (`src/ZWave.BuildTools/`)
 
@@ -116,7 +118,7 @@ Uses `Microsoft.Extensions.Logging` with source-generated `[LoggerMessage]` attr
 
 **New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`. Node ID parameters are `ushort`; cast to `(byte)nodeId` when writing to the buffer. Use `CommandDataParsingHelpers` for shared parsing (node bitmasks, command class lists).
 
-**New Command Class**: Create a class in `src/ZWave.CommandClasses/` inheriting `CommandClass<TEnum>`. Apply `[CommandClass(CommandClassId.X)]`. Define private inner structs for each command (Set/Get/Report) implementing `ICommand`. The source generator auto-registers it.
+**New Command Class**: Create a class in `src/ZWave.CommandClasses/` inheriting `CommandClass<TEnum>`. Apply `[CommandClass(CommandClassId.X)]`. Constructor takes `(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)`. Define private inner structs for each command (Set/Get/Report) implementing `ICommand`. The source generator auto-registers it. Use `Endpoint` property to access the endpoint (e.g. `Endpoint.NodeId`, `Endpoint.CommandClasses`).
 
 ## Protocol References
 

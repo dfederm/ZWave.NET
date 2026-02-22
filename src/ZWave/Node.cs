@@ -39,6 +39,12 @@ public sealed class Node : INode
     /// </summary>
     public ushort Id { get; }
 
+    /// <inheritdoc />
+    ushort IEndpoint.NodeId => Id;
+
+    /// <inheritdoc />
+    byte IEndpoint.EndpointIndex => 0;
+
     /// <summary>
     /// Gets the current interview status of the node.
     /// </summary>

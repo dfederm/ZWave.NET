@@ -14,7 +14,7 @@ public enum NotImplementedCommand : byte
 /// </summary>
 public sealed class NotImplementedCommandClass : CommandClass<NotImplementedCommand>
 {
-    internal NotImplementedCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger) : base(info, driver, node, logger)
+    internal NotImplementedCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger) : base(info, driver, endpoint, logger)
     {
     }
 

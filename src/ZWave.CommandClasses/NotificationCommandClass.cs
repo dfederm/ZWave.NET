@@ -156,8 +156,8 @@ public sealed class NotificationCommandClass : CommandClass<NotificationCommand>
 {
     private Dictionary<NotificationType, SupportedNotificationEvents?>? _supportedNotificationEvents;
 
-    internal NotificationCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    internal NotificationCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 

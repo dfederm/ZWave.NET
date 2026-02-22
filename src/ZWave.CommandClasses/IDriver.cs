@@ -6,11 +6,12 @@
 public interface IDriver
 {
     /// <summary>
-    /// Sends a command class command to a specific node.
+    /// Sends a command class command to a specific node and endpoint.
     /// </summary>
     Task SendCommandAsync<TCommand>(
         TCommand command,
         ushort nodeId,
+        byte endpointIndex,
         CancellationToken cancellationToken)
         where TCommand : struct, ICommand;
 

@@ -119,8 +119,8 @@ public readonly record struct PowerlevelTestResult(
 [CommandClass(CommandClassId.Powerlevel)]
 public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
 {
-    public PowerlevelCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    public PowerlevelCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 
@@ -183,7 +183,7 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         ushort testFrameCount,
         CancellationToken cancellationToken)
     {
-        if (testNodeId == Node.Id)
+        if (testNodeId == Endpoint.NodeId)
         {
             throw new ArgumentException("The test node must be different from the node performing the test.", nameof(testNodeId));
         }

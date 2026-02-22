@@ -226,9 +226,9 @@ public sealed class {Name}CommandClass : CommandClass<{Name}Command>
     internal {Name}CommandClass(
         CommandClassInfo info,
         IDriver driver,
-        INode node,
+        IEndpoint endpoint,
         ILogger logger)
-        : base(info, driver, node, logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 
@@ -271,7 +271,7 @@ public sealed class {Name}CommandClass : CommandClass<{Name}Command>
 #### Key Points for the CC Class
 
 - **`[CommandClass(CommandClassId.{Name})]` attribute**: This is required. A Roslyn source generator scans for this attribute and auto-generates the `CommandClassFactory` mapping. No other registration is needed.
-- **Constructor**: Always `internal`, takes `(CommandClassInfo info, IDriver driver, INode node, ILogger logger)`, calls `base(info, driver, node, logger)`.
+- **Constructor**: Always `internal`, takes `(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)`, calls `base(info, driver, endpoint, logger)`. The `Endpoint` property provides access to the endpoint this CC belongs to (e.g. `Endpoint.NodeId`, `Endpoint.CommandClasses`, `Endpoint.GetCommandClass()`).
 - **`IsCommandSupported`**: Return `true` for always-available commands, `false` for report-only/unsupported commands, and use `Version.HasValue ? Version >= N : null` for version-gated commands. Use `null` when it's unknown whether the command is supported.
 - **`Dependencies`**: Only override if this CC does NOT depend on the Version CC. The default is `{ CommandClassId.Version }`. The Version CC itself overrides this to `Array.Empty<CommandClassId>()`.
 

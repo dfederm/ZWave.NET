@@ -445,9 +445,16 @@ public sealed class Driver : IDriver, IAsyncDisposable
     public async Task SendCommandAsync<TCommand>(
         TCommand request,
         ushort nodeId,
+        byte endpointIndex,
         CancellationToken cancellationToken)
         where TCommand : struct, ICommand
     {
+        // TODO: Multi Channel encapsulation for non-zero endpoints (#138)
+        if (endpointIndex != 0)
+        {
+            throw new NotImplementedException("Multi Channel encapsulation for non-zero endpoints is not yet implemented.");
+        }
+
         const TransmissionOptions transmissionOptions = TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore;
         byte sessionId = GetNextSessionId();
         SendDataRequest sendDataRequest = SendDataRequest.Create(nodeId, request.Frame.Data.Span, transmissionOptions, sessionId);
