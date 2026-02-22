@@ -147,4 +147,10 @@ internal static partial class Logging
         Level = LogLevel.Warning,
         Message = "Skipping {commandId} as it is not supported by the controller")]
     public static partial void LogCommandNotSupported(this ILogger logger, CommandId commandId);
+
+    [LoggerMessage(
+        EventId = 219,
+        Level = LogLevel.Warning,
+        Message = "Callback timed out for {commandId}")]
+    public static partial void LogCallbackTimeout(this ILogger logger, CommandId commandId);
 }

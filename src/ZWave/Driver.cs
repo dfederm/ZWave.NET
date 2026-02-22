@@ -15,6 +15,14 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
     private record struct UnresolvedCallbackKey(CommandId CommandId, byte SessionId);
 
+    /// <summary>
+    /// The maximum time to wait for a callback from the Z-Wave module.
+    /// Per the Serial API Host Application Programming Guide, section "Missing Callbacks",
+    /// the host application SHOULD guard all its callbacks with a timer.
+    /// 65 seconds accounts for worst-case network routing and retransmission delays.
+    /// </summary>
+    private static readonly TimeSpan CallbackTimeout = TimeSpan.FromSeconds(65);
+
     private readonly ILogger _logger;
 
     private readonly ChannelWriter<DataFrameTransmission> _dataFrameSendChannelWriter;
@@ -113,6 +121,23 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
         // Allow the processing task to drain. Disposal of the serial port coordinator should complete the channel.
         await _frameProcessingTask;
+
+        // Cancel all pending callbacks. At this point, no more frames can be sent or received,
+        // so any remaining callbacks will never be resolved.
+        // Copy values and clear the dictionary first before canceling, to avoid modifying the
+        // dictionary during enumeration (TrySetCanceled may trigger synchronous continuations
+        // that call RemoveUnresolvedCallback).
+        List<TaskCompletionSource<DataFrame>> pendingCallbacks;
+        lock (_callbackLock)
+        {
+            pendingCallbacks = [.. _unresolvedCallbacks.Values];
+            _unresolvedCallbacks.Clear();
+        }
+
+        foreach (TaskCompletionSource<DataFrame> tcs in pendingCallbacks)
+        {
+            tcs.TrySetCanceled();
+        }
     }
 
     private void ProcessDataFrame(DataFrame frame)
@@ -369,7 +394,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
             _unresolvedCallbacks.Add(callbackKey, tcs);
         }
 
-        DataFrame callbackFrame = await tcs.Task;
+        DataFrame callbackFrame = await AwaitCallbackAsync(callbackKey, tcs, cancellationToken);
         return TCallback.Create(callbackFrame);
     }
 
@@ -442,18 +467,54 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
         // Intentionally not awaiting this task. The callback only contains a transmit report,
         // which the caller doesn't care about.
-        _ = tcs.Task.ContinueWith(task =>
-        {
-            // The unresolved callback tasks currently never get cancelled or fault. If this changes,
-            // consider what to do here in those cases.
-            if (task.IsCompletedSuccessfully)
+        _ = AwaitCallbackAsync(callbackKey, tcs, CancellationToken.None)
+            .ContinueWith(task =>
             {
-                DataFrame callbackFrame = task.Result;
-                SendDataCallback callback = SendDataCallback.Create(callbackFrame);
+                if (task.IsCompletedSuccessfully)
+                {
+                    SendDataCallback callback = SendDataCallback.Create(task.Result);
 
-                // TODO: Consume the transmit report.
-            }
-        });
+                    // TODO: Consume the transmit report.
+                }
+                else if (task.Exception?.InnerException is ZWaveException { ErrorCode: ZWaveErrorCode.CallbackTimeout })
+                {
+                    _logger.LogCallbackTimeout(CommandId.SendData);
+                }
+            });
+    }
+
+    /// <summary>
+    /// Awaits a callback with timeout, cleaning up the callback registration on failure.
+    /// Per the Serial API Host Application Programming Guide, the host SHOULD guard all
+    /// callbacks with a timer.
+    /// </summary>
+    private async Task<DataFrame> AwaitCallbackAsync(
+        UnresolvedCallbackKey callbackKey,
+        TaskCompletionSource<DataFrame> tcs,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await tcs.Task.WaitAsync(CallbackTimeout, cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            RemoveUnresolvedCallback(callbackKey);
+            throw new ZWaveException(ZWaveErrorCode.CallbackTimeout, $"Timed out waiting for callback for {callbackKey.CommandId}");
+        }
+        catch
+        {
+            RemoveUnresolvedCallback(callbackKey);
+            throw;
+        }
+    }
+
+    private void RemoveUnresolvedCallback(UnresolvedCallbackKey callbackKey)
+    {
+        lock (_callbackLock)
+        {
+            _unresolvedCallbacks.Remove(callbackKey);
+        }
     }
 
     private async Task SendFrameAsync(DataFrame request, CancellationToken cancellationToken)
