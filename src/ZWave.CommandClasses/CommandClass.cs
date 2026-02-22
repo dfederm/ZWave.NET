@@ -9,8 +9,8 @@ namespace ZWave.CommandClasses;
 public abstract class CommandClass<TCommand> : CommandClass
     where TCommand : struct, Enum
 {
-    internal CommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    internal CommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
         if (Unsafe.SizeOf<TCommand>() != Unsafe.SizeOf<byte>())
         {
@@ -52,12 +52,12 @@ public abstract class CommandClass
     internal CommandClass(
         CommandClassInfo info,
         IDriver driver,
-        INode node,
+        IEndpoint endpoint,
         ILogger logger)
     {
         Info = info;
         Driver = driver;
-        Node = node;
+        Endpoint = endpoint;
         Logger = logger;
     }
 
@@ -72,9 +72,9 @@ public abstract class CommandClass
     protected IDriver Driver { get; }
 
     /// <summary>
-    /// Gets the node this command class belongs to.
+    /// Gets the endpoint this command class belongs to.
     /// </summary>
-    public INode Node { get; }
+    public IEndpoint Endpoint { get; }
 
     /// <summary>
     /// Gets the logger for this command class.
@@ -172,7 +172,7 @@ public abstract class CommandClass
             throw new ZWaveException(ZWaveErrorCode.CommandNotSupported, "This command is not supported by this node");
         }
 
-        await Driver.SendCommandAsync(command, Node.Id, cancellationToken).ConfigureAwait(false);
+        await Driver.SendCommandAsync(command, Endpoint.NodeId, Endpoint.EndpointIndex, cancellationToken).ConfigureAwait(false);
     }
 
     internal Task<CommandClassFrame> AwaitNextReportAsync<TReport>(CancellationToken cancellationToken)

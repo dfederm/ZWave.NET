@@ -45,9 +45,9 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
     internal BasicCommandClass(
         CommandClassInfo info,
         IDriver driver,
-        INode node,
+        IEndpoint endpoint,
         ILogger logger)
-        : base(info, driver, node, logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 

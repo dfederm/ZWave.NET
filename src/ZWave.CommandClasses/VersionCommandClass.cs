@@ -181,8 +181,8 @@ public readonly record struct VersionSoftwareInfo(
 [CommandClass(CommandClassId.Version)]
 public sealed class VersionCommandClass : CommandClass<VersionCommand>
 {
-    public VersionCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    public VersionCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 
@@ -244,7 +244,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
             },
             cancellationToken).ConfigureAwait(false);
         (CommandClassId _, byte commandClassVersion) = VersionCommandClassReportCommand.Parse(reportFrame, Logger);
-        Node.GetCommandClass(commandClassId).SetVersion(commandClassVersion);
+        Endpoint.GetCommandClass(commandClassId).SetVersion(commandClassVersion);
         return commandClassVersion;
     }
 
@@ -277,7 +277,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
     {
         // Populate the version of every command class the node implements
-        foreach (KeyValuePair<CommandClassId, CommandClassInfo> pair in Node.CommandClasses)
+        foreach (KeyValuePair<CommandClassId, CommandClassInfo> pair in Endpoint.CommandClasses)
         {
             CommandClassId commandClassId = pair.Key;
             _ = await GetCommandClassAsync(commandClassId, cancellationToken).ConfigureAwait(false);
@@ -315,7 +315,7 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
             case VersionCommand.CommandClassReport:
             {
                 (CommandClassId requestedCommandClass, byte commandClassVersion) = VersionCommandClassReportCommand.Parse(frame, Logger);
-                CommandClass commandClass = Node.GetCommandClass(requestedCommandClass);
+                CommandClass commandClass = Endpoint.GetCommandClass(requestedCommandClass);
                 commandClass.SetVersion(commandClassVersion);
                 break;
             }

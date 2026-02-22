@@ -42,8 +42,8 @@ public readonly record struct BinarySwitchReport(
 [CommandClass(CommandClassId.BinarySwitch)]
 public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
 {
-    internal BinarySwitchCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    internal BinarySwitchCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 

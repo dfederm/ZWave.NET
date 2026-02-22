@@ -164,8 +164,8 @@ public readonly record struct BatteryHealth(
 [CommandClass(CommandClassId.Battery)]
 public sealed class BatteryCommandClass : CommandClass<BatteryCommand>
 {
-    public BatteryCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    public BatteryCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 

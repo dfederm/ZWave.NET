@@ -1,27 +1,16 @@
 ﻿namespace ZWave.CommandClasses;
 
 /// <summary>
-/// Provides the node operations needed by command classes.
+/// Provides node-level operations beyond what <see cref="IEndpoint"/> exposes.
 /// </summary>
-public interface INode
+/// <remarks>
+/// A node IS endpoint 0. <see cref="INode"/> extends <see cref="IEndpoint"/> with
+/// node-level properties that are not per-endpoint (e.g. frequent listening mode).
+/// </remarks>
+public interface INode : IEndpoint
 {
-    /// <summary>
-    /// Gets the node ID.
-    /// </summary>
-    ushort Id { get; }
-
     /// <summary>
     /// Gets the frequent listening mode of the node.
     /// </summary>
     FrequentListeningMode FrequentListeningMode { get; }
-
-    /// <summary>
-    /// Gets the command classes supported by this node.
-    /// </summary>
-    IReadOnlyDictionary<CommandClassId, CommandClassInfo> CommandClasses { get; }
-
-    /// <summary>
-    /// Gets a specific command class by ID.
-    /// </summary>
-    CommandClass GetCommandClass(CommandClassId commandClassId);
 }

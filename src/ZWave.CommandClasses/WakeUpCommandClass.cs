@@ -83,8 +83,8 @@ public readonly record struct WakeUpIntervalCapabilities(
 [CommandClass(CommandClassId.WakeUp)]
 public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
 {
-    public WakeUpCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    public WakeUpCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 

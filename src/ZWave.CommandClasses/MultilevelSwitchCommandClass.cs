@@ -100,8 +100,8 @@ public readonly record struct MultilevelSwitchReport(
 [CommandClass(CommandClassId.MultilevelSwitch)]
 public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitchCommand>
 {
-    public MultilevelSwitchCommandClass(CommandClassInfo info, IDriver driver, INode node, ILogger logger)
-        : base(info, driver, node, logger)
+    public MultilevelSwitchCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+        : base(info, driver, endpoint, logger)
     {
     }
 

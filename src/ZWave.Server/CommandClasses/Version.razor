@@ -155,7 +155,7 @@
                     <th scope="row">Command Class</th>
                     <td>
                         <select @bind="_commandClassId">
-                            @foreach (KeyValuePair<CommandClassId, CommandClassInfo> kvp in CommandClass.Node.CommandClasses)
+                            @foreach (KeyValuePair<CommandClassId, CommandClassInfo> kvp in CommandClass.Endpoint.CommandClasses)
                             {
                                 <option value="@kvp.Key">@kvp.Key</option>
                             }
