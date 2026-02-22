@@ -45,6 +45,24 @@ public class DataFrameTests
     }
 
     [TestMethod]
+    public void Create_MaxLengthParameters_Succeeds()
+    {
+        // Max length field = 255, which includes Length (1) + Type (1) + CommandId (1) + Payload (252)
+        byte[] maxParameters = new byte[byte.MaxValue - 3];
+        DataFrame dataFrame = DataFrame.Create(DataFrameType.REQ, CommandId.SerialApiStarted, maxParameters);
+        Assert.AreEqual(maxParameters.Length, dataFrame.CommandParameters.Length);
+        Assert.IsTrue(dataFrame.IsChecksumValid());
+    }
+
+    [TestMethod]
+    public void Create_ExceedsMaxLength_Throws()
+    {
+        byte[] tooLargeParameters = new byte[byte.MaxValue - 2];
+        Assert.ThrowsExactly<ArgumentException>(
+            () => DataFrame.Create(DataFrameType.REQ, CommandId.SerialApiStarted, tooLargeParameters));
+    }
+
+    [TestMethod]
     public void CommandParameters()
     {
         var frameData = new byte[]

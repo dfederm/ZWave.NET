@@ -60,13 +60,23 @@ public readonly struct DataFrame
     /// </summary>
     public static DataFrame Create(DataFrameType type, CommandId commandId, ReadOnlySpan<byte> commandParameters)
     {
+        // Per the Z-Wave Host API Specification section 3.2.1, the length field is 8 bits and counts itself,
+        // the type, the command ID, and the command payload. It does NOT include the SOF or the checksum.
+        int length = 3 + commandParameters.Length;
+        if (length > byte.MaxValue)
+        {
+            throw new ArgumentException(
+                $"Data frame length {length} exceeds maximum of {byte.MaxValue}.",
+                nameof(commandParameters));
+        }
+
         byte[] data = new byte[5 + commandParameters.Length];
         data[0] = FrameHeader.SOF;
-        data[1] = (byte)(data.Length - 2); // Frame length does not include the SOF or Checksum
+        data[1] = (byte)length;
         data[2] = (byte)type;
         data[3] = (byte)commandId;
         commandParameters.CopyTo(data.AsSpan()[4..]);
-        data[data.Length - 1] = CalculateChecksum(data);
+        data[^1] = CalculateChecksum(data);
         return new DataFrame(data);
     }
 
