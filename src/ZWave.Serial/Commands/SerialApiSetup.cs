@@ -13,9 +13,29 @@ public enum SerialApiSetupSubcommand : byte
     SetTxStatusReport = 0x02,
 
     /// <summary>
+    /// Configure the maximum Long Range transmit powerlevel.
+    /// </summary>
+    SetMaxLongRangePowerlevel = 0x03,
+
+    /// <summary>
     /// Configure the Tx Powerlevel setting of the Z-Wave API.
     /// </summary>
     SetPowerlevel = 0x04,
+
+    /// <summary>
+    /// Request the maximum Long Range transmit powerlevel.
+    /// </summary>
+    GetMaxLongRangePowerlevel = 0x05,
+
+    /// <summary>
+    /// Configure the maximum Long Range node ID.
+    /// </summary>
+    SetLongRangeMaxNodeId = 0x06,
+
+    /// <summary>
+    /// Request the maximum Long Range node ID.
+    /// </summary>
+    GetLongRangeMaxNodeId = 0x07,
 
     /// <summary>
     /// Request the Powerlevel setting of the Z-Wave API.
@@ -31,6 +51,26 @@ public enum SerialApiSetupSubcommand : byte
     /// Request the maximum payload that the Z-Wave API Module can accept for transmitting Z-Wave Long Range frames.
     /// </summary>
     GetLongRangeMaxPayloadSize = 0x11,
+
+    /// <summary>
+    /// Configure the TX powerlevel using 16-bit values.
+    /// </summary>
+    Set16BitPowerlevel = 0x12,
+
+    /// <summary>
+    /// Request the TX powerlevel as 16-bit values.
+    /// </summary>
+    Get16BitPowerlevel = 0x13,
+
+    /// <summary>
+    /// Request the list of supported RF regions.
+    /// </summary>
+    GetSupportedRegions = 0x15,
+
+    /// <summary>
+    /// Request information about a supported RF region.
+    /// </summary>
+    GetRegionInfo = 0x16,
 
     /// <summary>
     /// Request the current RF region configured at the Z-Wave API Module.

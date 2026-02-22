@@ -555,6 +555,16 @@ public enum CommandId : byte
     SerialApiGetLongRangeNodes = 0xda,
 
     /// <summary>
+    /// Get the active Long Range radio channel.
+    /// </summary>
+    GetLongRangeChannel = 0xdb,
+
+    /// <summary>
+    /// Set the active Long Range radio channel.
+    /// </summary>
+    SetLongRangeChannel = 0xdc,
+
+    /// <summary>
     /// Get the DCDC Configuration
     /// </summary>
     GetDcdcConfig = 0xde,
