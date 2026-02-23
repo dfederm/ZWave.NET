@@ -44,9 +44,9 @@ public readonly struct GetPriorityRouteResponse : ICommand<GetPriorityRouteRespo
     public DataFrame Frame { get; }
 
     /// <summary>
-    /// Indicates whether a priority route exists for the node.
+    /// The kind of route returned.
     /// </summary>
-    public bool RouteExists => Frame.CommandParameters.Span[0] != 0;
+    public PriorityRouteKind RouteKind => (PriorityRouteKind)Frame.CommandParameters.Span[0];
 
     /// <summary>
     /// The repeater nodes in the priority route (4 bytes).
@@ -56,7 +56,7 @@ public readonly struct GetPriorityRouteResponse : ICommand<GetPriorityRouteRespo
     /// <summary>
     /// The speed setting for the priority route.
     /// </summary>
-    public byte Speed => Frame.CommandParameters.Span[5];
+    public PriorityRouteSpeed Speed => (PriorityRouteSpeed)Frame.CommandParameters.Span[5];
 
     public static GetPriorityRouteResponse Create(DataFrame frame) => new GetPriorityRouteResponse(frame);
 }

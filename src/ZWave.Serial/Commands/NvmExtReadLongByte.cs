@@ -47,11 +47,6 @@ public readonly struct NvmExtReadLongByteResponse : ICommand<NvmExtReadLongByteR
     public DataFrame Frame { get; }
 
     /// <summary>
-    /// The status of the NVM operation.
-    /// </summary>
-    public NvmStatus Status => (NvmStatus)Frame.CommandParameters.Span[1];
-
-    /// <summary>
     /// The data byte read from NVM.
     /// </summary>
     public byte Data => Frame.CommandParameters.Span[0];

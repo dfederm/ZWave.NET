@@ -22,7 +22,7 @@ public readonly struct SerialApiSetupGetSupportedCommandsResponse : ICommand<Ser
     // The value 0 MUST indicate that the received Z-Wave API setup sub command in the Initial data frame is not supported.
     public bool WasSubcommandSupported => Frame.CommandParameters.Span[0] > 0;
 
-    public HashSet<SerialApiSetupSubcommand> SupportedSubcommands
+    public IReadOnlySet<SerialApiSetupSubcommand> SupportedSubcommands
     {
         get
         {

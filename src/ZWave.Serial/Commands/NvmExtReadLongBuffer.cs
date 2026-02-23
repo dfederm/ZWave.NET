@@ -48,14 +48,9 @@ public readonly struct NvmExtReadLongBufferResponse : ICommand<NvmExtReadLongBuf
     public DataFrame Frame { get; }
 
     /// <summary>
-    /// The status of the NVM operation.
+    /// The data read from NVM.
     /// </summary>
-    public NvmStatus Status => (NvmStatus)Frame.CommandParameters.Span[^1];
-
-    /// <summary>
-    /// The data read from NVM (excludes the status byte at the end).
-    /// </summary>
-    public ReadOnlyMemory<byte> Data => Frame.CommandParameters[..^1];
+    public ReadOnlyMemory<byte> Data => Frame.CommandParameters;
 
     public static NvmExtReadLongBufferResponse Create(DataFrame frame) => new NvmExtReadLongBufferResponse(frame);
 }

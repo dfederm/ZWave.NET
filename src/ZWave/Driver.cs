@@ -528,7 +528,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
     {
         // Per the Z-Wave Host API Specification, the host MUST NOT send commands that are not
         // indicated as supported in the GetSerialApiCapabilities response bitmask.
-        HashSet<CommandId>? supportedCommandIds = Controller.SupportedCommandIds;
+        IReadOnlySet<CommandId>? supportedCommandIds = Controller.SupportedCommandIds;
         if (supportedCommandIds != null && !supportedCommandIds.Contains(request.CommandId))
         {
             throw new ZWaveException(

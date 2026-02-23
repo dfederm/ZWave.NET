@@ -1,5 +1,4 @@
-﻿using ZWave.Serial;
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -9,7 +8,7 @@ public class GetInitDataTests : CommandTestBase
     private record GetInitDataResponseData(
         byte ApiVersion,
         GetInitDataCapabilities ApiCapabilities,
-        HashSet<ushort> NodeIds,
+        IReadOnlySet<ushort> NodeIds,
         byte ChipType,
         byte ChipVersion);
 

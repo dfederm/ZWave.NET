@@ -55,20 +55,15 @@ public readonly struct SerialApiGetLongRangeNodesResponse : ICommand<SerialApiGe
     public ushort BitmaskOffset => Frame.CommandParameters.Span[1..3].ToUInt16BE();
 
     /// <summary>
-    /// The length of the node list bitmask.
-    /// </summary>
-    public byte NodeListLength => Frame.CommandParameters.Span[3];
-
-    /// <summary>
     /// The set of Long Range node IDs parsed from the bitmask.
     /// Per the Z-Wave Host API Specification, LR node IDs start at BASE=256.
     /// Node ID = BASE + (BITMASK_OFFSET + J) * 8 + N, where J is the byte index and N is the bit index.
     /// </summary>
-    public HashSet<ushort> NodeIds
+    public IReadOnlySet<ushort> NodeIds
     {
         get
         {
-            byte nodeListLength = NodeListLength;
+            byte nodeListLength = Frame.CommandParameters.Span[3];
             ushort bitmaskOffset = BitmaskOffset;
             ReadOnlySpan<byte> bitMask = Frame.CommandParameters.Span.Slice(4, nodeListLength);
 

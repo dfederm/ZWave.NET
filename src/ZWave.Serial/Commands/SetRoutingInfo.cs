@@ -21,17 +21,36 @@ public readonly struct SetRoutingInfoRequest : ICommand<SetRoutingInfoRequest>
     /// </summary>
     /// <param name="nodeId">The node ID to update.</param>
     /// <param name="neighborMask">The 29-byte bitmask of neighbors (232 bits for 232 nodes).</param>
-    /// <param name="speed">The speed setting for the node.</param>
-    public static SetRoutingInfoRequest Create(ushort nodeId, ReadOnlySpan<byte> neighborMask, byte speed)
+    public static SetRoutingInfoRequest Create(ushort nodeId, ReadOnlySpan<byte> neighborMask)
     {
-        Span<byte> commandParameters = stackalloc byte[1 + neighborMask.Length + 1];
+        Span<byte> commandParameters = stackalloc byte[1 + neighborMask.Length];
         commandParameters[0] = (byte)nodeId;
         neighborMask.CopyTo(commandParameters[1..]);
-        commandParameters[1 + neighborMask.Length] = speed;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SetRoutingInfoRequest(frame);
     }
 
     public static SetRoutingInfoRequest Create(DataFrame frame) => new SetRoutingInfoRequest(frame);
+}
+
+public readonly struct SetRoutingInfoResponse : ICommand<SetRoutingInfoResponse>
+{
+    public SetRoutingInfoResponse(DataFrame frame)
+    {
+        Frame = frame;
+    }
+
+    public static DataFrameType Type => DataFrameType.RES;
+
+    public static CommandId CommandId => CommandId.SetRoutingInfo;
+
+    public DataFrame Frame { get; }
+
+    /// <summary>
+    /// The return value from the operation.
+    /// </summary>
+    public byte RetVal => Frame.CommandParameters.Span[0];
+
+    public static SetRoutingInfoResponse Create(DataFrame frame) => new SetRoutingInfoResponse(frame);
 }

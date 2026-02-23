@@ -3,6 +3,10 @@
 /// <summary>
 /// Restore HomeID and NodeID information from a backup.
 /// </summary>
+/// <remarks>
+/// This is a fire-and-forget command with no response per INS13954.
+/// The restored values will not take effect before the Z-Wave module has been reset.
+/// </remarks>
 public readonly struct StoreHomeIdRequest : ICommand<StoreHomeIdRequest>
 {
     public StoreHomeIdRequest(DataFrame frame)
@@ -19,7 +23,7 @@ public readonly struct StoreHomeIdRequest : ICommand<StoreHomeIdRequest>
     /// <summary>
     /// Create a request to store the Home ID and Node ID.
     /// </summary>
-    /// <param name="homeId">The Home ID to store (big-endian).</param>
+    /// <param name="homeId">The Home ID to store (4 bytes, big-endian).</param>
     /// <param name="nodeId">The Node ID to store.</param>
     public static StoreHomeIdRequest Create(uint homeId, ushort nodeId)
     {
@@ -27,30 +31,9 @@ public readonly struct StoreHomeIdRequest : ICommand<StoreHomeIdRequest>
         homeId.WriteBytesBE(commandParameters);
         commandParameters[4] = (byte)nodeId;
 
-        var frame = DataFrame.Create(Type, CommandId, commandParameters);
+        DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new StoreHomeIdRequest(frame);
     }
 
     public static StoreHomeIdRequest Create(DataFrame frame) => new StoreHomeIdRequest(frame);
-}
-
-public readonly struct StoreHomeIdResponse : ICommand<StoreHomeIdResponse>
-{
-    public StoreHomeIdResponse(DataFrame frame)
-    {
-        Frame = frame;
-    }
-
-    public static DataFrameType Type => DataFrameType.RES;
-
-    public static CommandId CommandId => CommandId.StoreHomeId;
-
-    public DataFrame Frame { get; }
-
-    /// <summary>
-    /// The status of the store operation.
-    /// </summary>
-    public byte Status => Frame.CommandParameters.Span[0];
-
-    public static StoreHomeIdResponse Create(DataFrame frame) => new StoreHomeIdResponse(frame);
 }

@@ -1,12 +1,11 @@
-﻿using ZWave.Serial;
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
 public class NvmExtWriteLongBufferTests : CommandTestBase
 {
-    private record NvmExtWriteLongBufferResponseData(NvmStatus Status);
+    private record NvmExtWriteLongBufferResponseData(bool Success);
 
     [TestMethod]
     public void Request()
@@ -31,8 +30,8 @@ public class NvmExtWriteLongBufferTests : CommandTestBase
             new[]
             {
                 (
-                    CommandParameters: new byte[] { 0x00 },
-                    ExpectedData: new NvmExtWriteLongBufferResponseData(Status: NvmStatus.Success)
+                    CommandParameters: new byte[] { 0x01 },
+                    ExpectedData: new NvmExtWriteLongBufferResponseData(Success: true)
                 )
             });
 }

@@ -62,19 +62,24 @@ public readonly struct NvmGetIdResponse : ICommand<NvmGetIdResponse>
     public DataFrame Frame { get; }
 
     /// <summary>
+    /// The length of the NVM ID structure.
+    /// </summary>
+    public byte Length => Frame.CommandParameters.Span[0];
+
+    /// <summary>
     /// The NVM manufacturer ID.
     /// </summary>
-    public byte NvmManufacturerId => Frame.CommandParameters.Span[0];
+    public byte NvmManufacturerId => Frame.CommandParameters.Span[1];
 
     /// <summary>
     /// The memory type.
     /// </summary>
-    public byte MemoryType => Frame.CommandParameters.Span[1];
+    public byte MemoryType => Frame.CommandParameters.Span[2];
 
     /// <summary>
     /// The memory capacity.
     /// </summary>
-    public byte MemoryCapacity => Frame.CommandParameters.Span[2];
+    public byte MemoryCapacity => Frame.CommandParameters.Span[3];
 
     public static NvmGetIdResponse Create(DataFrame frame) => new NvmGetIdResponse(frame);
 }

@@ -14,7 +14,7 @@ public readonly struct RediscoveryNeededRequest : IRequestWithCallback<Rediscove
 
     public static CommandId CommandId => CommandId.RediscoveryNeeded;
 
-    public static bool ExpectsResponseStatus => false;
+    public static bool ExpectsResponseStatus => true;
 
     public DataFrame Frame { get; }
 
@@ -54,9 +54,9 @@ public readonly struct RediscoveryNeededCallback : ICommand<RediscoveryNeededCal
     public byte SessionId => Frame.CommandParameters.Span[0];
 
     /// <summary>
-    /// The status of the rediscovery request.
+    /// Whether the rediscovery request succeeded.
     /// </summary>
-    public byte Status => Frame.CommandParameters.Span[1];
+    public bool Success => Frame.CommandParameters.Span[1] != 0;
 
     public static RediscoveryNeededCallback Create(DataFrame frame) => new RediscoveryNeededCallback(frame);
 }

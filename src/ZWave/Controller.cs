@@ -57,7 +57,7 @@ public sealed class Controller
     /// <summary>
     /// Gets the set of Serial API command IDs supported by the controller.
     /// </summary>
-    public HashSet<CommandId>? SupportedCommandIds { get; private set; }
+    public IReadOnlySet<CommandId>? SupportedCommandIds { get; private set; }
 
     /// <summary>
     /// Gets the Z-Wave library version string.
@@ -72,7 +72,7 @@ public sealed class Controller
     /// <summary>
     /// Gets the set of Serial API Setup subcommands supported by the controller.
     /// </summary>
-    public HashSet<SerialApiSetupSubcommand>? SupportedSerialApiSetupSubcommands { get; private set; }
+    public IReadOnlySet<SerialApiSetupSubcommand>? SupportedSerialApiSetupSubcommands { get; private set; }
 
     /// <summary>
     /// Gets the node ID of the SUC/SIS node.
@@ -179,7 +179,7 @@ public sealed class Controller
             }
             else
             {
-                SupportedSerialApiSetupSubcommands = [];
+                SupportedSerialApiSetupSubcommands = new HashSet<SerialApiSetupSubcommand>();
             }
 
             _logger.LogControllerSupportedSerialApiSetupSubcommands(FormatSerialApiSetupSubcommands(SupportedSerialApiSetupSubcommands));
@@ -247,7 +247,7 @@ public sealed class Controller
             ChipType = getInitDataResponse.ChipType;
             ChipVersion = getInitDataResponse.ChipVersion;
 
-            HashSet<ushort> nodeIds = getInitDataResponse.NodeIds;
+            IReadOnlySet<ushort> nodeIds = getInitDataResponse.NodeIds;
             foreach (ushort nodeId in nodeIds)
             {
                 _nodes.Add(nodeId, new Node(nodeId, _driver, _logger));
@@ -270,7 +270,7 @@ public sealed class Controller
         }
     }
 
-    private static string FormatCommandIds(HashSet<CommandId> commandIds)
+    private static string FormatCommandIds(IReadOnlySet<CommandId> commandIds)
     {
         int literalLength = commandIds.Count * 2;
         int formattedCount = commandIds.Count;
@@ -308,7 +308,7 @@ public sealed class Controller
         return false;
     }
 
-    private static string FormatSerialApiSetupSubcommands(HashSet<SerialApiSetupSubcommand> subcommands)
+    private static string FormatSerialApiSetupSubcommands(IReadOnlySet<SerialApiSetupSubcommand> subcommands)
     {
         int literalLength = subcommands.Count * 2;
         int formattedCount = subcommands.Count;
@@ -332,7 +332,7 @@ public sealed class Controller
         return handler.ToStringAndClear();
     }
 
-    private static string FormatNodeIds(HashSet<ushort> nodeIds)
+    private static string FormatNodeIds(IReadOnlySet<ushort> nodeIds)
     {
         int literalLength = nodeIds.Count * 2;
         int formattedCount = nodeIds.Count;

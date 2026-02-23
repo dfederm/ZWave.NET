@@ -7,7 +7,7 @@ public class SerialApiSetupTests : CommandTestBase
 {
     private record SerialApiSetupGetSupportedCommandsResponseData(
         bool WasSubcommandSupported,
-        HashSet<SerialApiSetupSubcommand> SupportedSubcommands);
+        IReadOnlySet<SerialApiSetupSubcommand> SupportedSubcommands);
 
     private record SerialApiSetupSetTxStatusReportResponseData(
         bool WasSubcommandSupported,

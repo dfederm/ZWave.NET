@@ -52,9 +52,9 @@ public readonly struct RequestNewRouteDestinationsCallback : ICommand<RequestNew
     public byte SessionId => Frame.CommandParameters.Span[0];
 
     /// <summary>
-    /// The status of the request.
+    /// Whether the request succeeded.
     /// </summary>
-    public byte Status => Frame.CommandParameters.Span[1];
+    public bool Success => Frame.CommandParameters.Span[1] != 0;
 
     public static RequestNewRouteDestinationsCallback Create(DataFrame frame) => new RequestNewRouteDestinationsCallback(frame);
 }
