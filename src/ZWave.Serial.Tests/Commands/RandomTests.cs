@@ -1,12 +1,11 @@
-﻿using ZWave.Serial;
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
 public class RandomTests : CommandTestBase
 {
-    private record RandomResponseData(bool Success, byte Count, ReadOnlyMemory<byte> RandomBytes);
+    private record RandomResponseData(byte RandomNumber);
 
     [TestMethod]
     public void Request()
@@ -16,8 +15,8 @@ public class RandomTests : CommandTestBase
             new[]
             {
                 (
-                    Request: RandomRequest.Create(count: 5),
-                    ExpectedCommandParameters: new byte[] { 0x05 }
+                    Request: RandomRequest.Create(),
+                    ExpectedCommandParameters: Array.Empty<byte>()
                 ),
             });
 
@@ -29,11 +28,8 @@ public class RandomTests : CommandTestBase
             new[]
             {
                 (
-                    CommandParameters: new byte[] { 0x01, 0x05, 0x11, 0x22, 0x33, 0x44, 0x55 },
-                    ExpectedData: new RandomResponseData(
-                        Success: true,
-                        Count: 5,
-                        RandomBytes: new byte[] { 0x11, 0x22, 0x33, 0x44, 0x55 })
+                    CommandParameters: new byte[] { 0x42 },
+                    ExpectedData: new RandomResponseData(RandomNumber: 0x42)
                 )
             });
 }

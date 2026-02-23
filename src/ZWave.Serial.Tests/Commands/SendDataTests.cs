@@ -1,5 +1,4 @@
-﻿using ZWave.Serial;
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -15,7 +14,6 @@ public class SendDataTests : CommandTestBase
         TimeSpan? TransitTime,
         byte? NumRepeaters,
         RssiMeasurement? AckRssi,
-        ReadOnlyMemory<RssiMeasurement> AckRepeaterRssi,
         byte? AckChannelNumber,
         byte? TransmitChannelNumber,
         byte? RouteSchemeState,
@@ -70,13 +68,6 @@ public class SendDataTests : CommandTestBase
                             TransitTime: TimeSpan.FromMilliseconds(30),
                             NumRepeaters: 0,
                             AckRssi: new RssiMeasurement(-43),
-                            AckRepeaterRssi: new RssiMeasurement[]
-                            {
-                                new RssiMeasurement(127),
-                                new RssiMeasurement(127),
-                                new RssiMeasurement(127),
-                                new RssiMeasurement(127),
-                            },
                             AckChannelNumber: 0,
                             TransmitChannelNumber: 0,
                             RouteSchemeState: 3,
@@ -93,5 +84,27 @@ public class SendDataTests : CommandTestBase
                             DestinationAckMeasuredRssi: null,
                             DestinationAckMeasuredNoiseFloor: null))
                 )
-            });
+            },
+            additionalExcludedProperties: new[] { "AckRepeaterRssi" });
+
+    [TestMethod]
+    public void CallbackAckRepeaterRssi()
+    {
+        byte[] commandParameters = new byte[]
+        {
+            0x01, 0x00, 0x00, 0x03, 0x00, 0xd5, 0x7f, 0x7f,
+            0x7f, 0x7f, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00,
+            0x00, 0x03, 0x01, 0x00, 0x00
+        };
+
+        DataFrame dataFrame = DataFrame.Create(DataFrameType.REQ, CommandId.SendData, commandParameters);
+        SendDataCallback callback = SendDataCallback.Create(dataFrame);
+        ReadOnlySpan<RssiMeasurement> ackRepeaterRssi = callback.TransmissionStatusReport!.Value.AckRepeaterRssi;
+
+        Assert.AreEqual(4, ackRepeaterRssi.Length);
+        Assert.AreEqual(new RssiMeasurement(127), ackRepeaterRssi[0]);
+        Assert.AreEqual(new RssiMeasurement(127), ackRepeaterRssi[1]);
+        Assert.AreEqual(new RssiMeasurement(127), ackRepeaterRssi[2]);
+        Assert.AreEqual(new RssiMeasurement(127), ackRepeaterRssi[3]);
+    }
 }

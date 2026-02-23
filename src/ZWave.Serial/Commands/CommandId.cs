@@ -47,9 +47,9 @@ public enum CommandId : byte
     SoftReset = 0x08,
 
     /// <summary>
-    /// Transmit the data buffer using S2 multicast to a list of Z-Wave Nodes.
+    /// Request the Z-Wave Protocol version data.
     /// </summary>
-    SendDataMultiEx = 0x09,
+    GetProtocolVersion = 0x09,
 
     /// <summary>
     /// Used by the Z-Wave Module to indicate that it is ready to be operated after a reboot or reset operation.
@@ -62,10 +62,21 @@ public enum CommandId : byte
     SerialApiSetup = 0x0b,
 
     /// <summary>
-    /// Notify the protocol of the command classes it supports using each security key.
-    /// This function is only required in slave_routing and slave_enhanced_232 based applications.
+    /// Notify the protocol of the command classes supported using each security key.
     /// </summary>
-    ApplicationSecureCommandsSupported = 0x0c,
+    SetApplicationNodeInformationCommandClasses = 0x0c,
+
+    /// <summary>
+    /// Transmit contents of a data buffer to a single node or all nodes (broadcast).
+    /// This command is only supported by End node library types.
+    /// </summary>
+    EndNodeSendData = 0x0e,
+
+    /// <summary>
+    /// Transmit a data buffer to a list of Z-Wave nodes (S2 Multicast frame).
+    /// This command is only supported by End Node library types.
+    /// </summary>
+    EndNodeSendDataMulticast = 0x0f,
 
     /// <summary>
     /// Power down the RF when not in use
@@ -189,6 +200,16 @@ public enum CommandId : byte
     NvmExtWriteLongByte = 0x2d,
 
     /// <summary>
+    /// Read and write the firmware data of the Z-Wave API Module using 16-bit addresses.
+    /// </summary>
+    NvmBackupRestore = 0x2e,
+
+    /// <summary>
+    /// Write the firmware data of the Z-Wave API Module in an implementation-independent way.
+    /// </summary>
+    NetworkRestore = 0x2f,
+
+    /// <summary>
     /// Clears the protocols internal tx timers
     /// </summary>
     ClearTxTimers = 0x37,
@@ -218,6 +239,16 @@ public enum CommandId : byte
     /// will refuse to transmit because of noise.
     /// </summary>
     SetListenBeforeTalkThreshold = 0x3c,
+
+    /// <summary>
+    /// Read and write the firmware data of the Z-Wave API Module using 32-bit addresses.
+    /// </summary>
+    ExtendedNvmBackupRestore = 0x3d,
+
+    /// <summary>
+    /// Perform Z-Wave API Module firmware and bootloader update.
+    /// </summary>
+    FirmwareUpdateNvm = 0x3e,
 
     /// <summary>
     /// Remove a specific node from a Z-Wave network.
@@ -277,14 +308,14 @@ public enum CommandId : byte
     RemoveNodeFromNetwork = 0x4b,
 
     /// <summary>
-    /// (Obsolete) Add a controller to the Z-Wave network as a replacement for the old primary controller.
+    /// Add a controller to the Z-Wave network and transfer the role as primary controller to it.
     /// </summary>
-    CreateNewPrimaryController = 0x4c,
+    AddControllerAndAssignPrimaryControllerRole = 0x4c,
 
     /// <summary>
-    /// Add a controller to the Z-Wave network and transfer the role as primary controller to it
+    /// Add a controller to the Z-Wave network as the new primary controller.
     /// </summary>
-    ControllerChange = 0x4d,
+    AddPrimaryController = 0x4d,
 
     /// <summary>
     /// Assign a application defined Priority Return Route to a routing or an enhanced slave that always will be
@@ -380,15 +411,45 @@ public enum CommandId : byte
     ReplaceFailedNode = 0x63,
 
     /// <summary>
+    /// Request the Z-Wave API module to encrypt a Z-Wave frame payload using AES-128 ECB mode.
+    /// </summary>
+    EncryptDataWithAes = 0x67,
+
+    /// <summary>
+    /// Request a node to perform a new neighbor update for a specific node type.
+    /// </summary>
+    RequestNodeTypeNeighborUpdate = 0x68,
+
+    /// <summary>
+    /// Transfer a protocol command class to the Z-Wave API module.
+    /// </summary>
+    TransferProtocolCc = 0x69,
+
+    /// <summary>
+    /// Enable the state of network layer security (NLS) of an included node.
+    /// </summary>
+    EnableNodeNls = 0x6a,
+
+    /// <summary>
+    /// Get the state of network layer security (NLS) on a node.
+    /// </summary>
+    GetNodeNlsState = 0x6b,
+
+    /// <summary>
+    /// Used by the Z-Wave API module to request a host application to encrypt a protocol frame payload.
+    /// </summary>
+    RequestProtocolCcEncryption = 0x6c,
+
+    /// <summary>
     /// The Firmware Update API provides functionality which together with the SDK supplied ZW_Bootloader
     /// module and a big enough external NVM makes it possible to implement firmware update
     /// </summary>
     FirmwareUpdate = 0x78,
 
     /// <summary>
-    /// Read out neighbor information from the protocol.
+    /// Read out neighbor information from the protocol for a given node.
     /// </summary>
-    GetRoutingInfo = 0x80,
+    GetNeighborTableLine = 0x80,
 
     /// <summary>
     /// Returns the number of transmits that the protocol has done since last reset of the variable.
@@ -411,6 +472,11 @@ public enum CommandId : byte
     StoreHomeId = 0x84,
 
     /// <summary>
+    /// Request entries from the controller routing table.
+    /// </summary>
+    GetRoutingTableEntries = 0x85,
+
+    /// <summary>
     /// Locks or unlocks response route for a given node ID.
     /// </summary>
     LockRoute = 0x90,
@@ -426,9 +492,9 @@ public enum CommandId : byte
     SetPriorityRoute = 0x93,
 
     /// <summary>
-    /// Returns a bitmask of security keys the node posseses.
+    /// Request and provide security keys and authentication during S2 inclusion.
     /// </summary>
-    GetSecurityKeys = 0x9c,
+    SecuritySetup = 0x9c,
 
     /// <summary>
     /// Notify the application of security events.
@@ -467,6 +533,12 @@ public enum CommandId : byte
     /// Transmit the data buffer to a list of Z-Wave Nodes (multicast frame).
     /// </summary>
     SendDataMultiBridge = 0xab,
+
+    /// <summary>
+    /// Transmit the contents of an encrypted data buffer to a single node (NLS only).
+    /// This command is only supported by controller Z-Wave library types.
+    /// </summary>
+    ControllerSendProtocolData = 0xac,
 
     /// <summary>
     /// Called when an application command has been received from another node to the Bridge
@@ -535,9 +607,30 @@ public enum CommandId : byte
     GetProtocolStatus = 0xbf,
 
     /// <summary>
+    /// Request the list of Z-Wave NLS nodes.
+    /// </summary>
+    GetNlsNodes = 0xc0,
+
+    /// <summary>
     /// Enable or disable promiscuous mode.
     /// </summary>
     SetPromiscuousMode = 0xd0,
+
+    /// <summary>
+    /// (Deprecated) Notify a host application that a foreign Z-Wave frame has been received.
+    /// </summary>
+    [Obsolete("This command is deprecated and should not be used.")]
+    PromiscuousApplicationCommandHandler = 0xd1,
+
+    /// <summary>
+    /// Start Watchdog functionality on Z-Wave module.
+    /// </summary>
+    StartWatchdog = 0xd2,
+
+    /// <summary>
+    /// Stop Watchdog functionality on Z-Wave module.
+    /// </summary>
+    StopWatchdog = 0xd3,
 
     /// <summary>
     /// set the maximum number of source routing attempts before the next mechanism kicks-in.
@@ -548,6 +641,21 @@ public enum CommandId : byte
     /// Set the maximum interval between SmartStart inclusion requests
     /// </summary>
     NetworkManagementSetMaxInclusionRequestIntervals = 0xd6,
+
+    /// <summary>
+    /// Keep the Z-Wave module awake.
+    /// </summary>
+    PowerManagementStayAwake = 0xd7,
+
+    /// <summary>
+    /// Cancel a power lock set with the Power Management Stay Awake Command.
+    /// </summary>
+    PowerManagementCancel = 0xd8,
+
+    /// <summary>
+    /// Instruct the Z-Wave API to go to sleep in order to remove the power.
+    /// </summary>
+    InitiateShutdown = 0xd9,
 
     /// <summary>
     /// Obtain the list of Long Range nodes
@@ -565,6 +673,11 @@ public enum CommandId : byte
     SetLongRangeChannel = 0xdc,
 
     /// <summary>
+    /// Enable the use of Shadow NodeIDs in the Long Range capable controller.
+    /// </summary>
+    SetLongRangeVirtualNodeIds = 0xdd,
+
+    /// <summary>
     /// Get the DCDC Configuration
     /// </summary>
     GetDcdcConfig = 0xde,
@@ -573,4 +686,34 @@ public enum CommandId : byte
     /// Set the DCDC Configuration
     /// </summary>
     SetDcdcConfig = 0xdf,
+
+    /// <summary>
+    /// Get the list of supported radio debug protocols.
+    /// </summary>
+    RadioDebugGetProtocolList = 0xe6,
+
+    /// <summary>
+    /// Enable or disable the radio debug interface.
+    /// </summary>
+    RadioDebugEnable = 0xe7,
+
+    /// <summary>
+    /// Get the status of the radio debug interface.
+    /// </summary>
+    RadioDebugStatus = 0xe8,
+
+    /// <summary>
+    /// Send a NOP to a node. Used to check if a node is reachable.
+    /// </summary>
+    SendNop = 0xe9,
+
+    /// <summary>
+    /// Request the Z-Wave Hardware, Protocol, and Host API manufacturer info.
+    /// </summary>
+    GetManufacturerInfo = 0xea,
+
+    /// <summary>
+    /// Enable Nonce Generation on the Z-Wave Module and receive nonce update notifications.
+    /// </summary>
+    NonceManagement = 0xeb,
 }

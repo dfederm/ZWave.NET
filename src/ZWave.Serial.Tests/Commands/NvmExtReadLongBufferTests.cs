@@ -1,12 +1,11 @@
-﻿using ZWave.Serial;
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
 public class NvmExtReadLongBufferTests : CommandTestBase
 {
-    private record NvmExtReadLongBufferResponseData(ReadOnlyMemory<byte> Data, NvmStatus Status);
+    private record NvmExtReadLongBufferResponseData(ReadOnlyMemory<byte> Data);
 
     [TestMethod]
     public void Request()
@@ -29,10 +28,9 @@ public class NvmExtReadLongBufferTests : CommandTestBase
             new[]
             {
                 (
-                    CommandParameters: new byte[] { 0xAA, 0xBB, 0xCC, 0x00 },
+                    CommandParameters: new byte[] { 0xAA, 0xBB, 0xCC },
                     ExpectedData: new NvmExtReadLongBufferResponseData(
-                        Data: new byte[] { 0xAA, 0xBB, 0xCC },
-                        Status: NvmStatus.Success)
+                        Data: new byte[] { 0xAA, 0xBB, 0xCC })
                 )
             });
 }

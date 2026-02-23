@@ -1,5 +1,4 @@
-﻿using ZWave.Serial;
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -12,7 +11,7 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
         ushort ManufacturerId,
         ushort ManufacturerProductType,
         ushort ManufacturerProductId,
-        HashSet<CommandId> SupportedCommandIds);
+        IReadOnlySet<CommandId> SupportedCommandIds);
 
     [TestMethod]
     public void Request()
@@ -55,7 +54,7 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             CommandId.SerialApiSetTimeouts,
                             CommandId.GetSerialApiCapabilities,
                             CommandId.SoftReset,
-                            CommandId.SendDataMultiEx,
+                            CommandId.GetProtocolVersion,
                             CommandId.SerialApiStarted,
                             CommandId.SerialApiSetup,
                             CommandId.SetRFReceiveMode,
@@ -98,8 +97,8 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             CommandId.ApplicationUpdate,
                             CommandId.AddNodeToNetwork,
                             CommandId.RemoveNodeFromNetwork,
-                            CommandId.CreateNewPrimaryController,
-                            CommandId.ControllerChange,
+                            CommandId.AddControllerAndAssignPrimaryControllerRole,
+                            CommandId.AddPrimaryController,
                             CommandId.AssignPriorityReturnRoute,
                             CommandId.SetLearnMode,
                             CommandId.AssignSucReturnRoute,
@@ -118,7 +117,7 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             (CommandId)102,
                             (CommandId)103,
                             CommandId.FirmwareUpdate,
-                            CommandId.GetRoutingInfo,
+                            CommandId.GetNeighborTableLine,
                             CommandId.LockRoute,
                             CommandId.GetPriorityRoute,
                             CommandId.SetPriorityRoute,

@@ -97,6 +97,10 @@ Implements Z-Wave Command Classes (Z-Wave Application Specification). This proje
 
 Uses `Microsoft.Extensions.Logging` with source-generated `[LoggerMessage]` attributes. Serial API log messages are in `src/ZWave.Serial/Logging.cs` (event IDs 100-199). Driver log messages are in `src/ZWave/Logging.cs` (event IDs 200-299). Follow this pattern for new log messages.
 
+### Zero-Allocation Response Patterns
+
+Response structs that contain variable-length collections use count + indexer methods instead of allocating arrays. For example, `GetRoutingTableEntriesResponse` exposes `RoutesCount` + `GetRoute(int index)` and `RadioDebugGetProtocolListResponse` exposes `ProtocolCount` + `GetProtocol(int index)`. Sub-structures like `RoutingTableEntry` and `TransmissionStatusReport` use `ReadOnlyMemory<byte>` backing with property getters that parse on access.
+
 ## Coding Conventions
 
 - **Nullable reference types** enabled. **Implicit usings** enabled.
@@ -113,12 +117,15 @@ Uses `Microsoft.Extensions.Logging` with source-generated `[LoggerMessage]` attr
 - Serial API command tests inherit from `CommandTestBase` and use `TestSendableCommand` / `TestReceivableCommand` helper methods that verify frame structure round-tripping.
 - `CommandDataParsingHelpersTests` covers the shared parsing helpers (`ParseCommandClasses`, `ParseNodeBitmask`).
 - Test files mirror the source structure: `src/ZWave.Serial.Tests/Commands/` contains tests for each serial command.
+- **Ref struct properties** (e.g. `ReadOnlySpan<T>`) cannot be compared via reflection. Add them to `CommandTestBase.ExcludedComparisonProperties` and write dedicated assertion methods. `AssertExtensions` has a guard that fails loudly if non-excluded ref struct properties are encountered.
 
 ## Adding New Functionality
 
-**New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`. Node ID parameters are `ushort`; cast to `(byte)nodeId` when writing to the buffer. Use `CommandDataParsingHelpers` for shared parsing (node bitmasks, command class lists).
+**New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`. Node ID parameters are `ushort`; cast to `(byte)nodeId` when writing to the buffer. Use `CommandDataParsingHelpers` for shared parsing (node bitmasks, command class lists). Reuse existing shared types where applicable: `TransmissionOptions`, `TransmissionStatus`, `TransmissionStatusReport`, `SecurityKey`, `TxSecurityOptions`, `PowerLockType`, `DebugInterfaceProtocol`, `RoutingTableEntry` (with `RouteType`, `RouteBeamType`, `RouteSpeed`), and `NvmOperationSubCommand`/`NvmOperationStatus`.
 
 **New SerialApiSetup Sub-Command**: The `SerialApiSetupRequest` is a `partial struct`. Each sub-command adds a factory method in a separate file (e.g. `SerialApiSetupSetNodeIdBaseType.cs`) and defines its own response struct implementing `ICommand<T>` with `CommandId => CommandId.SerialApiSetup`. Add the sub-command value to `SerialApiSetupSubcommand` enum. The response's first byte is always a `WasSubcommandSupported` flag (0 = not supported). Tests go in `SerialApiSetupTests.cs`.
+
+**New Sub-Command Based Command**: Several Serial API commands use sub-commands (e.g. `NvmBackupRestore`, `ExtendedNvmBackupRestore`, `NetworkRestore`, `FirmwareUpdateNvm`, `NonceManagement`). These use a `partial struct` with static factory methods for each sub-command. Define the sub-command enum and status enum alongside the struct. The response struct reads the sub-command byte and status from the command parameters.
 
 **New Command Class**: Create a class in `src/ZWave.CommandClasses/` inheriting `CommandClass<TEnum>`. Apply `[CommandClass(CommandClassId.X)]`. Constructor takes `(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)`. Define private inner structs for each command (Set/Get/Report) implementing `ICommand`. The source generator auto-registers it. Use `Endpoint` property to access the endpoint (e.g. `Endpoint.NodeId`, `Endpoint.CommandClasses`).
 

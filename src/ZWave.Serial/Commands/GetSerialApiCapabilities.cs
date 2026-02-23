@@ -63,7 +63,7 @@ public readonly struct GetSerialApiCapabilitiesResponse : ICommand<GetSerialApiC
     /// <summary>
     /// Gets the supported commands
     /// </summary>
-    public HashSet<CommandId> SupportedCommandIds
+    public IReadOnlySet<CommandId> SupportedCommandIds
     {
         get
         {

@@ -75,7 +75,7 @@ public readonly struct GetInitDataResponse : ICommand<GetInitDataResponse>
     /// <summary>
     /// List ids for nodes present in the current network.
     /// </summary>
-    public HashSet<ushort> NodeIds
+    public IReadOnlySet<ushort> NodeIds
     {
         get
         {

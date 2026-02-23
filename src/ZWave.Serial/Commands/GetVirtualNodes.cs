@@ -46,7 +46,7 @@ public readonly struct GetVirtualNodesResponse : ICommand<GetVirtualNodesRespons
     /// <summary>
     /// The set of Virtual Slave node IDs parsed from the bitmask.
     /// </summary>
-    public HashSet<ushort> NodeIds
+    public IReadOnlySet<ushort> NodeIds
     {
         get
         {

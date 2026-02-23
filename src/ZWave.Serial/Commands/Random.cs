@@ -16,14 +16,9 @@ public readonly struct RandomRequest : ICommand<RandomRequest>
 
     public DataFrame Frame { get; }
 
-    /// <summary>
-    /// Create a request for random bytes.
-    /// </summary>
-    /// <param name="count">The number of random bytes to generate (1-32).</param>
-    public static RandomRequest Create(byte count)
+    public static RandomRequest Create()
     {
-        ReadOnlySpan<byte> commandParameters = [count];
-        var frame = DataFrame.Create(Type, CommandId, commandParameters);
+        var frame = DataFrame.Create(Type, CommandId);
         return new RandomRequest(frame);
     }
 
@@ -44,19 +39,9 @@ public readonly struct RandomResponse : ICommand<RandomResponse>
     public DataFrame Frame { get; }
 
     /// <summary>
-    /// Indicates whether the random number generation was successful.
+    /// The random number.
     /// </summary>
-    public bool Success => Frame.CommandParameters.Span[0] != 0;
-
-    /// <summary>
-    /// The number of random bytes generated.
-    /// </summary>
-    public byte Count => Frame.CommandParameters.Span[1];
-
-    /// <summary>
-    /// The random bytes.
-    /// </summary>
-    public ReadOnlyMemory<byte> RandomBytes => Frame.CommandParameters.Slice(2, Count);
+    public byte RandomNumber => Frame.CommandParameters.Span[0];
 
     public static RandomResponse Create(DataFrame frame) => new RandomResponse(frame);
 }

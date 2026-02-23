@@ -1,5 +1,4 @@
-﻿using ZWave.Serial;
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -43,5 +42,6 @@ public class SendDataBridgeTests : CommandTestBase
                         TransmissionStatus: TransmissionStatus.Ok,
                         TransmissionStatusReport: null)
                 )
-            });
+            },
+            additionalExcludedProperties: new[] { "AckRepeaterRssi" });
 }

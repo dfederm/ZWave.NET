@@ -1,5 +1,4 @@
 ﻿using ZWave.Serial.Commands;
-using ZWave.Serial;
 
 namespace ZWave.Serial.Tests.Commands;
 

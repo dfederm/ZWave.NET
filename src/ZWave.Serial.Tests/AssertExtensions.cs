@@ -102,12 +102,29 @@ internal static class AssertExtensions
 
         Assert.IsNotNull(actualObj);
 
-        excludedProperties ??= Array.Empty<string>();
+        excludedProperties ??= [];
 
         Type expectedType = expectedObj.GetType();
         Type actualType = actualObj.GetType();
 
         const BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.Instance;
+
+        // Properties returning ref structs (e.g. ReadOnlySpan<T>) cannot be boxed by
+        // PropertyInfo.GetValue(), so they are excluded from reflection-based comparison.
+        // To ensure they still get test coverage, we fail if the actual type has any such
+        // properties that aren't explicitly listed in excludedProperties.
+        PropertyInfo[] refStructProperties = actualType.GetProperties(bindingFlags)
+            .Where(p => p.PropertyType.IsByRefLike)
+            .Where(p => !excludedProperties.Any(excludedProperty => p.Name.Equals(excludedProperty, StringComparison.OrdinalIgnoreCase)))
+            .ToArray();
+        foreach (PropertyInfo refStructProperty in refStructProperties)
+        {
+            Assert.Fail(
+                $"Property '{GetPropertyPath(propertyPathBase, refStructProperty.Name)}' returns a ref struct " +
+                $"({refStructProperty.PropertyType.Name}) and cannot be compared via reflection. " +
+                $"Add it to excludedProperties and test it separately.");
+        }
+
         PropertyInfo[] expectedProperties = expectedType.GetProperties(bindingFlags)
             .Where(p => !excludedProperties.Any(excludedProperty => p.Name.Equals(excludedProperty, StringComparison.OrdinalIgnoreCase)))
             .ToArray();
@@ -156,6 +173,18 @@ internal static class AssertExtensions
 
             }
             else if (expectedPropertyType.IsGenericType && expectedPropertyType.GetGenericTypeDefinition() == typeof(HashSet<>))
+            {
+                Type[] genericArgs = expectedPropertyType.GetGenericArguments();
+                Type listType = typeof(List<>).MakeGenericType(genericArgs);
+                Type enumerableType = typeof(IEnumerable<>).MakeGenericType(genericArgs);
+                ConstructorInfo listCtor = listType.GetConstructor(new[] { enumerableType })!;
+
+                ICollection expectedValueList = (ICollection)listCtor.Invoke(new[] { expectedValue });
+                ICollection actualValueList = (ICollection)listCtor.Invoke(new[] { actualValue });
+
+                CollectionAssert.AreEquivalent(expectedValueList, actualValueList, $"Property '{propertyPath}' not equal");
+            }
+            else if (expectedPropertyType.IsGenericType && expectedPropertyType.GetGenericTypeDefinition() == typeof(IReadOnlySet<>))
             {
                 Type[] genericArgs = expectedPropertyType.GetGenericArguments();
                 Type listType = typeof(List<>).MakeGenericType(genericArgs);

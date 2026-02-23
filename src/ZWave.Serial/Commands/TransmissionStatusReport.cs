@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace ZWave.Serial.Commands;
 
 public enum TransmissionStatusReportLastRouteSpeed : byte
@@ -69,23 +71,10 @@ public readonly struct TransmissionStatusReport
     /// <summary>
     /// The RSSI value measured from Repeaters for the incoming Acknowledgement frame.
     /// </summary>
-    public ReadOnlyMemory<RssiMeasurement> AckRepeaterRssi
-    {
-        get
-        {
-            if (_data.Length < 8)
-            {
-                return ReadOnlyMemory<RssiMeasurement>.Empty;
-            }
-
-            var result = new RssiMeasurement[4];
-            result[0] = _data.Span[4];
-            result[1] = _data.Span[5];
-            result[2] = _data.Span[6];
-            result[3] = _data.Span[7];
-            return result;
-        }
-    }
+    public ReadOnlySpan<RssiMeasurement> AckRepeaterRssi
+        => _data.Length < 8
+            ? []
+            : MemoryMarshal.Cast<byte, RssiMeasurement>(_data.Span[4..8]);
 
     /// <summary>
     /// The channel number where the ACK received from

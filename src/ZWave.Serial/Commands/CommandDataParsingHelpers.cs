@@ -34,7 +34,7 @@ internal static class CommandDataParsingHelpers
     /// For classic Z-Wave nodes this is 1 (bit 0 = NodeID 1).
     /// For Long Range nodes this is 256 + BITMASK_OFFSET * 8.
     /// </param>
-    public static HashSet<ushort> ParseNodeBitmask(ReadOnlySpan<byte> bitMask, ushort baseNodeId)
+    public static IReadOnlySet<ushort> ParseNodeBitmask(ReadOnlySpan<byte> bitMask, ushort baseNodeId)
     {
         HashSet<ushort> nodeIds = new HashSet<ushort>(bitMask.Length * 8);
         for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)

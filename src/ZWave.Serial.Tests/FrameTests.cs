@@ -1,5 +1,4 @@
 ﻿using System.Runtime.InteropServices;
-using ZWave.Serial;
 using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests;

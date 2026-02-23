@@ -49,9 +49,9 @@ public readonly struct NvmExtWriteLongBufferResponse : ICommand<NvmExtWriteLongB
     public DataFrame Frame { get; }
 
     /// <summary>
-    /// The status of the NVM operation.
+    /// Indicates whether the buffer was successfully written.
     /// </summary>
-    public NvmStatus Status => (NvmStatus)Frame.CommandParameters.Span[0];
+    public bool Success => Frame.CommandParameters.Span[0] != 0;
 
     public static NvmExtWriteLongBufferResponse Create(DataFrame frame) => new NvmExtWriteLongBufferResponse(frame);
 }
