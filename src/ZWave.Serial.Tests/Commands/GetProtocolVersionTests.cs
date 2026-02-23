@@ -1,4 +1,4 @@
-﻿using ZWave.Serial.Commands;
+using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -66,7 +66,7 @@ public class GetProtocolVersionTests : CommandTestBase
         ];
 
         DataFrame dataFrame = DataFrame.Create(DataFrameType.RES, CommandId.GetProtocolVersion, commandParameters);
-        GetProtocolVersionResponse response = GetProtocolVersionResponse.Create(dataFrame);
+        GetProtocolVersionResponse response = GetProtocolVersionResponse.Create(dataFrame, new CommandParsingContext(NodeIdType.Short));
 
         CollectionAssert.AreEqual(commitHash, response.GitCommitHash.ToArray());
     }
@@ -84,7 +84,7 @@ public class GetProtocolVersionTests : CommandTestBase
         ];
 
         DataFrame dataFrame = DataFrame.Create(DataFrameType.RES, CommandId.GetProtocolVersion, commandParameters);
-        GetProtocolVersionResponse response = GetProtocolVersionResponse.Create(dataFrame);
+        GetProtocolVersionResponse response = GetProtocolVersionResponse.Create(dataFrame, new CommandParsingContext(NodeIdType.Short));
 
         Assert.AreEqual(0, response.GitCommitHash.Length);
     }

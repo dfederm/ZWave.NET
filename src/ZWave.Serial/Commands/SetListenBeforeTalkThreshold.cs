@@ -26,7 +26,7 @@ public readonly struct SetListenBeforeTalkThresholdRequest : ICommand<SetListenB
         return new SetListenBeforeTalkThresholdRequest(frame);
     }
 
-    public static SetListenBeforeTalkThresholdRequest Create(DataFrame frame) => new SetListenBeforeTalkThresholdRequest(frame);
+    public static SetListenBeforeTalkThresholdRequest Create(DataFrame frame, CommandParsingContext context) => new SetListenBeforeTalkThresholdRequest(frame);
 }
 
 public readonly struct SetListenBeforeTalkThresholdResponse : ICommand<SetListenBeforeTalkThresholdResponse>
@@ -47,5 +47,5 @@ public readonly struct SetListenBeforeTalkThresholdResponse : ICommand<SetListen
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static SetListenBeforeTalkThresholdResponse Create(DataFrame frame) => new SetListenBeforeTalkThresholdResponse(frame);
+    public static SetListenBeforeTalkThresholdResponse Create(DataFrame frame, CommandParsingContext context) => new SetListenBeforeTalkThresholdResponse(frame);
 }

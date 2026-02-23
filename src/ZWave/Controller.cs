@@ -184,6 +184,21 @@ public sealed class Controller
 
             _logger.LogControllerSupportedSerialApiSetupSubcommands(FormatSerialApiSetupSubcommands(SupportedSerialApiSetupSubcommands));
 
+            if (SupportedSerialApiSetupSubcommands.Contains(SerialApiSetupSubcommand.SetNodeIdBaseType))
+            {
+                var setNodeIdBaseTypeRequest = SerialApiSetupRequest.SetNodeIdBaseType(Serial.NodeIdType.Long);
+                SerialApiSetupSetNodeIdBaseTypeResponse setNodeIdBaseTypeResponse = await _driver.SendCommandAsync<SerialApiSetupRequest, SerialApiSetupSetNodeIdBaseTypeResponse>(
+                    setNodeIdBaseTypeRequest,
+                    cancellationToken).ConfigureAwait(false);
+
+                if (setNodeIdBaseTypeResponse.WasSubcommandSupported && setNodeIdBaseTypeResponse.Success)
+                {
+                    _driver.NodeIdType = Serial.NodeIdType.Long;
+                }
+
+                _logger.LogSetNodeIdBaseType(_driver.NodeIdType);
+            }
+
             if (SupportedSerialApiSetupSubcommands.Contains(SerialApiSetupSubcommand.SetTxStatusReport))
             {
                 var setTxStatusReportRequest = SerialApiSetupRequest.SetTxStatusReport(enable: true);
@@ -220,6 +235,7 @@ public sealed class Controller
                 {
                     var setSucNodeIdRequest = SetSucNodeIdRequest.Create(
                         SucNodeId,
+                        _driver.NodeIdType,
                         enableSuc: true,
                         SetSucNodeIdRequestCapabilities.SucFuncNodeIdServer,
                         TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore,

@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Assign static return routes (up to 4) to a Routing Slave or Enhanced 232 Slave node.
@@ -18,19 +18,24 @@ public readonly struct AssignReturnRouteRequest : IRequestWithCallback<AssignRet
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[2];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static AssignReturnRouteRequest Create(
         ushort sourceNodeId,
         ushort destinationNodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)sourceNodeId, (byte)destinationNodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[2 * nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, sourceNodeId);
+        offset = nodeIdType.WriteNodeId(commandParameters, offset, destinationNodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AssignReturnRouteRequest(frame);
     }
 
-    public static AssignReturnRouteRequest Create(DataFrame frame) => new AssignReturnRouteRequest(frame);
+    public static AssignReturnRouteRequest Create(DataFrame frame, CommandParsingContext context) => new AssignReturnRouteRequest(frame);
 }
 
 /// <summary>
@@ -59,5 +64,5 @@ public readonly struct AssignReturnRouteCallback : ICommand<AssignReturnRouteCal
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static AssignReturnRouteCallback Create(DataFrame frame) => new AssignReturnRouteCallback(frame);
+    public static AssignReturnRouteCallback Create(DataFrame frame, CommandParsingContext context) => new AssignReturnRouteCallback(frame);
 }

@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Transmit SUC/SIS node ID from a primary controller or static controller to the controller node ID specified.
@@ -18,19 +18,24 @@ public readonly struct SendSucIdRequest : IRequestWithCallback<SendSucIdRequest>
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[2];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static SendSucIdRequest Create(
         ushort destinationNodeId,
+        NodeIdType nodeIdType,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)destinationNodeId, (byte)txOptions, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 2];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, destinationNodeId);
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendSucIdRequest(frame);
     }
 
-    public static SendSucIdRequest Create(DataFrame frame) => new SendSucIdRequest(frame);
+    public static SendSucIdRequest Create(DataFrame frame, CommandParsingContext context) => new SendSucIdRequest(frame);
 }
 
 /// <summary>
@@ -59,5 +64,5 @@ public readonly struct SendSucIdCallback : ICommand<SendSucIdCallback>
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static SendSucIdCallback Create(DataFrame frame) => new SendSucIdCallback(frame);
+    public static SendSucIdCallback Create(DataFrame frame, CommandParsingContext context) => new SendSucIdCallback(frame);
 }

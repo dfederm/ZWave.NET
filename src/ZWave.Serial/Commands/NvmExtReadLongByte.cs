@@ -30,7 +30,7 @@ public readonly struct NvmExtReadLongByteRequest : ICommand<NvmExtReadLongByteRe
         return new NvmExtReadLongByteRequest(frame);
     }
 
-    public static NvmExtReadLongByteRequest Create(DataFrame frame) => new NvmExtReadLongByteRequest(frame);
+    public static NvmExtReadLongByteRequest Create(DataFrame frame, CommandParsingContext context) => new NvmExtReadLongByteRequest(frame);
 }
 
 public readonly struct NvmExtReadLongByteResponse : ICommand<NvmExtReadLongByteResponse>
@@ -51,5 +51,5 @@ public readonly struct NvmExtReadLongByteResponse : ICommand<NvmExtReadLongByteR
     /// </summary>
     public byte Data => Frame.CommandParameters.Span[0];
 
-    public static NvmExtReadLongByteResponse Create(DataFrame frame) => new NvmExtReadLongByteResponse(frame);
+    public static NvmExtReadLongByteResponse Create(DataFrame frame, CommandParsingContext context) => new NvmExtReadLongByteResponse(frame);
 }

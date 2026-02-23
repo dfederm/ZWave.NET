@@ -27,7 +27,7 @@ public readonly struct RequestNewRouteDestinationsRequest : IRequestWithCallback
         return new RequestNewRouteDestinationsRequest(frame);
     }
 
-    public static RequestNewRouteDestinationsRequest Create(DataFrame frame) => new RequestNewRouteDestinationsRequest(frame);
+    public static RequestNewRouteDestinationsRequest Create(DataFrame frame, CommandParsingContext context) => new RequestNewRouteDestinationsRequest(frame);
 }
 
 /// <summary>
@@ -56,5 +56,5 @@ public readonly struct RequestNewRouteDestinationsCallback : ICommand<RequestNew
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[1] != 0;
 
-    public static RequestNewRouteDestinationsCallback Create(DataFrame frame) => new RequestNewRouteDestinationsCallback(frame);
+    public static RequestNewRouteDestinationsCallback Create(DataFrame frame, CommandParsingContext context) => new RequestNewRouteDestinationsCallback(frame);
 }

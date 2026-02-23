@@ -22,7 +22,7 @@ public readonly struct RadioDebugGetProtocolListRequest : ICommand<RadioDebugGet
         return new RadioDebugGetProtocolListRequest(frame);
     }
 
-    public static RadioDebugGetProtocolListRequest Create(DataFrame frame) => new RadioDebugGetProtocolListRequest(frame);
+    public static RadioDebugGetProtocolListRequest Create(DataFrame frame, CommandParsingContext context) => new RadioDebugGetProtocolListRequest(frame);
 }
 
 public readonly struct RadioDebugGetProtocolListResponse : ICommand<RadioDebugGetProtocolListResponse>
@@ -63,5 +63,5 @@ public readonly struct RadioDebugGetProtocolListResponse : ICommand<RadioDebugGe
         return (DebugInterfaceProtocol)Frame.CommandParameters.Span[offset..(offset + 2)].ToUInt16BE();
     }
 
-    public static RadioDebugGetProtocolListResponse Create(DataFrame frame) => new RadioDebugGetProtocolListResponse(frame);
+    public static RadioDebugGetProtocolListResponse Create(DataFrame frame, CommandParsingContext context) => new RadioDebugGetProtocolListResponse(frame);
 }

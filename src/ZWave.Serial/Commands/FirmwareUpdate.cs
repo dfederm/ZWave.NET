@@ -131,7 +131,7 @@ public readonly partial struct FirmwareUpdateRequest : ICommand<FirmwareUpdateRe
         return Create(FirmwareUpdateSubCommand.Write, subCommandParameters);
     }
 
-    public static FirmwareUpdateRequest Create(DataFrame frame) => new FirmwareUpdateRequest(frame);
+    public static FirmwareUpdateRequest Create(DataFrame frame, CommandParsingContext context) => new FirmwareUpdateRequest(frame);
 }
 
 /// <summary>
@@ -171,5 +171,5 @@ public readonly struct FirmwareUpdateResponse : ICommand<FirmwareUpdateResponse>
     /// </summary>
     public ushort ValidCRC16 => (ushort)((Frame.CommandParameters.Span[2] << 8) | Frame.CommandParameters.Span[3]);
 
-    public static FirmwareUpdateResponse Create(DataFrame frame) => new FirmwareUpdateResponse(frame);
+    public static FirmwareUpdateResponse Create(DataFrame frame, CommandParsingContext context) => new FirmwareUpdateResponse(frame);
 }

@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Delete all static return routes from a Routing Slave or Enhanced 232 Slave node.
@@ -18,18 +18,22 @@ public readonly struct DeleteReturnRouteRequest : IRequestWithCallback<DeleteRet
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[1];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static DeleteReturnRouteRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new DeleteReturnRouteRequest(frame);
     }
 
-    public static DeleteReturnRouteRequest Create(DataFrame frame) => new DeleteReturnRouteRequest(frame);
+    public static DeleteReturnRouteRequest Create(DataFrame frame, CommandParsingContext context) => new DeleteReturnRouteRequest(frame);
 }
 
 /// <summary>
@@ -58,5 +62,5 @@ public readonly struct DeleteReturnRouteCallback : ICommand<DeleteReturnRouteCal
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static DeleteReturnRouteCallback Create(DataFrame frame) => new DeleteReturnRouteCallback(frame);
+    public static DeleteReturnRouteCallback Create(DataFrame frame, CommandParsingContext context) => new DeleteReturnRouteCallback(frame);
 }

@@ -22,7 +22,7 @@ public readonly struct GetLongRangeChannelRequest : ICommand<GetLongRangeChannel
         return new GetLongRangeChannelRequest(frame);
     }
 
-    public static GetLongRangeChannelRequest Create(DataFrame frame) => new GetLongRangeChannelRequest(frame);
+    public static GetLongRangeChannelRequest Create(DataFrame frame, CommandParsingContext context) => new GetLongRangeChannelRequest(frame);
 }
 
 /// <summary>
@@ -58,5 +58,5 @@ public readonly struct GetLongRangeChannelResponse : ICommand<GetLongRangeChanne
     public bool AutoChannelSelectionActive
         => Frame.CommandParameters.Length >= 2 && (Frame.CommandParameters.Span[1] & 0b0010_0000) != 0;
 
-    public static GetLongRangeChannelResponse Create(DataFrame frame) => new GetLongRangeChannelResponse(frame);
+    public static GetLongRangeChannelResponse Create(DataFrame frame, CommandParsingContext context) => new GetLongRangeChannelResponse(frame);
 }

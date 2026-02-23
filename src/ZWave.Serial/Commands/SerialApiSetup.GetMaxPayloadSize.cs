@@ -35,5 +35,5 @@ public readonly struct SerialApiSetupGetMaxPayloadSizeResponse : ICommand<Serial
     /// </summary>
     public byte MaxPayloadSize => Frame.CommandParameters.Span[1];
 
-    public static SerialApiSetupGetMaxPayloadSizeResponse Create(DataFrame frame) => new SerialApiSetupGetMaxPayloadSizeResponse(frame);
+    public static SerialApiSetupGetMaxPayloadSizeResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGetMaxPayloadSizeResponse(frame);
 }

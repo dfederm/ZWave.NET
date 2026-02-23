@@ -27,7 +27,7 @@ public readonly struct NetworkManagementSetMaxInclusionRequestIntervalsRequest :
         return new NetworkManagementSetMaxInclusionRequestIntervalsRequest(frame);
     }
 
-    public static NetworkManagementSetMaxInclusionRequestIntervalsRequest Create(DataFrame frame) => new NetworkManagementSetMaxInclusionRequestIntervalsRequest(frame);
+    public static NetworkManagementSetMaxInclusionRequestIntervalsRequest Create(DataFrame frame, CommandParsingContext context) => new NetworkManagementSetMaxInclusionRequestIntervalsRequest(frame);
 }
 
 public readonly struct NetworkManagementSetMaxInclusionRequestIntervalsResponse : ICommand<NetworkManagementSetMaxInclusionRequestIntervalsResponse>
@@ -48,5 +48,5 @@ public readonly struct NetworkManagementSetMaxInclusionRequestIntervalsResponse 
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static NetworkManagementSetMaxInclusionRequestIntervalsResponse Create(DataFrame frame) => new NetworkManagementSetMaxInclusionRequestIntervalsResponse(frame);
+    public static NetworkManagementSetMaxInclusionRequestIntervalsResponse Create(DataFrame frame, CommandParsingContext context) => new NetworkManagementSetMaxInclusionRequestIntervalsResponse(frame);
 }

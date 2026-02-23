@@ -1,4 +1,4 @@
-﻿using static ZWave.Serial.Commands.CommandDataParsingHelpers;
+using static ZWave.Serial.Commands.CommandDataParsingHelpers;
 
 namespace ZWave.Serial.Commands;
 
@@ -66,9 +66,12 @@ public enum ApplicationUpdateEvent
 
 public readonly struct ApplicationUpdateRequest : ICommand<ApplicationUpdateRequest>
 {
-    public ApplicationUpdateRequest(DataFrame frame)
+    private readonly NodeIdType _nodeIdType;
+
+    public ApplicationUpdateRequest(DataFrame frame, NodeIdType nodeIdType)
     {
         Frame = frame;
+        _nodeIdType = nodeIdType;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
@@ -86,7 +89,7 @@ public readonly struct ApplicationUpdateRequest : ICommand<ApplicationUpdateRequ
     /// This only applies with specific values for <see cref="Event"/>. Using this with the wrong
     /// event type at best lead to garbled data and at worst lead to out of range exceptions.
     /// </remarks>
-    public ApplicationUpdateGeneric Generic => new ApplicationUpdateGeneric(Frame.CommandParameters[1..]);
+    public ApplicationUpdateGeneric Generic => new ApplicationUpdateGeneric(Frame.CommandParameters[1..], _nodeIdType);
 
     /// <summary>
     /// The data frame format when the <see cref="Event"/> is <see cref="ApplicationUpdateEvent.NodeInfoSmartStartHomeIdReceived"/>
@@ -97,7 +100,7 @@ public readonly struct ApplicationUpdateRequest : ICommand<ApplicationUpdateRequ
     /// event type at best lead to garbled data and at worst lead to out of range exceptions.
     /// </remarks>
     public ApplicationUpdateSmartStartPrime? SmartStartPrime => Event == ApplicationUpdateEvent.NodeInfoSmartStartHomeIdReceived
-        ? new ApplicationUpdateSmartStartPrime(Frame.CommandParameters[1..])
+        ? new ApplicationUpdateSmartStartPrime(Frame.CommandParameters[1..], _nodeIdType)
         : null;
 
     /// <summary>
@@ -108,28 +111,31 @@ public readonly struct ApplicationUpdateRequest : ICommand<ApplicationUpdateRequ
     /// event type at best lead to garbled data and at worst lead to out of range exceptions.
     /// </remarks>
     public ApplicationUpdateSmartStartIncludedNodeInfo? SmartStartIncludedNodeInfo => Event == ApplicationUpdateEvent.IncludedNodeInfoReceived
-        ? new ApplicationUpdateSmartStartIncludedNodeInfo(Frame.CommandParameters[1..])
+        ? new ApplicationUpdateSmartStartIncludedNodeInfo(Frame.CommandParameters[1..], _nodeIdType)
         : null;
 
-    public static ApplicationUpdateRequest Create(DataFrame frame) => new ApplicationUpdateRequest(frame);
+    public static ApplicationUpdateRequest Create(DataFrame frame, CommandParsingContext context) => new ApplicationUpdateRequest(frame, context.NodeIdType);
 }
 
 public readonly struct ApplicationUpdateGeneric
 {
-    public ApplicationUpdateGeneric(ReadOnlyMemory<byte> data)
+    private readonly ReadOnlyMemory<byte> _data;
+
+    private readonly NodeIdType _nodeIdType;
+
+    public ApplicationUpdateGeneric(ReadOnlyMemory<byte> data, NodeIdType nodeIdType)
     {
-        Data = data;
+        _data = data;
+        _nodeIdType = nodeIdType;
     }
 
-    public ReadOnlyMemory<byte> Data { get; }
+    public ushort NodeId => _nodeIdType.ReadNodeId(_data.Span, 0);
 
-    public ushort NodeId => Data.Span[0];
+    public byte BasicDeviceClass => _data.Span[_nodeIdType.NodeIdSize() + 1];
 
-    public byte BasicDeviceClass => Data.Span[2];
+    public byte GenericDeviceClass => _data.Span[_nodeIdType.NodeIdSize() + 2];
 
-    public byte GenericDeviceClass => Data.Span[3];
-
-    public byte SpecificDeviceClass => Data.Span[4];
+    public byte SpecificDeviceClass => _data.Span[_nodeIdType.NodeIdSize() + 3];
 
     /// <summary>
     /// The list of non-secure implemented Command Classes by the remote node.
@@ -138,8 +144,8 @@ public readonly struct ApplicationUpdateGeneric
     {
         get
         {
-            byte length = Data.Span[1];
-            ReadOnlySpan<byte> allCommandClasses = Data.Span.Slice(5, length);
+            byte length = _data.Span[_nodeIdType.NodeIdSize()];
+            ReadOnlySpan<byte> allCommandClasses = _data.Span.Slice(_nodeIdType.NodeIdSize() + 4, length);
             return ParseCommandClasses(allCommandClasses);
         }
     }
@@ -147,27 +153,30 @@ public readonly struct ApplicationUpdateGeneric
 
 public readonly struct ApplicationUpdateSmartStartPrime
 {
-    public ApplicationUpdateSmartStartPrime(ReadOnlyMemory<byte> data)
+    private readonly ReadOnlyMemory<byte> _data;
+
+    private readonly NodeIdType _nodeIdType;
+
+    public ApplicationUpdateSmartStartPrime(ReadOnlyMemory<byte> data, NodeIdType nodeIdType)
     {
-        Data = data;
+        _data = data;
+        _nodeIdType = nodeIdType;
     }
 
-    public ReadOnlyMemory<byte> Data { get; }
+    public ushort NodeId => _nodeIdType.ReadNodeId(_data.Span, 0);
 
-    public ushort NodeId => Data.Span[0];
-
-    public ReceivedStatus ReceivedStatus => (ReceivedStatus)Data.Span[1];
+    public ReceivedStatus ReceivedStatus => (ReceivedStatus)_data.Span[_nodeIdType.NodeIdSize()];
 
     /// <summary>
     /// The NWI HomeID on which the SmartStart Prime Command was received.
     /// </summary>
-    public uint HomeId => Data.Span[2..6].ToUInt32BE();
+    public uint HomeId => _data.Span[(_nodeIdType.NodeIdSize() + 1)..(_nodeIdType.NodeIdSize() + 5)].ToUInt32BE();
 
-    public byte BasicDeviceClass => Data.Span[7];
+    public byte BasicDeviceClass => _data.Span[_nodeIdType.NodeIdSize() + 6];
 
-    public byte GenericDeviceClass => Data.Span[8];
+    public byte GenericDeviceClass => _data.Span[_nodeIdType.NodeIdSize() + 7];
 
-    public byte SpecificDeviceClass => Data.Span[9];
+    public byte SpecificDeviceClass => _data.Span[_nodeIdType.NodeIdSize() + 8];
 
     /// <summary>
     /// The list of non-secure implemented Command Classes by the remote node.
@@ -176,8 +185,8 @@ public readonly struct ApplicationUpdateSmartStartPrime
     {
         get
         {
-            byte length = Data.Span[6];
-            ReadOnlySpan<byte> allCommandClasses = Data.Span.Slice(10, length);
+            byte length = _data.Span[_nodeIdType.NodeIdSize() + 5];
+            ReadOnlySpan<byte> allCommandClasses = _data.Span.Slice(_nodeIdType.NodeIdSize() + 9, length);
             return ParseCommandClasses(allCommandClasses);
         }
     }
@@ -185,21 +194,24 @@ public readonly struct ApplicationUpdateSmartStartPrime
 
 public readonly struct ApplicationUpdateSmartStartIncludedNodeInfo
 {
-    public ApplicationUpdateSmartStartIncludedNodeInfo(ReadOnlyMemory<byte> data)
+    private readonly ReadOnlyMemory<byte> _data;
+
+    private readonly NodeIdType _nodeIdType;
+
+    public ApplicationUpdateSmartStartIncludedNodeInfo(ReadOnlyMemory<byte> data, NodeIdType nodeIdType)
     {
-        Data = data;
+        _data = data;
+        _nodeIdType = nodeIdType;
     }
 
-    public ReadOnlyMemory<byte> Data { get; }
+    public ushort NodeId => _nodeIdType.ReadNodeId(_data.Span, 0);
 
-    public ushort NodeId => Data.Span[0];
+    // Byte at NodeIdType.NodeIdSize() is reserved
 
-    // Byte 1 is reserved
-
-    public ReceivedStatus ReceivedStatus => (ReceivedStatus)Data.Span[2];
+    public ReceivedStatus ReceivedStatus => (ReceivedStatus)_data.Span[_nodeIdType.NodeIdSize() + 1];
 
     /// <summary>
     /// The NWI HomeID for which the SmartStart Inclusion Node Information Frame was received
     /// </summary>
-    public uint HomeId => Data.Span[3..7].ToUInt32BE();
+    public uint HomeId => _data.Span[(_nodeIdType.NodeIdSize() + 2)..(_nodeIdType.NodeIdSize() + 6)].ToUInt32BE();
 }

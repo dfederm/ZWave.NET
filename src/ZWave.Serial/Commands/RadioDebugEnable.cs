@@ -39,7 +39,7 @@ public readonly struct RadioDebugEnableRequest : ICommand<RadioDebugEnableReques
         return new RadioDebugEnableRequest(frame);
     }
 
-    public static RadioDebugEnableRequest Create(DataFrame frame) => new RadioDebugEnableRequest(frame);
+    public static RadioDebugEnableRequest Create(DataFrame frame, CommandParsingContext context) => new RadioDebugEnableRequest(frame);
 }
 
 public readonly struct RadioDebugEnableResponse : ICommand<RadioDebugEnableResponse>
@@ -60,5 +60,5 @@ public readonly struct RadioDebugEnableResponse : ICommand<RadioDebugEnableRespo
     /// </summary>
     public byte CommandStatus => Frame.CommandParameters.Span[0];
 
-    public static RadioDebugEnableResponse Create(DataFrame frame) => new RadioDebugEnableResponse(frame);
+    public static RadioDebugEnableResponse Create(DataFrame frame, CommandParsingContext context) => new RadioDebugEnableResponse(frame);
 }

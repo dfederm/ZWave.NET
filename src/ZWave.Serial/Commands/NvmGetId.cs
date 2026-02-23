@@ -45,7 +45,7 @@ public readonly struct NvmGetIdRequest : ICommand<NvmGetIdRequest>
         return new NvmGetIdRequest(frame);
     }
 
-    public static NvmGetIdRequest Create(DataFrame frame) => new NvmGetIdRequest(frame);
+    public static NvmGetIdRequest Create(DataFrame frame, CommandParsingContext context) => new NvmGetIdRequest(frame);
 }
 
 public readonly struct NvmGetIdResponse : ICommand<NvmGetIdResponse>
@@ -81,5 +81,5 @@ public readonly struct NvmGetIdResponse : ICommand<NvmGetIdResponse>
     /// </summary>
     public byte MemoryCapacity => Frame.CommandParameters.Span[3];
 
-    public static NvmGetIdResponse Create(DataFrame frame) => new NvmGetIdResponse(frame);
+    public static NvmGetIdResponse Create(DataFrame frame, CommandParsingContext context) => new NvmGetIdResponse(frame);
 }

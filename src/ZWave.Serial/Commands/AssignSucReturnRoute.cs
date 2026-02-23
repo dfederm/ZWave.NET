@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Notify presence of a SUC/SIS to a Routing Slave or Enhanced 232 Slave.
@@ -18,18 +18,22 @@ public readonly struct AssignSucReturnRouteRequest : IRequestWithCallback<Assign
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[1];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static AssignSucReturnRouteRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AssignSucReturnRouteRequest(frame);
     }
 
-    public static AssignSucReturnRouteRequest Create(DataFrame frame) => new AssignSucReturnRouteRequest(frame);
+    public static AssignSucReturnRouteRequest Create(DataFrame frame, CommandParsingContext context) => new AssignSucReturnRouteRequest(frame);
 }
 
 /// <summary>
@@ -58,5 +62,5 @@ public readonly struct AssignSucReturnRouteCallback : ICommand<AssignSucReturnRo
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static AssignSucReturnRouteCallback Create(DataFrame frame) => new AssignSucReturnRouteCallback(frame);
+    public static AssignSucReturnRouteCallback Create(DataFrame frame, CommandParsingContext context) => new AssignSucReturnRouteCallback(frame);
 }

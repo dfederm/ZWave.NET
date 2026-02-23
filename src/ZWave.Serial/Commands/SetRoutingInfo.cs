@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Overwrite the current neighbor information for a given node ID in the protocol locally.
@@ -21,8 +21,13 @@ public readonly struct SetRoutingInfoRequest : ICommand<SetRoutingInfoRequest>
     /// </summary>
     /// <param name="nodeId">The node ID to update.</param>
     /// <param name="neighborMask">The 29-byte bitmask of neighbors (232 bits for 232 nodes).</param>
+    /// <remarks>
+    /// This command writes the neighbor bitmask which is structurally limited to classic Z-Wave
+    /// nodes (1–232). The NodeID field is always 8 bits.
+    /// </remarks>
     public static SetRoutingInfoRequest Create(ushort nodeId, ReadOnlySpan<byte> neighborMask)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         Span<byte> commandParameters = stackalloc byte[1 + neighborMask.Length];
         commandParameters[0] = (byte)nodeId;
         neighborMask.CopyTo(commandParameters[1..]);
@@ -31,7 +36,7 @@ public readonly struct SetRoutingInfoRequest : ICommand<SetRoutingInfoRequest>
         return new SetRoutingInfoRequest(frame);
     }
 
-    public static SetRoutingInfoRequest Create(DataFrame frame) => new SetRoutingInfoRequest(frame);
+    public static SetRoutingInfoRequest Create(DataFrame frame, CommandParsingContext context) => new SetRoutingInfoRequest(frame);
 }
 
 public readonly struct SetRoutingInfoResponse : ICommand<SetRoutingInfoResponse>
@@ -52,5 +57,5 @@ public readonly struct SetRoutingInfoResponse : ICommand<SetRoutingInfoResponse>
     /// </summary>
     public byte RetVal => Frame.CommandParameters.Span[0];
 
-    public static SetRoutingInfoResponse Create(DataFrame frame) => new SetRoutingInfoResponse(frame);
+    public static SetRoutingInfoResponse Create(DataFrame frame, CommandParsingContext context) => new SetRoutingInfoResponse(frame);
 }

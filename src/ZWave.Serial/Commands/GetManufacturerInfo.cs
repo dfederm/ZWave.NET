@@ -22,7 +22,7 @@ public readonly struct GetManufacturerInfoRequest : ICommand<GetManufacturerInfo
         return new GetManufacturerInfoRequest(frame);
     }
 
-    public static GetManufacturerInfoRequest Create(DataFrame frame) => new GetManufacturerInfoRequest(frame);
+    public static GetManufacturerInfoRequest Create(DataFrame frame, CommandParsingContext context) => new GetManufacturerInfoRequest(frame);
 }
 
 public readonly struct GetManufacturerInfoResponse : ICommand<GetManufacturerInfoResponse>
@@ -67,5 +67,5 @@ public readonly struct GetManufacturerInfoResponse : ICommand<GetManufacturerInf
         }
     }
 
-    public static GetManufacturerInfoResponse Create(DataFrame frame) => new GetManufacturerInfoResponse(frame);
+    public static GetManufacturerInfoResponse Create(DataFrame frame, CommandParsingContext context) => new GetManufacturerInfoResponse(frame);
 }

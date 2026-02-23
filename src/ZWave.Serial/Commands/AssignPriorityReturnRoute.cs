@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Assign an application defined Priority Return Route to a routing or an enhanced slave.
@@ -38,7 +38,7 @@ public readonly struct AssignPriorityReturnRouteRequest : IRequestWithCallback<A
         return new AssignPriorityReturnRouteRequest(frame);
     }
 
-    public static AssignPriorityReturnRouteRequest Create(DataFrame frame) => new AssignPriorityReturnRouteRequest(frame);
+    public static AssignPriorityReturnRouteRequest Create(DataFrame frame, CommandParsingContext context) => new AssignPriorityReturnRouteRequest(frame);
 }
 
 /// <summary>
@@ -67,5 +67,5 @@ public readonly struct AssignPriorityReturnRouteCallback : ICommand<AssignPriori
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static AssignPriorityReturnRouteCallback Create(DataFrame frame) => new AssignPriorityReturnRouteCallback(frame);
+    public static AssignPriorityReturnRouteCallback Create(DataFrame frame, CommandParsingContext context) => new AssignPriorityReturnRouteCallback(frame);
 }

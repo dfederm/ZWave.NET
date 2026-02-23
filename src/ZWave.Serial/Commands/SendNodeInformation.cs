@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Create and transmit a "Node Information" frame.
@@ -18,19 +18,24 @@ public readonly struct SendNodeInformationRequest : IRequestWithCallback<SendNod
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[2];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static SendNodeInformationRequest Create(
         ushort destinationNodeId,
+        NodeIdType nodeIdType,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)destinationNodeId, (byte)txOptions, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 2];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, destinationNodeId);
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendNodeInformationRequest(frame);
     }
 
-    public static SendNodeInformationRequest Create(DataFrame frame) => new SendNodeInformationRequest(frame);
+    public static SendNodeInformationRequest Create(DataFrame frame, CommandParsingContext context) => new SendNodeInformationRequest(frame);
 }
 
 /// <summary>
@@ -59,5 +64,5 @@ public readonly struct SendNodeInformationCallback : ICommand<SendNodeInformatio
     /// </summary>
     public TransmissionStatus TransmissionStatus => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static SendNodeInformationCallback Create(DataFrame frame) => new SendNodeInformationCallback(frame);
+    public static SendNodeInformationCallback Create(DataFrame frame, CommandParsingContext context) => new SendNodeInformationCallback(frame);
 }

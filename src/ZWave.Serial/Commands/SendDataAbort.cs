@@ -22,5 +22,5 @@ public readonly struct SendDataAbortRequest : ICommand<SendDataAbortRequest>
         return new SendDataAbortRequest(frame);
     }
 
-    public static SendDataAbortRequest Create(DataFrame frame) => new SendDataAbortRequest(frame);
+    public static SendDataAbortRequest Create(DataFrame frame, CommandParsingContext context) => new SendDataAbortRequest(frame);
 }

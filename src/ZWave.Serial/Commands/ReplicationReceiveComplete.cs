@@ -23,5 +23,5 @@ public readonly struct ReplicationReceiveCompleteRequest : ICommand<ReplicationR
         return new ReplicationReceiveCompleteRequest(frame);
     }
 
-    public static ReplicationReceiveCompleteRequest Create(DataFrame frame) => new ReplicationReceiveCompleteRequest(frame);
+    public static ReplicationReceiveCompleteRequest Create(DataFrame frame, CommandParsingContext context) => new ReplicationReceiveCompleteRequest(frame);
 }

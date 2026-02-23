@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The slave learn mode to set.
@@ -62,17 +62,22 @@ public readonly struct SetSlaveLearnModeRequest : IRequestWithCallback<SetSlaveL
 
     public byte SessionId => Frame.CommandParameters.Span[2];
 
+    /// <remarks>
+    /// Per Z-Wave Host API Specification, the NodeID field MUST be encoded using 8 bits regardless
+    /// of the configured NodeID base Type.
+    /// </remarks>
     public static SetSlaveLearnModeRequest Create(
         ushort nodeId,
         SlaveLearnMode mode,
         byte sessionId)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         ReadOnlySpan<byte> commandParameters = [(byte)nodeId, (byte)mode, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SetSlaveLearnModeRequest(frame);
     }
 
-    public static SetSlaveLearnModeRequest Create(DataFrame frame) => new SetSlaveLearnModeRequest(frame);
+    public static SetSlaveLearnModeRequest Create(DataFrame frame, CommandParsingContext context) => new SetSlaveLearnModeRequest(frame);
 }
 
 /// <summary>
@@ -111,5 +116,5 @@ public readonly struct SetSlaveLearnModeCallback : ICommand<SetSlaveLearnModeCal
     /// </summary>
     public ushort NewNodeId => Frame.CommandParameters.Span[3];
 
-    public static SetSlaveLearnModeCallback Create(DataFrame frame) => new SetSlaveLearnModeCallback(frame);
+    public static SetSlaveLearnModeCallback Create(DataFrame frame, CommandParsingContext context) => new SetSlaveLearnModeCallback(frame);
 }

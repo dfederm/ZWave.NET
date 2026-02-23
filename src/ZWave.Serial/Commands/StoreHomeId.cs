@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Restore HomeID and NodeID information from a backup.
@@ -25,15 +25,16 @@ public readonly struct StoreHomeIdRequest : ICommand<StoreHomeIdRequest>
     /// </summary>
     /// <param name="homeId">The Home ID to store (4 bytes, big-endian).</param>
     /// <param name="nodeId">The Node ID to store.</param>
-    public static StoreHomeIdRequest Create(uint homeId, ushort nodeId)
+    public static StoreHomeIdRequest Create(uint homeId, ushort nodeId, NodeIdType nodeIdType)
     {
-        Span<byte> commandParameters = stackalloc byte[5];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[4 + nodeIdSize];
         homeId.WriteBytesBE(commandParameters);
-        commandParameters[4] = (byte)nodeId;
+        nodeIdType.WriteNodeId(commandParameters, 4, nodeId);
 
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new StoreHomeIdRequest(frame);
     }
 
-    public static StoreHomeIdRequest Create(DataFrame frame) => new StoreHomeIdRequest(frame);
+    public static StoreHomeIdRequest Create(DataFrame frame, CommandParsingContext context) => new StoreHomeIdRequest(frame);
 }

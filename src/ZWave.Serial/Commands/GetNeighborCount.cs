@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Get the number of neighbors the specified node has registered.
@@ -20,14 +20,19 @@ public readonly struct GetNeighborCountRequest : ICommand<GetNeighborCountReques
     /// Create a request to get the neighbor count for a node.
     /// </summary>
     /// <param name="nodeId">The node ID to query.</param>
+    /// <remarks>
+    /// This command queries the neighbor bitmask which is structurally limited to classic Z-Wave
+    /// nodes (1–232). The NodeID field is always 8 bits.
+    /// </remarks>
     public static GetNeighborCountRequest Create(ushort nodeId)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new GetNeighborCountRequest(frame);
     }
 
-    public static GetNeighborCountRequest Create(DataFrame frame) => new GetNeighborCountRequest(frame);
+    public static GetNeighborCountRequest Create(DataFrame frame, CommandParsingContext context) => new GetNeighborCountRequest(frame);
 }
 
 public readonly struct GetNeighborCountResponse : ICommand<GetNeighborCountResponse>
@@ -48,5 +53,5 @@ public readonly struct GetNeighborCountResponse : ICommand<GetNeighborCountRespo
     /// </summary>
     public byte Count => Frame.CommandParameters.Span[0];
 
-    public static GetNeighborCountResponse Create(DataFrame frame) => new GetNeighborCountResponse(frame);
+    public static GetNeighborCountResponse Create(DataFrame frame, CommandParsingContext context) => new GetNeighborCountResponse(frame);
 }

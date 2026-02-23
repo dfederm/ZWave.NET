@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Delete the return routes of the SUC/SIS node from a Routing Slave node or Enhanced 232 Slave node.
@@ -18,18 +18,22 @@ public readonly struct DeleteSucReturnRouteRequest : IRequestWithCallback<Delete
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[1];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static DeleteSucReturnRouteRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new DeleteSucReturnRouteRequest(frame);
     }
 
-    public static DeleteSucReturnRouteRequest Create(DataFrame frame) => new DeleteSucReturnRouteRequest(frame);
+    public static DeleteSucReturnRouteRequest Create(DataFrame frame, CommandParsingContext context) => new DeleteSucReturnRouteRequest(frame);
 }
 
 /// <summary>
@@ -58,5 +62,5 @@ public readonly struct DeleteSucReturnRouteCallback : ICommand<DeleteSucReturnRo
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static DeleteSucReturnRouteCallback Create(DataFrame frame) => new DeleteSucReturnRouteCallback(frame);
+    public static DeleteSucReturnRouteCallback Create(DataFrame frame, CommandParsingContext context) => new DeleteSucReturnRouteCallback(frame);
 }

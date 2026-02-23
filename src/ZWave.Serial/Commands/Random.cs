@@ -22,7 +22,7 @@ public readonly struct RandomRequest : ICommand<RandomRequest>
         return new RandomRequest(frame);
     }
 
-    public static RandomRequest Create(DataFrame frame) => new RandomRequest(frame);
+    public static RandomRequest Create(DataFrame frame, CommandParsingContext context) => new RandomRequest(frame);
 }
 
 public readonly struct RandomResponse : ICommand<RandomResponse>
@@ -43,5 +43,5 @@ public readonly struct RandomResponse : ICommand<RandomResponse>
     /// </summary>
     public byte RandomNumber => Frame.CommandParameters.Span[0];
 
-    public static RandomResponse Create(DataFrame frame) => new RandomResponse(frame);
+    public static RandomResponse Create(DataFrame frame, CommandParsingContext context) => new RandomResponse(frame);
 }

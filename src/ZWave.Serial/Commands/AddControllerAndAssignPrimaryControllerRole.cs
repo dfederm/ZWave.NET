@@ -85,7 +85,7 @@ public readonly struct AddControllerAndAssignPrimaryControllerRoleRequest : ICom
         return new AddControllerAndAssignPrimaryControllerRoleRequest(frame);
     }
 
-    public static AddControllerAndAssignPrimaryControllerRoleRequest Create(DataFrame frame) => new AddControllerAndAssignPrimaryControllerRoleRequest(frame);
+    public static AddControllerAndAssignPrimaryControllerRoleRequest Create(DataFrame frame, CommandParsingContext context) => new AddControllerAndAssignPrimaryControllerRoleRequest(frame);
 }
 
 /// <summary>
@@ -147,5 +147,5 @@ public readonly struct AddControllerAndAssignPrimaryControllerRoleCallback : ICo
         }
     }
 
-    public static AddControllerAndAssignPrimaryControllerRoleCallback Create(DataFrame frame) => new AddControllerAndAssignPrimaryControllerRoleCallback(frame);
+    public static AddControllerAndAssignPrimaryControllerRoleCallback Create(DataFrame frame, CommandParsingContext context) => new AddControllerAndAssignPrimaryControllerRoleCallback(frame);
 }

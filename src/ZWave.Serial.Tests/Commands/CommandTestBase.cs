@@ -1,10 +1,10 @@
-﻿using ZWave.Serial.Commands;
+using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
 public class CommandTestBase
 {
-    private static readonly string[] ExcludedComparisonProperties = ["Frame", "Data"];
+    private static readonly string[] ExcludedComparisonProperties = ["Frame", "Data", "NodeIdType"];
 
     internal static void TestSendableCommand<TCommand>(
         DataFrameType dataFrameType,
@@ -29,6 +29,15 @@ public class CommandTestBase
         IReadOnlyList<(byte[] CommandParameters, TData ExpectedData)> tests,
         IReadOnlyList<string>? additionalExcludedProperties = null)
         where TCommand : struct, ICommand<TCommand>
+        => TestReceivableCommand<TCommand, TData>(dataFrameType, commandId, tests, new CommandParsingContext(NodeIdType.Short), additionalExcludedProperties);
+
+    internal static void TestReceivableCommand<TCommand, TData>(
+        DataFrameType dataFrameType,
+        CommandId commandId,
+        IReadOnlyList<(byte[] CommandParameters, TData ExpectedData)> tests,
+        CommandParsingContext context,
+        IReadOnlyList<string>? additionalExcludedProperties = null)
+        where TCommand : struct, ICommand<TCommand>
     {
         Assert.AreEqual(dataFrameType, TCommand.Type);
 
@@ -48,7 +57,7 @@ public class CommandTestBase
         foreach ((ReadOnlyMemory<byte> commandParameters, TData expectedData) in tests)
         {
             var dataFrame = DataFrame.Create(dataFrameType, commandId, commandParameters.Span);
-            var command = TCommand.Create(dataFrame);
+            var command = TCommand.Create(dataFrame, context);
 
             Assert.That.ObjectsAreEquivalent(expectedData, command, excludedProperties);
         }

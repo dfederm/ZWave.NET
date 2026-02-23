@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Restore protocol node information from a backup.
@@ -26,18 +26,19 @@ public readonly struct StoreNodeInfoRequest : IRequestWithCallback<StoreNodeInfo
     /// <param name="nodeId">The node ID to store information for.</param>
     /// <param name="nodeInfo">The node information data (NODEINFO field).</param>
     /// <param name="sessionId">The session ID for correlating the callback.</param>
-    public static StoreNodeInfoRequest Create(ushort nodeId, ReadOnlySpan<byte> nodeInfo, byte sessionId)
+    public static StoreNodeInfoRequest Create(ushort nodeId, NodeIdType nodeIdType, ReadOnlySpan<byte> nodeInfo, byte sessionId)
     {
-        Span<byte> commandParameters = stackalloc byte[1 + nodeInfo.Length + 1];
-        commandParameters[0] = (byte)nodeId;
-        nodeInfo.CopyTo(commandParameters[1..]);
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + nodeInfo.Length + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        nodeInfo.CopyTo(commandParameters[offset..]);
         commandParameters[^1] = sessionId;
 
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new StoreNodeInfoRequest(frame);
     }
 
-    public static StoreNodeInfoRequest Create(DataFrame frame) => new StoreNodeInfoRequest(frame);
+    public static StoreNodeInfoRequest Create(DataFrame frame, CommandParsingContext context) => new StoreNodeInfoRequest(frame);
 }
 
 /// <summary>
@@ -61,7 +62,7 @@ public readonly struct StoreNodeInfoResponse : ICommand<StoreNodeInfoResponse>
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static StoreNodeInfoResponse Create(DataFrame frame) => new StoreNodeInfoResponse(frame);
+    public static StoreNodeInfoResponse Create(DataFrame frame, CommandParsingContext context) => new StoreNodeInfoResponse(frame);
 }
 
 /// <summary>
@@ -85,5 +86,5 @@ public readonly struct StoreNodeInfoCallback : ICommand<StoreNodeInfoCallback>
     /// </summary>
     public byte SessionId => Frame.CommandParameters.Span[0];
 
-    public static StoreNodeInfoCallback Create(DataFrame frame) => new StoreNodeInfoCallback(frame);
+    public static StoreNodeInfoCallback Create(DataFrame frame, CommandParsingContext context) => new StoreNodeInfoCallback(frame);
 }

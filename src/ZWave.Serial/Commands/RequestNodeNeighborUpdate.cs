@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The status of the neighbor update request.
@@ -39,18 +39,22 @@ public readonly struct RequestNodeNeighborUpdateRequest : IRequestWithCallback<R
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[1];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static RequestNodeNeighborUpdateRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new RequestNodeNeighborUpdateRequest(frame);
     }
 
-    public static RequestNodeNeighborUpdateRequest Create(DataFrame frame) => new RequestNodeNeighborUpdateRequest(frame);
+    public static RequestNodeNeighborUpdateRequest Create(DataFrame frame, CommandParsingContext context) => new RequestNodeNeighborUpdateRequest(frame);
 }
 
 /// <summary>
@@ -79,5 +83,5 @@ public readonly struct RequestNodeNeighborUpdateCallback : ICommand<RequestNodeN
     /// </summary>
     public RequestNodeNeighborUpdateStatus Status => (RequestNodeNeighborUpdateStatus)Frame.CommandParameters.Span[1];
 
-    public static RequestNodeNeighborUpdateCallback Create(DataFrame frame) => new RequestNodeNeighborUpdateCallback(frame);
+    public static RequestNodeNeighborUpdateCallback Create(DataFrame frame, CommandParsingContext context) => new RequestNodeNeighborUpdateCallback(frame);
 }

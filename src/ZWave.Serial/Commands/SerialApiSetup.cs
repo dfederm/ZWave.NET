@@ -111,5 +111,5 @@ public readonly partial struct SerialApiSetupRequest : ICommand<SerialApiSetupRe
         return new SerialApiSetupRequest(frame);
     }
 
-    public static SerialApiSetupRequest Create(DataFrame frame) => new SerialApiSetupRequest(frame);
+    public static SerialApiSetupRequest Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupRequest(frame);
 }

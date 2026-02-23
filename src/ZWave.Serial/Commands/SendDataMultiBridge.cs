@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Transmit the data buffer to a list of Z-Wave Nodes (multicast frame) via Bridge Controller.
@@ -22,26 +22,35 @@ public readonly struct SendDataMultiBridgeRequest : IRequestWithCallback<SendDat
 
     public static SendDataMultiBridgeRequest Create(
         ushort sourceNodeId,
-        ReadOnlySpan<byte> nodeList,
+        ReadOnlySpan<ushort> nodeIds,
+        NodeIdType nodeIdType,
         ReadOnlySpan<byte> data,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        byte nodeCount = (byte)nodeList.Length;
-        Span<byte> commandParameters = stackalloc byte[3 + nodeCount + 1 + data.Length + 1 + 1];
-        commandParameters[0] = (byte)sourceNodeId;
-        commandParameters[1] = nodeCount;
-        nodeList.CopyTo(commandParameters.Slice(2, nodeCount));
-        commandParameters[2 + nodeCount] = (byte)data.Length;
-        data.CopyTo(commandParameters.Slice(3 + nodeCount, data.Length));
-        commandParameters[3 + nodeCount + data.Length] = (byte)txOptions;
-        commandParameters[4 + nodeCount + data.Length] = sessionId;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        byte nodeCount = (byte)nodeIds.Length;
+        int nodeListBytes = nodeCount * nodeIdSize;
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1 + nodeListBytes + 1 + data.Length + 1 + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, sourceNodeId);
+        commandParameters[offset] = nodeCount;
+        offset++;
+        for (int i = 0; i < nodeCount; i++)
+        {
+            offset = nodeIdType.WriteNodeId(commandParameters, offset, nodeIds[i]);
+        }
+
+        commandParameters[offset] = (byte)data.Length;
+        data.CopyTo(commandParameters.Slice(offset + 1, data.Length));
+        offset += 1 + data.Length;
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = sessionId;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendDataMultiBridgeRequest(frame);
     }
 
-    public static SendDataMultiBridgeRequest Create(DataFrame frame) => new SendDataMultiBridgeRequest(frame);
+    public static SendDataMultiBridgeRequest Create(DataFrame frame, CommandParsingContext context) => new SendDataMultiBridgeRequest(frame);
 }
 
 /// <summary>
@@ -70,5 +79,5 @@ public readonly struct SendDataMultiBridgeCallback : ICommand<SendDataMultiBridg
     /// </summary>
     public TransmissionStatus TransmissionStatus => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static SendDataMultiBridgeCallback Create(DataFrame frame) => new SendDataMultiBridgeCallback(frame);
+    public static SendDataMultiBridgeCallback Create(DataFrame frame, CommandParsingContext context) => new SendDataMultiBridgeCallback(frame);
 }

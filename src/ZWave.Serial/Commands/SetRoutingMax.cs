@@ -27,5 +27,5 @@ public readonly struct SetRoutingMaxRequest : ICommand<SetRoutingMaxRequest>
         return new SetRoutingMaxRequest(frame);
     }
 
-    public static SetRoutingMaxRequest Create(DataFrame frame) => new SetRoutingMaxRequest(frame);
+    public static SetRoutingMaxRequest Create(DataFrame frame, CommandParsingContext context) => new SetRoutingMaxRequest(frame);
 }

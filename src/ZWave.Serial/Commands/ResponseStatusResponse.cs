@@ -15,5 +15,5 @@ public readonly struct ResponseStatusResponse : ICommand<ResponseStatusResponse>
 
     public bool WasRequestAccepted => Frame.CommandParameters.Span[0] != 0;
 
-    public static ResponseStatusResponse Create(DataFrame frame) => new ResponseStatusResponse(frame);
+    public static ResponseStatusResponse Create(DataFrame frame, CommandParsingContext context) => new ResponseStatusResponse(frame);
 }

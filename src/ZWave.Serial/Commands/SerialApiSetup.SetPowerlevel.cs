@@ -40,5 +40,5 @@ public readonly struct SerialApiSetupSetPowerlevelResponse : ICommand<SerialApiS
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[1] != 0;
 
-    public static SerialApiSetupSetPowerlevelResponse Create(DataFrame frame) => new SerialApiSetupSetPowerlevelResponse(frame);
+    public static SerialApiSetupSetPowerlevelResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupSetPowerlevelResponse(frame);
 }

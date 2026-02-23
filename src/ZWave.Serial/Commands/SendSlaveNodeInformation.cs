@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Create and transmit a Virtual Slave node "Node Information" frame.
@@ -37,7 +37,7 @@ public readonly struct SendSlaveNodeInformationRequest : IRequestWithCallback<Se
         return new SendSlaveNodeInformationRequest(frame);
     }
 
-    public static SendSlaveNodeInformationRequest Create(DataFrame frame) => new SendSlaveNodeInformationRequest(frame);
+    public static SendSlaveNodeInformationRequest Create(DataFrame frame, CommandParsingContext context) => new SendSlaveNodeInformationRequest(frame);
 }
 
 /// <summary>
@@ -66,5 +66,5 @@ public readonly struct SendSlaveNodeInformationCallback : ICommand<SendSlaveNode
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static SendSlaveNodeInformationCallback Create(DataFrame frame) => new SendSlaveNodeInformationCallback(frame);
+    public static SendSlaveNodeInformationCallback Create(DataFrame frame, CommandParsingContext context) => new SendSlaveNodeInformationCallback(frame);
 }

@@ -27,7 +27,7 @@ public readonly struct SetLongRangeChannelRequest : ICommand<SetLongRangeChannel
         return new SetLongRangeChannelRequest(frame);
     }
 
-    public static SetLongRangeChannelRequest Create(DataFrame frame) => new SetLongRangeChannelRequest(frame);
+    public static SetLongRangeChannelRequest Create(DataFrame frame, CommandParsingContext context) => new SetLongRangeChannelRequest(frame);
 }
 
 /// <summary>
@@ -51,5 +51,5 @@ public readonly struct SetLongRangeChannelResponse : ICommand<SetLongRangeChanne
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static SetLongRangeChannelResponse Create(DataFrame frame) => new SetLongRangeChannelResponse(frame);
+    public static SetLongRangeChannelResponse Create(DataFrame frame, CommandParsingContext context) => new SetLongRangeChannelResponse(frame);
 }

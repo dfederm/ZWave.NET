@@ -27,5 +27,5 @@ public readonly struct SetWutTimeoutRequest : ICommand<SetWutTimeoutRequest>
         return new SetWutTimeoutRequest(frame);
     }
 
-    public static SetWutTimeoutRequest Create(DataFrame frame) => new SetWutTimeoutRequest(frame);
+    public static SetWutTimeoutRequest Create(DataFrame frame, CommandParsingContext context) => new SetWutTimeoutRequest(frame);
 }

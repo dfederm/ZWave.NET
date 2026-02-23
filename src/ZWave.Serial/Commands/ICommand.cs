@@ -16,9 +16,9 @@ public interface ICommand<TCommand> where TCommand : struct, ICommand<TCommand>
     public static abstract CommandId CommandId { get; }
 
     /// <summary>
-    /// Creates an instance of this command from a data frame.
+    /// Creates an instance of this command from a data frame and protocol context.
     /// </summary>
-    public static abstract TCommand Create(DataFrame frame);
+    public static abstract TCommand Create(DataFrame frame, CommandParsingContext context);
 
     /// <summary>
     /// Gets the data frame representation of this command.

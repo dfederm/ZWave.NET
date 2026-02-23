@@ -27,7 +27,7 @@ public readonly struct SetDcdcConfigRequest : ICommand<SetDcdcConfigRequest>
         return new SetDcdcConfigRequest(frame);
     }
 
-    public static SetDcdcConfigRequest Create(DataFrame frame) => new SetDcdcConfigRequest(frame);
+    public static SetDcdcConfigRequest Create(DataFrame frame, CommandParsingContext context) => new SetDcdcConfigRequest(frame);
 }
 
 public readonly struct SetDcdcConfigResponse : ICommand<SetDcdcConfigResponse>
@@ -48,5 +48,5 @@ public readonly struct SetDcdcConfigResponse : ICommand<SetDcdcConfigResponse>
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static SetDcdcConfigResponse Create(DataFrame frame) => new SetDcdcConfigResponse(frame);
+    public static SetDcdcConfigResponse Create(DataFrame frame, CommandParsingContext context) => new SetDcdcConfigResponse(frame);
 }

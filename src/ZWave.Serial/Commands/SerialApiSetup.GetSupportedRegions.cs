@@ -43,5 +43,5 @@ public readonly struct SerialApiSetupGetSupportedRegionsResponse : ICommand<Seri
     public ReadOnlySpan<RfRegion> GetSupportedRegions()
         => MemoryMarshal.Cast<byte, RfRegion>(Frame.CommandParameters.Span[2..(2 + Count)]);
 
-    public static SerialApiSetupGetSupportedRegionsResponse Create(DataFrame frame) => new SerialApiSetupGetSupportedRegionsResponse(frame);
+    public static SerialApiSetupGetSupportedRegionsResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGetSupportedRegionsResponse(frame);
 }

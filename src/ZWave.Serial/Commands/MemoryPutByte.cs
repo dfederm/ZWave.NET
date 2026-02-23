@@ -26,7 +26,7 @@ public readonly struct MemoryPutByteRequest : ICommand<MemoryPutByteRequest>
         return new MemoryPutByteRequest(frame);
     }
 
-    public static MemoryPutByteRequest Create(DataFrame frame) => new MemoryPutByteRequest(frame);
+    public static MemoryPutByteRequest Create(DataFrame frame, CommandParsingContext context) => new MemoryPutByteRequest(frame);
 }
 
 public readonly struct MemoryPutByteResponse : ICommand<MemoryPutByteResponse>
@@ -47,5 +47,5 @@ public readonly struct MemoryPutByteResponse : ICommand<MemoryPutByteResponse>
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static MemoryPutByteResponse Create(DataFrame frame) => new MemoryPutByteResponse(frame);
+    public static MemoryPutByteResponse Create(DataFrame frame, CommandParsingContext context) => new MemoryPutByteResponse(frame);
 }

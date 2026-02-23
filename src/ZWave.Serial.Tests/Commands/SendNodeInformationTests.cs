@@ -17,6 +17,7 @@ public class SendNodeInformationTests : CommandTestBase
                 (
                     Request: SendNodeInformationRequest.Create(
                         destinationNodeId: 1,
+                        NodeIdType.Short,
                         txOptions: TransmissionOptions.ACK,
                         sessionId: 2),
                     ExpectedCommandParameters: new byte[] { 0x01, 0x01, 0x02 }

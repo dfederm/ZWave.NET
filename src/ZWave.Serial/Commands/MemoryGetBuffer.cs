@@ -26,7 +26,7 @@ public readonly struct MemoryGetBufferRequest : ICommand<MemoryGetBufferRequest>
         return new MemoryGetBufferRequest(frame);
     }
 
-    public static MemoryGetBufferRequest Create(DataFrame frame) => new MemoryGetBufferRequest(frame);
+    public static MemoryGetBufferRequest Create(DataFrame frame, CommandParsingContext context) => new MemoryGetBufferRequest(frame);
 }
 
 public readonly struct MemoryGetBufferResponse : ICommand<MemoryGetBufferResponse>
@@ -47,5 +47,5 @@ public readonly struct MemoryGetBufferResponse : ICommand<MemoryGetBufferRespons
     /// </summary>
     public ReadOnlyMemory<byte> Data => Frame.CommandParameters;
 
-    public static MemoryGetBufferResponse Create(DataFrame frame) => new MemoryGetBufferResponse(frame);
+    public static MemoryGetBufferResponse Create(DataFrame frame, CommandParsingContext context) => new MemoryGetBufferResponse(frame);
 }

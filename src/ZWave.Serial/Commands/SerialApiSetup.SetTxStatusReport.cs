@@ -27,5 +27,5 @@ public readonly struct SerialApiSetupSetTxStatusReportResponse : ICommand<Serial
 
     public bool Success => Frame.CommandParameters.Span[1] != 0;
 
-    public static SerialApiSetupSetTxStatusReportResponse Create(DataFrame frame) => new SerialApiSetupSetTxStatusReportResponse(frame);
+    public static SerialApiSetupSetTxStatusReportResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupSetTxStatusReportResponse(frame);
 }

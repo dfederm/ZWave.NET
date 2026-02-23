@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 public readonly struct GetSucNodeIdRequest : ICommand<GetSucNodeIdRequest>
 {
@@ -19,14 +19,17 @@ public readonly struct GetSucNodeIdRequest : ICommand<GetSucNodeIdRequest>
         return new GetSucNodeIdRequest(frame);
     }
 
-    public static GetSucNodeIdRequest Create(DataFrame frame) => new GetSucNodeIdRequest(frame);
+    public static GetSucNodeIdRequest Create(DataFrame frame, CommandParsingContext context) => new GetSucNodeIdRequest(frame);
 }
 
 public readonly struct GetSucNodeIdResponse : ICommand<GetSucNodeIdResponse>
 {
-    public GetSucNodeIdResponse(DataFrame frame)
+    private readonly NodeIdType _nodeIdType;
+
+    public GetSucNodeIdResponse(DataFrame frame, NodeIdType nodeIdType)
     {
         Frame = frame;
+        _nodeIdType = nodeIdType;
     }
 
     public static DataFrameType Type => DataFrameType.RES;
@@ -35,8 +38,7 @@ public readonly struct GetSucNodeIdResponse : ICommand<GetSucNodeIdResponse>
 
     public DataFrame Frame { get; }
 
-    // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-    public ushort SucNodeId => Frame.CommandParameters.Span[0];
+    public ushort SucNodeId => _nodeIdType.ReadNodeId(Frame.CommandParameters.Span, 0);
 
-    public static GetSucNodeIdResponse Create(DataFrame frame) => new GetSucNodeIdResponse(frame);
+    public static GetSucNodeIdResponse Create(DataFrame frame, CommandParsingContext context) => new GetSucNodeIdResponse(frame, context.NodeIdType);
 }

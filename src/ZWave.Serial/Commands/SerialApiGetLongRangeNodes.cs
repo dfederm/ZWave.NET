@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Obtain the list of Long Range nodes.
@@ -27,7 +27,7 @@ public readonly struct SerialApiGetLongRangeNodesRequest : ICommand<SerialApiGet
         return new SerialApiGetLongRangeNodesRequest(frame);
     }
 
-    public static SerialApiGetLongRangeNodesRequest Create(DataFrame frame) => new SerialApiGetLongRangeNodesRequest(frame);
+    public static SerialApiGetLongRangeNodesRequest Create(DataFrame frame, CommandParsingContext context) => new SerialApiGetLongRangeNodesRequest(frame);
 }
 
 public readonly struct SerialApiGetLongRangeNodesResponse : ICommand<SerialApiGetLongRangeNodesResponse>
@@ -73,5 +73,5 @@ public readonly struct SerialApiGetLongRangeNodesResponse : ICommand<SerialApiGe
         }
     }
 
-    public static SerialApiGetLongRangeNodesResponse Create(DataFrame frame) => new SerialApiGetLongRangeNodesResponse(frame);
+    public static SerialApiGetLongRangeNodesResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiGetLongRangeNodesResponse(frame);
 }

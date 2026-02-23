@@ -61,5 +61,5 @@ public readonly struct SerialApiSetupSetMaxLongRangePowerlevelResponse : IComman
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[1] != 0;
 
-    public static SerialApiSetupSetMaxLongRangePowerlevelResponse Create(DataFrame frame) => new SerialApiSetupSetMaxLongRangePowerlevelResponse(frame);
+    public static SerialApiSetupSetMaxLongRangePowerlevelResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupSetMaxLongRangePowerlevelResponse(frame);
 }

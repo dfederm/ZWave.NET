@@ -1,13 +1,16 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// This command is used by a Z-Wave module to notify a host application that a Z-Wave frame has been received
 /// </summary>
 public readonly struct ApplicationCommandHandler : ICommand<ApplicationCommandHandler>
 {
-    public ApplicationCommandHandler(DataFrame frame)
+    private readonly NodeIdType _nodeIdType;
+
+    public ApplicationCommandHandler(DataFrame frame, NodeIdType nodeIdType)
     {
         Frame = frame;
+        _nodeIdType = nodeIdType;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
@@ -18,13 +21,13 @@ public readonly struct ApplicationCommandHandler : ICommand<ApplicationCommandHa
 
     public ReceivedStatus ReceivedStatus => (ReceivedStatus)Frame.CommandParameters.Span[0];
 
-    public ushort NodeId => Frame.CommandParameters.Span[1];
+    public ushort NodeId => _nodeIdType.ReadNodeId(Frame.CommandParameters.Span, 1);
 
-    private byte PayloadLength => Frame.CommandParameters.Span[2];
+    private byte PayloadLength => Frame.CommandParameters.Span[1 + _nodeIdType.NodeIdSize()];
 
-    public ReadOnlyMemory<byte> Payload => Frame.CommandParameters.Slice(3, PayloadLength);
+    public ReadOnlyMemory<byte> Payload => Frame.CommandParameters.Slice(2 + _nodeIdType.NodeIdSize(), PayloadLength);
 
-    public RssiMeasurement ReceivedRssi => Frame.CommandParameters.Span[3 + PayloadLength];
+    public RssiMeasurement ReceivedRssi => Frame.CommandParameters.Span[2 + _nodeIdType.NodeIdSize() + PayloadLength];
 
-    public static ApplicationCommandHandler Create(DataFrame frame) => new ApplicationCommandHandler(frame);
+    public static ApplicationCommandHandler Create(DataFrame frame, CommandParsingContext context) => new ApplicationCommandHandler(frame, context.NodeIdType);
 }

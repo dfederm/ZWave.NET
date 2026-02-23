@@ -61,7 +61,7 @@ public readonly struct GetLibraryVersionRequest : ICommand<GetLibraryVersionRequ
         return new GetLibraryVersionRequest(frame);
     }
 
-    public static GetLibraryVersionRequest Create(DataFrame frame) => new GetLibraryVersionRequest(frame);
+    public static GetLibraryVersionRequest Create(DataFrame frame, CommandParsingContext context) => new GetLibraryVersionRequest(frame);
 }
 
 public readonly struct GetLibraryVersionResponse : ICommand<GetLibraryVersionResponse>
@@ -102,5 +102,5 @@ public readonly struct GetLibraryVersionResponse : ICommand<GetLibraryVersionRes
     /// </summary>
     public LibraryType LibraryType => (LibraryType)Frame.CommandParameters.Span[12];
 
-    public static GetLibraryVersionResponse Create(DataFrame frame) => new GetLibraryVersionResponse(frame);
+    public static GetLibraryVersionResponse Create(DataFrame frame, CommandParsingContext context) => new GetLibraryVersionResponse(frame);
 }

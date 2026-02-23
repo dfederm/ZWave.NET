@@ -40,5 +40,5 @@ public readonly struct SerialApiSetupSetNodeIdBaseTypeResponse : ICommand<Serial
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[1] != 0;
 
-    public static SerialApiSetupSetNodeIdBaseTypeResponse Create(DataFrame frame) => new SerialApiSetupSetNodeIdBaseTypeResponse(frame);
+    public static SerialApiSetupSetNodeIdBaseTypeResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupSetNodeIdBaseTypeResponse(frame);
 }

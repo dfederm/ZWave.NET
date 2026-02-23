@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The security mode for the Security Setup command.
@@ -67,7 +67,7 @@ public readonly struct SecuritySetupRequest : ICommand<SecuritySetupRequest>
         return new SecuritySetupRequest(frame);
     }
 
-    public static SecuritySetupRequest Create(DataFrame frame) => new SecuritySetupRequest(frame);
+    public static SecuritySetupRequest Create(DataFrame frame, CommandParsingContext context) => new SecuritySetupRequest(frame);
 }
 
 /// <summary>
@@ -107,6 +107,6 @@ public readonly struct SecuritySetupResponse : ICommand<SecuritySetupResponse>
     /// </summary>
     public SecurityKeyFlags SecurityKeys => (SecurityKeyFlags)Parameters[0];
 
-    public static SecuritySetupResponse Create(DataFrame frame) => new SecuritySetupResponse(frame);
+    public static SecuritySetupResponse Create(DataFrame frame, CommandParsingContext context) => new SecuritySetupResponse(frame);
 }
 

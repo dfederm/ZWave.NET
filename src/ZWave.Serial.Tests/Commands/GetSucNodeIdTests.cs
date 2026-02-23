@@ -1,4 +1,4 @@
-﻿using ZWave.Serial.Commands;
+using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -29,4 +29,14 @@ public class GetSucNodeIdTests : CommandTestBase
                     ExpectedData: new GetSucNodeIdResponseData(SucNodeId: 1)
                 )
             });
+
+    [TestMethod]
+    public void Response16Bit()
+    {
+        byte[] commandParameters = new byte[] { 0x01, 0x00 };
+        DataFrame dataFrame = DataFrame.Create(DataFrameType.RES, CommandId.GetSucNodeId, commandParameters);
+        GetSucNodeIdResponse response = GetSucNodeIdResponse.Create(dataFrame, new CommandParsingContext(NodeIdType.Long));
+
+        Assert.AreEqual((ushort)256, response.SucNodeId);
+    }
 }

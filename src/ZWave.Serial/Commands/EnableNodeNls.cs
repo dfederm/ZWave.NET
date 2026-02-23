@@ -21,17 +21,16 @@ public readonly struct EnableNodeNlsRequest : ICommand<EnableNodeNlsRequest>
     /// Create a request to enable NLS for a node.
     /// </summary>
     /// <param name="nodeId">The node ID to enable NLS for.</param>
-    public static EnableNodeNlsRequest Create(ushort nodeId)
+    public static EnableNodeNlsRequest Create(ushort nodeId, NodeIdType nodeIdType)
     {
-        ReadOnlySpan<byte> commandParameters =
-        [
-            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        ];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize];
+        nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new EnableNodeNlsRequest(frame);
     }
 
-    public static EnableNodeNlsRequest Create(DataFrame frame) => new EnableNodeNlsRequest(frame);
+    public static EnableNodeNlsRequest Create(DataFrame frame, CommandParsingContext context) => new EnableNodeNlsRequest(frame);
 }
 
 public readonly struct EnableNodeNlsResponse : ICommand<EnableNodeNlsResponse>
@@ -52,5 +51,5 @@ public readonly struct EnableNodeNlsResponse : ICommand<EnableNodeNlsResponse>
     /// </summary>
     public byte CommandStatus => Frame.CommandParameters.Span[0];
 
-    public static EnableNodeNlsResponse Create(DataFrame frame) => new EnableNodeNlsResponse(frame);
+    public static EnableNodeNlsResponse Create(DataFrame frame, CommandParsingContext context) => new EnableNodeNlsResponse(frame);
 }

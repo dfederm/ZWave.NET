@@ -22,7 +22,7 @@ public readonly struct GetTransmitCounterRequest : ICommand<GetTransmitCounterRe
         return new GetTransmitCounterRequest(frame);
     }
 
-    public static GetTransmitCounterRequest Create(DataFrame frame) => new GetTransmitCounterRequest(frame);
+    public static GetTransmitCounterRequest Create(DataFrame frame, CommandParsingContext context) => new GetTransmitCounterRequest(frame);
 }
 
 public readonly struct GetTransmitCounterResponse : ICommand<GetTransmitCounterResponse>
@@ -43,5 +43,5 @@ public readonly struct GetTransmitCounterResponse : ICommand<GetTransmitCounterR
     /// </summary>
     public byte Counter => Frame.CommandParameters.Span[0];
 
-    public static GetTransmitCounterResponse Create(DataFrame frame) => new GetTransmitCounterResponse(frame);
+    public static GetTransmitCounterResponse Create(DataFrame frame, CommandParsingContext context) => new GetTransmitCounterResponse(frame);
 }

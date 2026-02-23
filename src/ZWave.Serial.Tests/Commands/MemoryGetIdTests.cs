@@ -1,4 +1,4 @@
-﻿using ZWave.Serial.Commands;
+using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -29,4 +29,16 @@ public class MemoryGetIdTests : CommandTestBase
                     ExpectedData: new MemoryGetIdResponseData(HomeId: 792451114u, NodeId: 1)
                 )
             });
+
+    [TestMethod]
+    public void Response16Bit()
+    {
+        // In 16-bit mode, NodeID is 2 bytes: 0x01, 0x00 = node 256
+        byte[] commandParameters = new byte[] { 0x2f, 0x3b, 0xd8, 0x2a, 0x01, 0x00 };
+        DataFrame dataFrame = DataFrame.Create(DataFrameType.RES, CommandId.MemoryGetId, commandParameters);
+        MemoryGetIdResponse response = MemoryGetIdResponse.Create(dataFrame, new CommandParsingContext(NodeIdType.Long));
+
+        Assert.AreEqual(792451114u, response.HomeId);
+        Assert.AreEqual((ushort)256, response.NodeId);
+    }
 }

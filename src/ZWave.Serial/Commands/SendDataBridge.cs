@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Transmit the data buffer to a single Z-Wave Node or all Z-Wave Nodes (broadcast) via Bridge Controller.
@@ -23,23 +23,26 @@ public readonly struct SendDataBridgeRequest : IRequestWithCallback<SendDataBrid
     public static SendDataBridgeRequest Create(
         ushort sourceNodeId,
         ushort destinationNodeId,
+        NodeIdType nodeIdType,
         ReadOnlySpan<byte> data,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        Span<byte> commandParameters = stackalloc byte[5 + data.Length];
-        commandParameters[0] = (byte)sourceNodeId;
-        commandParameters[1] = (byte)destinationNodeId;
-        commandParameters[2] = (byte)data.Length;
-        data.CopyTo(commandParameters.Slice(3, data.Length));
-        commandParameters[3 + data.Length] = (byte)txOptions;
-        commandParameters[4 + data.Length] = sessionId;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[3 + 2 * nodeIdSize + data.Length];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, sourceNodeId);
+        offset = nodeIdType.WriteNodeId(commandParameters, offset, destinationNodeId);
+        commandParameters[offset] = (byte)data.Length;
+        data.CopyTo(commandParameters.Slice(offset + 1, data.Length));
+        offset += 1 + data.Length;
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = sessionId;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendDataBridgeRequest(frame);
     }
 
-    public static SendDataBridgeRequest Create(DataFrame frame) => new SendDataBridgeRequest(frame);
+    public static SendDataBridgeRequest Create(DataFrame frame, CommandParsingContext context) => new SendDataBridgeRequest(frame);
 }
 
 /// <summary>
@@ -76,5 +79,5 @@ public readonly struct SendDataBridgeCallback : ICommand<SendDataBridgeCallback>
             ? new TransmissionStatusReport(Frame.CommandParameters[2..])
             : null;
 
-    public static SendDataBridgeCallback Create(DataFrame frame) => new SendDataBridgeCallback(frame);
+    public static SendDataBridgeCallback Create(DataFrame frame, CommandParsingContext context) => new SendDataBridgeCallback(frame);
 }

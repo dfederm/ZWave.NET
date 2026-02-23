@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Request a SUC/SIS controller to update the requesting nodes neighbors.
@@ -18,18 +18,22 @@ public readonly struct RediscoveryNeededRequest : IRequestWithCallback<Rediscove
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[1];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static RediscoveryNeededRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new RediscoveryNeededRequest(frame);
     }
 
-    public static RediscoveryNeededRequest Create(DataFrame frame) => new RediscoveryNeededRequest(frame);
+    public static RediscoveryNeededRequest Create(DataFrame frame, CommandParsingContext context) => new RediscoveryNeededRequest(frame);
 }
 
 /// <summary>
@@ -58,5 +62,5 @@ public readonly struct RediscoveryNeededCallback : ICommand<RediscoveryNeededCal
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[1] != 0;
 
-    public static RediscoveryNeededCallback Create(DataFrame frame) => new RediscoveryNeededCallback(frame);
+    public static RediscoveryNeededCallback Create(DataFrame frame, CommandParsingContext context) => new RediscoveryNeededCallback(frame);
 }

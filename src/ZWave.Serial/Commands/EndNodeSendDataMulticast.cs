@@ -40,7 +40,7 @@ public readonly struct EndNodeSendDataMulticastRequest : IRequestWithCallback<En
         return new EndNodeSendDataMulticastRequest(frame);
     }
 
-    public static EndNodeSendDataMulticastRequest Create(DataFrame frame) => new EndNodeSendDataMulticastRequest(frame);
+    public static EndNodeSendDataMulticastRequest Create(DataFrame frame, CommandParsingContext context) => new EndNodeSendDataMulticastRequest(frame);
 }
 
 /// <summary>
@@ -69,5 +69,5 @@ public readonly struct EndNodeSendDataMulticastCallback : ICommand<EndNodeSendDa
     /// </summary>
     public TransmissionStatus TransmissionStatus => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static EndNodeSendDataMulticastCallback Create(DataFrame frame) => new EndNodeSendDataMulticastCallback(frame);
+    public static EndNodeSendDataMulticastCallback Create(DataFrame frame, CommandParsingContext context) => new EndNodeSendDataMulticastCallback(frame);
 }

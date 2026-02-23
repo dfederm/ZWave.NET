@@ -22,5 +22,5 @@ public readonly struct WatchdogKickRequest : ICommand<WatchdogKickRequest>
         return new WatchdogKickRequest(frame);
     }
 
-    public static WatchdogKickRequest Create(DataFrame frame) => new WatchdogKickRequest(frame);
+    public static WatchdogKickRequest Create(DataFrame frame, CommandParsingContext context) => new WatchdogKickRequest(frame);
 }

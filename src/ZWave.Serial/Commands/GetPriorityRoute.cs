@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Get the route with the highest priority.
@@ -20,14 +20,16 @@ public readonly struct GetPriorityRouteRequest : ICommand<GetPriorityRouteReques
     /// Create a request to get the priority route for a node.
     /// </summary>
     /// <param name="nodeId">The node ID to get the priority route for.</param>
-    public static GetPriorityRouteRequest Create(ushort nodeId)
+    public static GetPriorityRouteRequest Create(ushort nodeId, NodeIdType nodeIdType)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize];
+        nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new GetPriorityRouteRequest(frame);
     }
 
-    public static GetPriorityRouteRequest Create(DataFrame frame) => new GetPriorityRouteRequest(frame);
+    public static GetPriorityRouteRequest Create(DataFrame frame, CommandParsingContext context) => new GetPriorityRouteRequest(frame);
 }
 
 public readonly struct GetPriorityRouteResponse : ICommand<GetPriorityRouteResponse>
@@ -58,5 +60,5 @@ public readonly struct GetPriorityRouteResponse : ICommand<GetPriorityRouteRespo
     /// </summary>
     public PriorityRouteSpeed Speed => (PriorityRouteSpeed)Frame.CommandParameters.Span[5];
 
-    public static GetPriorityRouteResponse Create(DataFrame frame) => new GetPriorityRouteResponse(frame);
+    public static GetPriorityRouteResponse Create(DataFrame frame, CommandParsingContext context) => new GetPriorityRouteResponse(frame);
 }

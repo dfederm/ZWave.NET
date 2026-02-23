@@ -18,20 +18,22 @@ public readonly struct TransferProtocolCcRequest : ICommand<TransferProtocolCcRe
 
     public static TransferProtocolCcRequest Create(
         ushort sourceNodeId,
+        NodeIdType nodeIdType,
         SecurityKey decryptionKey,
         ReadOnlySpan<byte> payload)
     {
-        Span<byte> commandParameters = stackalloc byte[3 + payload.Length];
-        commandParameters[0] = (byte)sourceNodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        commandParameters[1] = (byte)decryptionKey;
-        commandParameters[2] = (byte)payload.Length;
-        payload.CopyTo(commandParameters.Slice(3, payload.Length));
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[2 + nodeIdSize + payload.Length];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, sourceNodeId);
+        commandParameters[offset] = (byte)decryptionKey;
+        commandParameters[offset + 1] = (byte)payload.Length;
+        payload.CopyTo(commandParameters.Slice(offset + 2, payload.Length));
 
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new TransferProtocolCcRequest(frame);
     }
 
-    public static TransferProtocolCcRequest Create(DataFrame frame) => new TransferProtocolCcRequest(frame);
+    public static TransferProtocolCcRequest Create(DataFrame frame, CommandParsingContext context) => new TransferProtocolCcRequest(frame);
 }
 
 /// <summary>
@@ -55,5 +57,5 @@ public readonly struct TransferProtocolCcResponse : ICommand<TransferProtocolCcR
     /// </summary>
     public byte CommandStatus => Frame.CommandParameters.Span[0];
 
-    public static TransferProtocolCcResponse Create(DataFrame frame) => new TransferProtocolCcResponse(frame);
+    public static TransferProtocolCcResponse Create(DataFrame frame, CommandParsingContext context) => new TransferProtocolCcResponse(frame);
 }

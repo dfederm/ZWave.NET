@@ -20,9 +20,27 @@ public class SendNopTests : CommandTestBase
                 (
                     Request: SendNopRequest.Create(
                         nodeId: 5,
+                        NodeIdType.Short,
                         txOptions: TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore,
                         sessionId: 1),
                     ExpectedCommandParameters: new byte[] { 0x05, 0x25, 0x01 }
+                ),
+            });
+
+    [TestMethod]
+    public void Request16Bit()
+        => TestSendableCommand(
+            DataFrameType.REQ,
+            CommandId.SendNop,
+            new[]
+            {
+                (
+                    Request: SendNopRequest.Create(
+                        nodeId: 0x0105,
+                        NodeIdType.Long,
+                        txOptions: TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore,
+                        sessionId: 1),
+                    ExpectedCommandParameters: new byte[] { 0x01, 0x05, 0x25, 0x01 }
                 ),
             });
 

@@ -27,7 +27,7 @@ public readonly struct GetNlsNodesRequest : ICommand<GetNlsNodesRequest>
         return new GetNlsNodesRequest(frame);
     }
 
-    public static GetNlsNodesRequest Create(DataFrame frame) => new GetNlsNodesRequest(frame);
+    public static GetNlsNodesRequest Create(DataFrame frame, CommandParsingContext context) => new GetNlsNodesRequest(frame);
 }
 
 public readonly struct GetNlsNodesResponse : ICommand<GetNlsNodesResponse>
@@ -58,5 +58,5 @@ public readonly struct GetNlsNodesResponse : ICommand<GetNlsNodesResponse>
     /// </summary>
     public ReadOnlyMemory<byte> NodeList => Frame.CommandParameters.Slice(3, Frame.CommandParameters.Span[2]);
 
-    public static GetNlsNodesResponse Create(DataFrame frame) => new GetNlsNodesResponse(frame);
+    public static GetNlsNodesResponse Create(DataFrame frame, CommandParsingContext context) => new GetNlsNodesResponse(frame);
 }

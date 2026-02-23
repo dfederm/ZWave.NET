@@ -25,7 +25,7 @@ public readonly struct MemoryGetByteRequest : ICommand<MemoryGetByteRequest>
         return new MemoryGetByteRequest(frame);
     }
 
-    public static MemoryGetByteRequest Create(DataFrame frame) => new MemoryGetByteRequest(frame);
+    public static MemoryGetByteRequest Create(DataFrame frame, CommandParsingContext context) => new MemoryGetByteRequest(frame);
 }
 
 public readonly struct MemoryGetByteResponse : ICommand<MemoryGetByteResponse>
@@ -46,5 +46,5 @@ public readonly struct MemoryGetByteResponse : ICommand<MemoryGetByteResponse>
     /// </summary>
     public byte Value => Frame.CommandParameters.Span[0];
 
-    public static MemoryGetByteResponse Create(DataFrame frame) => new MemoryGetByteResponse(frame);
+    public static MemoryGetByteResponse Create(DataFrame frame, CommandParsingContext context) => new MemoryGetByteResponse(frame);
 }

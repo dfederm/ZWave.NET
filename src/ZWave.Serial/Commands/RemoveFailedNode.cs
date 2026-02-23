@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The status of the remove failed node operation.
@@ -39,18 +39,22 @@ public readonly struct RemoveFailedNodeRequest : IRequestWithCallback<RemoveFail
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[1];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static RemoveFailedNodeRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new RemoveFailedNodeRequest(frame);
     }
 
-    public static RemoveFailedNodeRequest Create(DataFrame frame) => new RemoveFailedNodeRequest(frame);
+    public static RemoveFailedNodeRequest Create(DataFrame frame, CommandParsingContext context) => new RemoveFailedNodeRequest(frame);
 }
 
 /// <summary>
@@ -79,5 +83,5 @@ public readonly struct RemoveFailedNodeCallback : ICommand<RemoveFailedNodeCallb
     /// </summary>
     public RemoveFailedNodeStatus Status => (RemoveFailedNodeStatus)Frame.CommandParameters.Span[1];
 
-    public static RemoveFailedNodeCallback Create(DataFrame frame) => new RemoveFailedNodeCallback(frame);
+    public static RemoveFailedNodeCallback Create(DataFrame frame, CommandParsingContext context) => new RemoveFailedNodeCallback(frame);
 }

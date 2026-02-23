@@ -31,7 +31,7 @@ public readonly struct EncryptDataWithAesRequest : ICommand<EncryptDataWithAesRe
         return new EncryptDataWithAesRequest(frame);
     }
 
-    public static EncryptDataWithAesRequest Create(DataFrame frame) => new EncryptDataWithAesRequest(frame);
+    public static EncryptDataWithAesRequest Create(DataFrame frame, CommandParsingContext context) => new EncryptDataWithAesRequest(frame);
 }
 
 public readonly struct EncryptDataWithAesResponse : ICommand<EncryptDataWithAesResponse>
@@ -52,5 +52,5 @@ public readonly struct EncryptDataWithAesResponse : ICommand<EncryptDataWithAesR
     /// </summary>
     public ReadOnlyMemory<byte> OutputData => Frame.CommandParameters[..16];
 
-    public static EncryptDataWithAesResponse Create(DataFrame frame) => new EncryptDataWithAesResponse(frame);
+    public static EncryptDataWithAesResponse Create(DataFrame frame, CommandParsingContext context) => new EncryptDataWithAesResponse(frame);
 }
