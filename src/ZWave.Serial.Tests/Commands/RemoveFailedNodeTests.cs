@@ -15,7 +15,7 @@ public class RemoveFailedNodeTests : CommandTestBase
             new[]
             {
                 (
-                    Request: RemoveFailedNodeRequest.Create(nodeId: 5, sessionId: 1),
+                    Request: RemoveFailedNodeRequest.Create(nodeId: 5, NodeIdType.Short, sessionId: 1),
                     ExpectedCommandParameters: new byte[] { 0x05, 0x01 }
                 ),
             });

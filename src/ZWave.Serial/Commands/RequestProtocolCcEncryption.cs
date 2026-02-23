@@ -6,9 +6,12 @@ namespace ZWave.Serial.Commands;
 /// </summary>
 public readonly struct RequestProtocolCcEncryption : ICommand<RequestProtocolCcEncryption>
 {
-    public RequestProtocolCcEncryption(DataFrame frame)
+    private readonly NodeIdType _nodeIdType;
+
+    public RequestProtocolCcEncryption(DataFrame frame, NodeIdType nodeIdType)
     {
         Frame = frame;
+        _nodeIdType = nodeIdType;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
@@ -20,33 +23,33 @@ public readonly struct RequestProtocolCcEncryption : ICommand<RequestProtocolCcE
     /// <summary>
     /// The destination node ID.
     /// </summary>
-    public ushort DestinationNodeId => Frame.CommandParameters.Span[0]; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+    public ushort DestinationNodeId => _nodeIdType.ReadNodeId(Frame.CommandParameters.Span, 0);
 
-    private byte PayloadLength => Frame.CommandParameters.Span[1];
+    private byte PayloadLength => Frame.CommandParameters.Span[_nodeIdType.NodeIdSize()];
 
     /// <summary>
     /// The payload to encrypt.
     /// </summary>
-    public ReadOnlyMemory<byte> Payload => Frame.CommandParameters.Slice(2, PayloadLength);
+    public ReadOnlyMemory<byte> Payload => Frame.CommandParameters.Slice(1 + _nodeIdType.NodeIdSize(), PayloadLength);
 
-    private byte PayloadMetaDataLength => Frame.CommandParameters.Span[2 + PayloadLength];
+    private byte PayloadMetaDataLength => Frame.CommandParameters.Span[1 + _nodeIdType.NodeIdSize() + PayloadLength];
 
     /// <summary>
     /// The payload metadata.
     /// </summary>
-    public ReadOnlyMemory<byte> PayloadMetaData => Frame.CommandParameters.Slice(3 + PayloadLength, PayloadMetaDataLength);
+    public ReadOnlyMemory<byte> PayloadMetaData => Frame.CommandParameters.Slice(2 + _nodeIdType.NodeIdSize() + PayloadLength, PayloadMetaDataLength);
 
     /// <summary>
     /// Whether to use supervision for the encrypted frame.
     /// </summary>
-    public bool UseSupervision => (Frame.CommandParameters.Span[3 + PayloadLength + PayloadMetaDataLength] & 0x80) != 0;
+    public bool UseSupervision => (Frame.CommandParameters.Span[2 + _nodeIdType.NodeIdSize() + PayloadLength + PayloadMetaDataLength] & 0x80) != 0;
 
     /// <summary>
     /// The session ID for correlating with the encryption callback.
     /// </summary>
-    public byte SessionId => Frame.CommandParameters.Span[4 + PayloadLength + PayloadMetaDataLength];
+    public byte SessionId => Frame.CommandParameters.Span[3 + _nodeIdType.NodeIdSize() + PayloadLength + PayloadMetaDataLength];
 
-    public static RequestProtocolCcEncryption Create(DataFrame frame) => new RequestProtocolCcEncryption(frame);
+    public static RequestProtocolCcEncryption Create(DataFrame frame, CommandParsingContext context) => new RequestProtocolCcEncryption(frame, context.NodeIdType);
 }
 
 /// <summary>
@@ -83,5 +86,5 @@ public readonly struct RequestProtocolCcEncryptionCallback : ICommand<RequestPro
             ? new TransmissionStatusReport(Frame.CommandParameters[2..])
             : null;
 
-    public static RequestProtocolCcEncryptionCallback Create(DataFrame frame) => new RequestProtocolCcEncryptionCallback(frame);
+    public static RequestProtocolCcEncryptionCallback Create(DataFrame frame, CommandParsingContext context) => new RequestProtocolCcEncryptionCallback(frame);
 }

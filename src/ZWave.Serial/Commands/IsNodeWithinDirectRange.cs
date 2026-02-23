@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Check if the supplied node ID is marked as being within direct range in any of the existing return routes.
@@ -20,14 +20,19 @@ public readonly struct IsNodeWithinDirectRangeRequest : ICommand<IsNodeWithinDir
     /// Create a request to check if a node is within direct range.
     /// </summary>
     /// <param name="nodeId">The node ID to check.</param>
+    /// <remarks>
+    /// Per Z-Wave Host API Specification, this field MUST be encoded using 8 bits regardless
+    /// of the configured NodeID base Type.
+    /// </remarks>
     public static IsNodeWithinDirectRangeRequest Create(ushort nodeId)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new IsNodeWithinDirectRangeRequest(frame);
     }
 
-    public static IsNodeWithinDirectRangeRequest Create(DataFrame frame) => new IsNodeWithinDirectRangeRequest(frame);
+    public static IsNodeWithinDirectRangeRequest Create(DataFrame frame, CommandParsingContext context) => new IsNodeWithinDirectRangeRequest(frame);
 }
 
 public readonly struct IsNodeWithinDirectRangeResponse : ICommand<IsNodeWithinDirectRangeResponse>
@@ -48,5 +53,5 @@ public readonly struct IsNodeWithinDirectRangeResponse : ICommand<IsNodeWithinDi
     /// </summary>
     public bool IsWithinRange => Frame.CommandParameters.Span[0] != 0;
 
-    public static IsNodeWithinDirectRangeResponse Create(DataFrame frame) => new IsNodeWithinDirectRangeResponse(frame);
+    public static IsNodeWithinDirectRangeResponse Create(DataFrame frame, CommandParsingContext context) => new IsNodeWithinDirectRangeResponse(frame);
 }

@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 public readonly struct SendDataRequest : IRequestWithCallback<SendDataRequest>
 {
@@ -19,22 +19,25 @@ public readonly struct SendDataRequest : IRequestWithCallback<SendDataRequest>
 
     public static SendDataRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         ReadOnlySpan<byte> data,
         TransmissionOptions transmissionOptions,
         byte sessionId)
     {
-        Span<byte> commandParameters = stackalloc byte[4 + data.Length];
-        commandParameters[0] = (byte)nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        commandParameters[1] = (byte)data.Length;
-        data.CopyTo(commandParameters.Slice(2, data.Length));
-        commandParameters[2 + data.Length] = (byte)transmissionOptions;
-        commandParameters[3 + data.Length] = sessionId;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[3 + nodeIdSize + data.Length];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = (byte)data.Length;
+        data.CopyTo(commandParameters.Slice(offset + 1, data.Length));
+        offset += 1 + data.Length;
+        commandParameters[offset] = (byte)transmissionOptions;
+        commandParameters[offset + 1] = sessionId;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendDataRequest(frame);
     }
 
-    public static SendDataRequest Create(DataFrame frame) => new SendDataRequest(frame);
+    public static SendDataRequest Create(DataFrame frame, CommandParsingContext context) => new SendDataRequest(frame);
 }
 
 public readonly struct SendDataCallback : ICommand<SendDataCallback>
@@ -59,5 +62,5 @@ public readonly struct SendDataCallback : ICommand<SendDataCallback>
             ? new TransmissionStatusReport(Frame.CommandParameters[2..])
             : null;
 
-    public static SendDataCallback Create(DataFrame frame) => new SendDataCallback(frame);
+    public static SendDataCallback Create(DataFrame frame, CommandParsingContext context) => new SendDataCallback(frame);
 }

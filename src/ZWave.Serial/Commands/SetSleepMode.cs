@@ -28,5 +28,5 @@ public readonly struct SetSleepModeRequest : ICommand<SetSleepModeRequest>
         return new SetSleepModeRequest(frame);
     }
 
-    public static SetSleepModeRequest Create(DataFrame frame) => new SetSleepModeRequest(frame);
+    public static SetSleepModeRequest Create(DataFrame frame, CommandParsingContext context) => new SetSleepModeRequest(frame);
 }

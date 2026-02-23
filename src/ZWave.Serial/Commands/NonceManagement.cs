@@ -47,7 +47,7 @@ public readonly struct NonceManagementRequest : ICommand<NonceManagementRequest>
         return new NonceManagementRequest(frame);
     }
 
-    public static NonceManagementRequest Create(DataFrame frame) => new NonceManagementRequest(frame);
+    public static NonceManagementRequest Create(DataFrame frame, CommandParsingContext context) => new NonceManagementRequest(frame);
 }
 
 /// <summary>
@@ -76,7 +76,7 @@ public readonly struct NonceManagementResponse : ICommand<NonceManagementRespons
     /// </summary>
     public byte CommandStatus => Frame.CommandParameters.Span[1];
 
-    public static NonceManagementResponse Create(DataFrame frame) => new NonceManagementResponse(frame);
+    public static NonceManagementResponse Create(DataFrame frame, CommandParsingContext context) => new NonceManagementResponse(frame);
 }
 
 /// <summary>
@@ -97,9 +97,12 @@ public enum NoncePayloadType : byte
 /// </summary>
 public readonly struct NonceUpdate : ICommand<NonceUpdate>
 {
-    public NonceUpdate(DataFrame frame)
+    private readonly NodeIdType _nodeIdType;
+
+    public NonceUpdate(DataFrame frame, NodeIdType nodeIdType)
     {
         Frame = frame;
+        _nodeIdType = nodeIdType;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
@@ -116,17 +119,17 @@ public readonly struct NonceUpdate : ICommand<NonceUpdate>
     /// <summary>
     /// The source node ID.
     /// </summary>
-    public ushort SourceNodeId => Frame.CommandParameters.Span[1]; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+    public ushort SourceNodeId => _nodeIdType.ReadNodeId(Frame.CommandParameters.Span, 1);
 
     /// <summary>
     /// The payload type.
     /// </summary>
-    public NoncePayloadType PayloadType => (NoncePayloadType)Frame.CommandParameters.Span[2];
+    public NoncePayloadType PayloadType => (NoncePayloadType)Frame.CommandParameters.Span[1 + _nodeIdType.NodeIdSize()];
 
     /// <summary>
     /// The nonce update payload.
     /// </summary>
-    public ReadOnlyMemory<byte> Payload => Frame.CommandParameters.Slice(4, Frame.CommandParameters.Span[3]);
+    public ReadOnlyMemory<byte> Payload => Frame.CommandParameters.Slice(3 + _nodeIdType.NodeIdSize(), Frame.CommandParameters.Span[2 + _nodeIdType.NodeIdSize()]);
 
-    public static NonceUpdate Create(DataFrame frame) => new NonceUpdate(frame);
+    public static NonceUpdate Create(DataFrame frame, CommandParsingContext context) => new NonceUpdate(frame, context.NodeIdType);
 }

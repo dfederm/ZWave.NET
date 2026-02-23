@@ -28,7 +28,7 @@ public readonly struct SerialApiSetTimeoutsRequest : ICommand<SerialApiSetTimeou
         return new SerialApiSetTimeoutsRequest(frame);
     }
 
-    public static SerialApiSetTimeoutsRequest Create(DataFrame frame) => new SerialApiSetTimeoutsRequest(frame);
+    public static SerialApiSetTimeoutsRequest Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetTimeoutsRequest(frame);
 }
 
 public readonly struct SerialApiSetTimeoutsResponse : ICommand<SerialApiSetTimeoutsResponse>
@@ -54,5 +54,5 @@ public readonly struct SerialApiSetTimeoutsResponse : ICommand<SerialApiSetTimeo
     /// </summary>
     public byte PreviousRxByteTimeout => Frame.CommandParameters.Span[1];
 
-    public static SerialApiSetTimeoutsResponse Create(DataFrame frame) => new SerialApiSetTimeoutsResponse(frame);
+    public static SerialApiSetTimeoutsResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetTimeoutsResponse(frame);
 }

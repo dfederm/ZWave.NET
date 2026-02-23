@@ -22,5 +22,5 @@ public readonly struct FlashAutoProgSetRequest : ICommand<FlashAutoProgSetReques
         return new FlashAutoProgSetRequest(frame);
     }
 
-    public static FlashAutoProgSetRequest Create(DataFrame frame) => new FlashAutoProgSetRequest(frame);
+    public static FlashAutoProgSetRequest Create(DataFrame frame, CommandParsingContext context) => new FlashAutoProgSetRequest(frame);
 }

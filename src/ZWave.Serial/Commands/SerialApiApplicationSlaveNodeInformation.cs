@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Used to set node information for all Virtual Slave Nodes in the embedded module.
@@ -16,6 +16,10 @@ public readonly struct SerialApiApplicationSlaveNodeInformationRequest : IComman
 
     public DataFrame Frame { get; }
 
+    /// <remarks>
+    /// Per Z-Wave Host API Specification, the Virtual NodeID field MUST be encoded using 8 bits
+    /// regardless of the configured NodeID base Type.
+    /// </remarks>
     public static SerialApiApplicationSlaveNodeInformationRequest Create(
         ushort nodeId,
         byte deviceOptionMask,
@@ -23,6 +27,7 @@ public readonly struct SerialApiApplicationSlaveNodeInformationRequest : IComman
         byte specificType,
         ReadOnlySpan<byte> commandClasses)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         Span<byte> commandParameters = stackalloc byte[5 + commandClasses.Length];
         commandParameters[0] = (byte)nodeId;
         commandParameters[1] = deviceOptionMask;
@@ -35,5 +40,5 @@ public readonly struct SerialApiApplicationSlaveNodeInformationRequest : IComman
         return new SerialApiApplicationSlaveNodeInformationRequest(frame);
     }
 
-    public static SerialApiApplicationSlaveNodeInformationRequest Create(DataFrame frame) => new SerialApiApplicationSlaveNodeInformationRequest(frame);
+    public static SerialApiApplicationSlaveNodeInformationRequest Create(DataFrame frame, CommandParsingContext context) => new SerialApiApplicationSlaveNodeInformationRequest(frame);
 }

@@ -22,5 +22,5 @@ public readonly struct ResetTransmitCounterRequest : ICommand<ResetTransmitCount
         return new ResetTransmitCounterRequest(frame);
     }
 
-    public static ResetTransmitCounterRequest Create(DataFrame frame) => new ResetTransmitCounterRequest(frame);
+    public static ResetTransmitCounterRequest Create(DataFrame frame, CommandParsingContext context) => new ResetTransmitCounterRequest(frame);
 }

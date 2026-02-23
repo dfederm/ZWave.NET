@@ -40,5 +40,5 @@ public readonly struct SerialApiSetupSetLongRangeMaxNodeIdResponse : ICommand<Se
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[1] != 0;
 
-    public static SerialApiSetupSetLongRangeMaxNodeIdResponse Create(DataFrame frame) => new SerialApiSetupSetLongRangeMaxNodeIdResponse(frame);
+    public static SerialApiSetupSetLongRangeMaxNodeIdResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupSetLongRangeMaxNodeIdResponse(frame);
 }

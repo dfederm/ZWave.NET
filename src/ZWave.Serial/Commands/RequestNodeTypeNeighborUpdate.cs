@@ -54,20 +54,20 @@ public readonly struct RequestNodeTypeNeighborUpdateRequest : ICommand<RequestNo
 
     public static RequestNodeTypeNeighborUpdateRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         NeighborUpdateNodeType nodeType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters =
-        [
-            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-            (byte)nodeType,
-            sessionId,
-        ];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 2];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = (byte)nodeType;
+        commandParameters[offset + 1] = sessionId;
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new RequestNodeTypeNeighborUpdateRequest(frame);
     }
 
-    public static RequestNodeTypeNeighborUpdateRequest Create(DataFrame frame) => new RequestNodeTypeNeighborUpdateRequest(frame);
+    public static RequestNodeTypeNeighborUpdateRequest Create(DataFrame frame, CommandParsingContext context) => new RequestNodeTypeNeighborUpdateRequest(frame);
 }
 
 /// <summary>
@@ -96,5 +96,5 @@ public readonly struct RequestNodeTypeNeighborUpdateCallback : ICommand<RequestN
     /// </summary>
     public NeighborDiscoveryStatus Status => (NeighborDiscoveryStatus)Frame.CommandParameters.Span[1];
 
-    public static RequestNodeTypeNeighborUpdateCallback Create(DataFrame frame) => new RequestNodeTypeNeighborUpdateCallback(frame);
+    public static RequestNodeTypeNeighborUpdateCallback Create(DataFrame frame, CommandParsingContext context) => new RequestNodeTypeNeighborUpdateCallback(frame);
 }

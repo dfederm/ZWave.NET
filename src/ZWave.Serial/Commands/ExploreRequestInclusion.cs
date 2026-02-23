@@ -27,7 +27,7 @@ public readonly struct ExploreRequestInclusionRequest : IRequestWithCallback<Exp
         return new ExploreRequestInclusionRequest(frame);
     }
 
-    public static ExploreRequestInclusionRequest Create(DataFrame frame) => new ExploreRequestInclusionRequest(frame);
+    public static ExploreRequestInclusionRequest Create(DataFrame frame, CommandParsingContext context) => new ExploreRequestInclusionRequest(frame);
 }
 
 /// <summary>
@@ -56,5 +56,5 @@ public readonly struct ExploreRequestInclusionCallback : ICommand<ExploreRequest
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static ExploreRequestInclusionCallback Create(DataFrame frame) => new ExploreRequestInclusionCallback(frame);
+    public static ExploreRequestInclusionCallback Create(DataFrame frame, CommandParsingContext context) => new ExploreRequestInclusionCallback(frame);
 }

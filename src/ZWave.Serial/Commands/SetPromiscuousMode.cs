@@ -27,5 +27,5 @@ public readonly struct SetPromiscuousModeRequest : ICommand<SetPromiscuousModeRe
         return new SetPromiscuousModeRequest(frame);
     }
 
-    public static SetPromiscuousModeRequest Create(DataFrame frame) => new SetPromiscuousModeRequest(frame);
+    public static SetPromiscuousModeRequest Create(DataFrame frame, CommandParsingContext context) => new SetPromiscuousModeRequest(frame);
 }

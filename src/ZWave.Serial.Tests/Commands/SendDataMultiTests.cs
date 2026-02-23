@@ -16,7 +16,8 @@ public class SendDataMultiTests : CommandTestBase
             {
                 (
                     Request: SendDataMultiRequest.Create(
-                        nodeList: new byte[] { 0x02, 0x03 },
+                        nodeIds: new ushort[] { 0x02, 0x03 },
+                        NodeIdType.Short,
                         data: new byte[] { 0x25, 0x01 },
                         txOptions: TransmissionOptions.ACK | TransmissionOptions.AutoRoute,
                         sessionId: 1),

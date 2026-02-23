@@ -36,5 +36,5 @@ public readonly struct PowerManagementStayAwakeRequest : ICommand<PowerManagemen
         return new PowerManagementStayAwakeRequest(frame);
     }
 
-    public static PowerManagementStayAwakeRequest Create(DataFrame frame) => new PowerManagementStayAwakeRequest(frame);
+    public static PowerManagementStayAwakeRequest Create(DataFrame frame, CommandParsingContext context) => new PowerManagementStayAwakeRequest(frame);
 }

@@ -15,7 +15,7 @@ public class IsFailedNodeTests : CommandTestBase
             new[]
             {
                 (
-                    Request: IsFailedNodeRequest.Create(nodeId: 5),
+                    Request: IsFailedNodeRequest.Create(nodeId: 5, NodeIdType.Short),
                     ExpectedCommandParameters: new byte[] { 0x05 }
                 ),
             });

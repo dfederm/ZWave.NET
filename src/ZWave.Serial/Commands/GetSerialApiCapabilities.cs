@@ -19,7 +19,7 @@ public readonly struct GetSerialApiCapabilitiesRequest : ICommand<GetSerialApiCa
         return new GetSerialApiCapabilitiesRequest(frame);
     }
 
-    public static GetSerialApiCapabilitiesRequest Create(DataFrame frame) => new GetSerialApiCapabilitiesRequest(frame);
+    public static GetSerialApiCapabilitiesRequest Create(DataFrame frame, CommandParsingContext context) => new GetSerialApiCapabilitiesRequest(frame);
 }
 
 public readonly struct GetSerialApiCapabilitiesResponse : ICommand<GetSerialApiCapabilitiesResponse>
@@ -97,5 +97,5 @@ public readonly struct GetSerialApiCapabilitiesResponse : ICommand<GetSerialApiC
         }
     }
 
-    public static GetSerialApiCapabilitiesResponse Create(DataFrame frame) => new GetSerialApiCapabilitiesResponse(frame);
+    public static GetSerialApiCapabilitiesResponse Create(DataFrame frame, CommandParsingContext context) => new GetSerialApiCapabilitiesResponse(frame);
 }

@@ -22,20 +22,20 @@ public readonly struct SendNopRequest : IRequestWithCallback<SendNopRequest>
 
     public static SendNopRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters =
-        [
-            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-            (byte)txOptions,
-            sessionId,
-        ];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 2];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = sessionId;
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendNopRequest(frame);
     }
 
-    public static SendNopRequest Create(DataFrame frame) => new SendNopRequest(frame);
+    public static SendNopRequest Create(DataFrame frame, CommandParsingContext context) => new SendNopRequest(frame);
 }
 
 /// <summary>
@@ -72,5 +72,5 @@ public readonly struct SendNopCallback : ICommand<SendNopCallback>
             ? new TransmissionStatusReport(Frame.CommandParameters[2..])
             : null;
 
-    public static SendNopCallback Create(DataFrame frame) => new SendNopCallback(frame);
+    public static SendNopCallback Create(DataFrame frame, CommandParsingContext context) => new SendNopCallback(frame);
 }

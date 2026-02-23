@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Checks if a node is a Virtual Slave node.
@@ -20,14 +20,19 @@ public readonly struct IsVirtualNodeRequest : ICommand<IsVirtualNodeRequest>
     /// Create a request to check if a node is virtual.
     /// </summary>
     /// <param name="nodeId">The node ID to check.</param>
+    /// <remarks>
+    /// Per Z-Wave Host API Specification, this field MUST be encoded using 8 bits regardless
+    /// of the configured NodeID base Type.
+    /// </remarks>
     public static IsVirtualNodeRequest Create(ushort nodeId)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         ReadOnlySpan<byte> commandParameters = [(byte)nodeId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new IsVirtualNodeRequest(frame);
     }
 
-    public static IsVirtualNodeRequest Create(DataFrame frame) => new IsVirtualNodeRequest(frame);
+    public static IsVirtualNodeRequest Create(DataFrame frame, CommandParsingContext context) => new IsVirtualNodeRequest(frame);
 }
 
 public readonly struct IsVirtualNodeResponse : ICommand<IsVirtualNodeResponse>
@@ -48,5 +53,5 @@ public readonly struct IsVirtualNodeResponse : ICommand<IsVirtualNodeResponse>
     /// </summary>
     public bool IsVirtual => Frame.CommandParameters.Span[0] != 0;
 
-    public static IsVirtualNodeResponse Create(DataFrame frame) => new IsVirtualNodeResponse(frame);
+    public static IsVirtualNodeResponse Create(DataFrame frame, CommandParsingContext context) => new IsVirtualNodeResponse(frame);
 }

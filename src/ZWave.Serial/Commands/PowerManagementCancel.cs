@@ -27,5 +27,5 @@ public readonly struct PowerManagementCancelRequest : ICommand<PowerManagementCa
         return new PowerManagementCancelRequest(frame);
     }
 
-    public static PowerManagementCancelRequest Create(DataFrame frame) => new PowerManagementCancelRequest(frame);
+    public static PowerManagementCancelRequest Create(DataFrame frame, CommandParsingContext context) => new PowerManagementCancelRequest(frame);
 }

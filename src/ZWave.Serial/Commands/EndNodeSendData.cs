@@ -47,27 +47,30 @@ public readonly struct EndNodeSendDataRequest : IRequestWithCallback<EndNodeSend
 
     public static EndNodeSendDataRequest Create(
         ushort destinationNodeId,
+        NodeIdType nodeIdType,
         ReadOnlySpan<byte> data,
         TransmissionOptions txOptions,
         TxSecurityOptions txSecurityOptions,
         SecurityKey securityKey,
         byte sessionId)
     {
-        Span<byte> commandParameters = stackalloc byte[7 + data.Length];
-        commandParameters[0] = (byte)destinationNodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        commandParameters[1] = (byte)data.Length;
-        data.CopyTo(commandParameters.Slice(2, data.Length));
-        commandParameters[2 + data.Length] = (byte)txOptions;
-        commandParameters[3 + data.Length] = (byte)txSecurityOptions;
-        commandParameters[4 + data.Length] = (byte)securityKey;
-        commandParameters[5 + data.Length] = 0x00; // TxOptions2 (reserved)
-        commandParameters[6 + data.Length] = sessionId;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[6 + nodeIdSize + data.Length];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, destinationNodeId);
+        commandParameters[offset] = (byte)data.Length;
+        data.CopyTo(commandParameters.Slice(offset + 1, data.Length));
+        offset += 1 + data.Length;
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = (byte)txSecurityOptions;
+        commandParameters[offset + 2] = (byte)securityKey;
+        commandParameters[offset + 3] = 0x00; // TxOptions2 (reserved)
+        commandParameters[offset + 4] = sessionId;
 
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new EndNodeSendDataRequest(frame);
     }
 
-    public static EndNodeSendDataRequest Create(DataFrame frame) => new EndNodeSendDataRequest(frame);
+    public static EndNodeSendDataRequest Create(DataFrame frame, CommandParsingContext context) => new EndNodeSendDataRequest(frame);
 }
 
 /// <summary>
@@ -104,5 +107,5 @@ public readonly struct EndNodeSendDataCallback : ICommand<EndNodeSendDataCallbac
             ? new TransmissionStatusReport(Frame.CommandParameters[2..])
             : null;
 
-    public static EndNodeSendDataCallback Create(DataFrame frame) => new EndNodeSendDataCallback(frame);
+    public static EndNodeSendDataCallback Create(DataFrame frame, CommandParsingContext context) => new EndNodeSendDataCallback(frame);
 }

@@ -15,7 +15,7 @@ public class GetPriorityRouteTests : CommandTestBase
             new[]
             {
                 (
-                    Request: GetPriorityRouteRequest.Create(nodeId: 3),
+                    Request: GetPriorityRouteRequest.Create(nodeId: 3, NodeIdType.Short),
                     ExpectedCommandParameters: new byte[] { 0x03 }
                 ),
             });

@@ -60,5 +60,5 @@ public readonly struct SerialApiSetupGetRegionInfoResponse : ICommand<SerialApiS
     /// </remarks>
     public RfRegion IncludesRegion => (RfRegion)Frame.CommandParameters.Span[3];
 
-    public static SerialApiSetupGetRegionInfoResponse Create(DataFrame frame) => new SerialApiSetupGetRegionInfoResponse(frame);
+    public static SerialApiSetupGetRegionInfoResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGetRegionInfoResponse(frame);
 }

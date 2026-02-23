@@ -35,5 +35,5 @@ public readonly struct SerialApiSetupGetMaxLongRangePowerlevelResponse : IComman
     /// </summary>
     public short MaxPowerlevelDeciDbm => Frame.CommandParameters.Span[1..3].ToInt16BE();
 
-    public static SerialApiSetupGetMaxLongRangePowerlevelResponse Create(DataFrame frame) => new SerialApiSetupGetMaxLongRangePowerlevelResponse(frame);
+    public static SerialApiSetupGetMaxLongRangePowerlevelResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGetMaxLongRangePowerlevelResponse(frame);
 }

@@ -21,6 +21,7 @@ public class SendDataBridgeTests : CommandTestBase
                     Request: SendDataBridgeRequest.Create(
                         sourceNodeId: 1,
                         destinationNodeId: 2,
+                        NodeIdType.Short,
                         data: new byte[] { 0x25, 0x01 },
                         txOptions: TransmissionOptions.ACK,
                         sessionId: 3),

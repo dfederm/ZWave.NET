@@ -22,5 +22,5 @@ public readonly struct ClearNetworkStatsRequest : ICommand<ClearNetworkStatsRequ
         return new ClearNetworkStatsRequest(frame);
     }
 
-    public static ClearNetworkStatsRequest Create(DataFrame frame) => new ClearNetworkStatsRequest(frame);
+    public static ClearNetworkStatsRequest Create(DataFrame frame, CommandParsingContext context) => new ClearNetworkStatsRequest(frame);
 }

@@ -27,8 +27,8 @@ public class GetNodeProtocolInfoTests : CommandTestBase
             CommandId.GetNodeProtocolInfo,
             new[]
             {
-                (Request: GetNodeProtocolInfoRequest.Create(1), ExpectedCommandParameters: new byte[] { 0x01 }),
-                (Request: GetNodeProtocolInfoRequest.Create(2), ExpectedCommandParameters: new byte[] { 0x02 }),
+                (Request: GetNodeProtocolInfoRequest.Create(1, NodeIdType.Short), ExpectedCommandParameters: new byte[] { 0x01 }),
+                (Request: GetNodeProtocolInfoRequest.Create(2, NodeIdType.Short), ExpectedCommandParameters: new byte[] { 0x02 }),
             });
 
     [TestMethod]

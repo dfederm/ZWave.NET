@@ -22,7 +22,7 @@ public readonly struct GetProtocolStatusRequest : ICommand<GetProtocolStatusRequ
         return new GetProtocolStatusRequest(frame);
     }
 
-    public static GetProtocolStatusRequest Create(DataFrame frame) => new GetProtocolStatusRequest(frame);
+    public static GetProtocolStatusRequest Create(DataFrame frame, CommandParsingContext context) => new GetProtocolStatusRequest(frame);
 }
 
 public readonly struct GetProtocolStatusResponse : ICommand<GetProtocolStatusResponse>
@@ -43,5 +43,5 @@ public readonly struct GetProtocolStatusResponse : ICommand<GetProtocolStatusRes
     /// </summary>
     public byte Status => Frame.CommandParameters.Span[0];
 
-    public static GetProtocolStatusResponse Create(DataFrame frame) => new GetProtocolStatusResponse(frame);
+    public static GetProtocolStatusResponse Create(DataFrame frame, CommandParsingContext context) => new GetProtocolStatusResponse(frame);
 }

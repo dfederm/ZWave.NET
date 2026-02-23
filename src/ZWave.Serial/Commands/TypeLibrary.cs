@@ -22,7 +22,7 @@ public readonly struct TypeLibraryRequest : ICommand<TypeLibraryRequest>
         return new TypeLibraryRequest(frame);
     }
 
-    public static TypeLibraryRequest Create(DataFrame frame) => new TypeLibraryRequest(frame);
+    public static TypeLibraryRequest Create(DataFrame frame, CommandParsingContext context) => new TypeLibraryRequest(frame);
 }
 
 public readonly struct TypeLibraryResponse : ICommand<TypeLibraryResponse>
@@ -43,5 +43,5 @@ public readonly struct TypeLibraryResponse : ICommand<TypeLibraryResponse>
     /// </summary>
     public LibraryType LibraryType => (LibraryType)Frame.CommandParameters.Span[0];
 
-    public static TypeLibraryResponse Create(DataFrame frame) => new TypeLibraryResponse(frame);
+    public static TypeLibraryResponse Create(DataFrame frame, CommandParsingContext context) => new TypeLibraryResponse(frame);
 }

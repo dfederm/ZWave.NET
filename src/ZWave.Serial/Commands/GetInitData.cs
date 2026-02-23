@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 [Flags]
 public enum GetInitDataCapabilities : byte
@@ -46,7 +46,7 @@ public readonly struct GetInitDataRequest : ICommand<GetInitDataRequest>
         return new GetInitDataRequest(frame);
     }
 
-    public static GetInitDataRequest Create(DataFrame frame) => new GetInitDataRequest(frame);
+    public static GetInitDataRequest Create(DataFrame frame, CommandParsingContext context) => new GetInitDataRequest(frame);
 }
 
 public readonly struct GetInitDataResponse : ICommand<GetInitDataResponse>
@@ -95,5 +95,5 @@ public readonly struct GetInitDataResponse : ICommand<GetInitDataResponse>
     /// </summary>
     public byte ChipVersion => Frame.CommandParameters.Span[^1];
 
-    public static GetInitDataResponse Create(DataFrame frame) => new GetInitDataResponse(frame);
+    public static GetInitDataResponse Create(DataFrame frame, CommandParsingContext context) => new GetInitDataResponse(frame);
 }

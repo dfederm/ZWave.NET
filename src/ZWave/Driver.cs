@@ -1,4 +1,4 @@
-﻿using System.Threading.Channels;
+using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using ZWave.CommandClasses;
 using ZWave.Serial;
@@ -37,6 +37,16 @@ public sealed class Driver : IDriver, IAsyncDisposable
     private readonly Dictionary<UnresolvedCallbackKey, TaskCompletionSource<DataFrame>> _unresolvedCallbacks = new Dictionary<UnresolvedCallbackKey, TaskCompletionSource<DataFrame>>();
 
     private byte _lastSessionId = 0;
+
+    /// <summary>
+    /// Gets or sets the current NodeID base type for serial API communication.
+    /// </summary>
+    internal NodeIdType NodeIdType { get; set; } = NodeIdType.Short;
+
+    /// <summary>
+    /// Gets a <see cref="CommandParsingContext"/> reflecting the current protocol state.
+    /// </summary>
+    private CommandParsingContext CommandParsingContext => new CommandParsingContext(NodeIdType);
 
     // Lock access to _awaitedFrameResponse
     private readonly object _requestResponseFrameFlowLock = new object();
@@ -142,6 +152,8 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
     private void ProcessDataFrame(DataFrame frame)
     {
+        CommandParsingContext context = CommandParsingContext;
+
         switch (frame.Type)
         {
             case DataFrameType.REQ:
@@ -154,7 +166,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
                         // Unblock the task.
                         if (_serialApiStartedTaskCompletionSource != null)
                         {
-                            _serialApiStartedTaskCompletionSource.SetResult(SerialApiStartedRequest.Create(frame));
+                            _serialApiStartedTaskCompletionSource.SetResult(SerialApiStartedRequest.Create(frame, context));
                         }
                         else
                         {
@@ -165,7 +177,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
                     }
                     case CommandId.ApplicationUpdate:
                     {
-                        var applicationUpdateRequest = ApplicationUpdateRequest.Create(frame);
+                        var applicationUpdateRequest = ApplicationUpdateRequest.Create(frame, context);
                         if (applicationUpdateRequest.Event == ApplicationUpdateEvent.NodeInfoReceived)
                         {
                             if (Controller.Nodes.TryGetValue(applicationUpdateRequest.Generic.NodeId, out Node? node))
@@ -182,7 +194,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
                     }
                     case CommandId.ApplicationCommandHandler:
                     {
-                        var applicationCommandHandler = ApplicationCommandHandler.Create(frame);
+                        var applicationCommandHandler = ApplicationCommandHandler.Create(frame, context);
                         if (Controller.Nodes.TryGetValue(applicationCommandHandler.NodeId, out Node? node))
                         {
                             var commandClassFrame = new CommandClassFrame(applicationCommandHandler.Payload);
@@ -395,7 +407,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
         }
 
         DataFrame callbackFrame = await AwaitCallbackAsync(callbackKey, tcs, cancellationToken);
-        return TCallback.Create(callbackFrame);
+        return TCallback.Create(callbackFrame, CommandParsingContext);
     }
 
     internal async Task<TResponse> SendCommandAsync<TRequest, TResponse>(
@@ -432,7 +444,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
         DataFrame responseFrame = await tcs.Task.WaitAsync(cancellationToken);
 
-        return TResponse.Create(responseFrame);
+        return TResponse.Create(responseFrame, CommandParsingContext);
     }
 
     internal async Task SendCommandAsync<TRequest>(
@@ -457,7 +469,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
         const TransmissionOptions transmissionOptions = TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore;
         byte sessionId = GetNextSessionId();
-        SendDataRequest sendDataRequest = SendDataRequest.Create(nodeId, request.Frame.Data.Span, transmissionOptions, sessionId);
+        SendDataRequest sendDataRequest = SendDataRequest.Create(nodeId, NodeIdType, request.Frame.Data.Span, transmissionOptions, sessionId);
         ResponseStatusResponse response = await SendCommandAsync<SendDataRequest, ResponseStatusResponse>(sendDataRequest, cancellationToken)
             .ConfigureAwait(false);
         if (!response.WasRequestAccepted)
@@ -479,7 +491,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
             {
                 if (task.IsCompletedSuccessfully)
                 {
-                    SendDataCallback callback = SendDataCallback.Create(task.Result);
+                    SendDataCallback callback = SendDataCallback.Create(task.Result, CommandParsingContext);
 
                     // TODO: Consume the transmit report.
                 }

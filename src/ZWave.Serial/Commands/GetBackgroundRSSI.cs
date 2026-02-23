@@ -22,7 +22,7 @@ public readonly struct GetBackgroundRSSIRequest : ICommand<GetBackgroundRSSIRequ
         return new GetBackgroundRSSIRequest(frame);
     }
 
-    public static GetBackgroundRSSIRequest Create(DataFrame frame) => new GetBackgroundRSSIRequest(frame);
+    public static GetBackgroundRSSIRequest Create(DataFrame frame, CommandParsingContext context) => new GetBackgroundRSSIRequest(frame);
 }
 
 public readonly struct GetBackgroundRSSIResponse : ICommand<GetBackgroundRSSIResponse>
@@ -56,5 +56,5 @@ public readonly struct GetBackgroundRSSIResponse : ICommand<GetBackgroundRSSIRes
             ? Frame.CommandParameters.Span[2]
             : null;
 
-    public static GetBackgroundRSSIResponse Create(DataFrame frame) => new GetBackgroundRSSIResponse(frame);
+    public static GetBackgroundRSSIResponse Create(DataFrame frame, CommandParsingContext context) => new GetBackgroundRSSIResponse(frame);
 }

@@ -28,5 +28,5 @@ public readonly struct SetExtIntLevelRequest : ICommand<SetExtIntLevelRequest>
         return new SetExtIntLevelRequest(frame);
     }
 
-    public static SetExtIntLevelRequest Create(DataFrame frame) => new SetExtIntLevelRequest(frame);
+    public static SetExtIntLevelRequest Create(DataFrame frame, CommandParsingContext context) => new SetExtIntLevelRequest(frame);
 }

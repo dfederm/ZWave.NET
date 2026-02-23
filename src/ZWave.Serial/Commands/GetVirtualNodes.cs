@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Request a buffer containing available Virtual Slave nodes in the Z-Wave network.
@@ -22,7 +22,7 @@ public readonly struct GetVirtualNodesRequest : ICommand<GetVirtualNodesRequest>
         return new GetVirtualNodesRequest(frame);
     }
 
-    public static GetVirtualNodesRequest Create(DataFrame frame) => new GetVirtualNodesRequest(frame);
+    public static GetVirtualNodesRequest Create(DataFrame frame, CommandParsingContext context) => new GetVirtualNodesRequest(frame);
 }
 
 public readonly struct GetVirtualNodesResponse : ICommand<GetVirtualNodesResponse>
@@ -55,5 +55,5 @@ public readonly struct GetVirtualNodesResponse : ICommand<GetVirtualNodesRespons
         }
     }
 
-    public static GetVirtualNodesResponse Create(DataFrame frame) => new GetVirtualNodesResponse(frame);
+    public static GetVirtualNodesResponse Create(DataFrame frame, CommandParsingContext context) => new GetVirtualNodesResponse(frame);
 }

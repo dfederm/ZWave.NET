@@ -1,4 +1,4 @@
-﻿using ZWave.Serial.Commands;
+using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
@@ -35,4 +35,17 @@ public class ApplicationCommandHandlerTests : CommandTestBase
                         ReceivedRssi: new RssiMeasurement(-65))
                 ),
             });
+
+    [TestMethod]
+    public void Command16Bit()
+    {
+        // In 16-bit mode, Source NodeID is 2 bytes: 0x01, 0x00 = node 256
+        byte[] commandParameters = new byte[] { 0x00, 0x01, 0x00, 0x04, 0x86, 0x14, 0x5e, 0x02, 0xd5 };
+        DataFrame dataFrame = DataFrame.Create(DataFrameType.REQ, CommandId.ApplicationCommandHandler, commandParameters);
+        ApplicationCommandHandler cmd = ApplicationCommandHandler.Create(dataFrame, new CommandParsingContext(NodeIdType.Long));
+
+        Assert.AreEqual((ushort)256, cmd.NodeId);
+        Assert.AreEqual(4, cmd.Payload.Length);
+        Assert.AreEqual(new RssiMeasurement(-43), cmd.ReceivedRssi);
+    }
 }

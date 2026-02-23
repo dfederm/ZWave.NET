@@ -95,7 +95,7 @@ public readonly partial struct FirmwareUpdateNvmRequest : ICommand<FirmwareUpdat
         return Create(FirmwareUpdateNvmSubCommand.PerformUpdate, subCommandParameters);
     }
 
-    public static FirmwareUpdateNvmRequest Create(DataFrame frame) => new FirmwareUpdateNvmRequest(frame);
+    public static FirmwareUpdateNvmRequest Create(DataFrame frame, CommandParsingContext context) => new FirmwareUpdateNvmRequest(frame);
 }
 
 /// <summary>
@@ -124,5 +124,5 @@ public readonly struct FirmwareUpdateNvmResponse : ICommand<FirmwareUpdateNvmRes
     /// </summary>
     public FirmwareUpdateNvmStatus Status => (FirmwareUpdateNvmStatus)Frame.CommandParameters.Span[1];
 
-    public static FirmwareUpdateNvmResponse Create(DataFrame frame) => new FirmwareUpdateNvmResponse(frame);
+    public static FirmwareUpdateNvmResponse Create(DataFrame frame, CommandParsingContext context) => new FirmwareUpdateNvmResponse(frame);
 }

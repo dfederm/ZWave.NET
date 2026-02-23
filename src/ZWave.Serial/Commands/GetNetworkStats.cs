@@ -22,7 +22,7 @@ public readonly struct GetNetworkStatsRequest : ICommand<GetNetworkStatsRequest>
         return new GetNetworkStatsRequest(frame);
     }
 
-    public static GetNetworkStatsRequest Create(DataFrame frame) => new GetNetworkStatsRequest(frame);
+    public static GetNetworkStatsRequest Create(DataFrame frame, CommandParsingContext context) => new GetNetworkStatsRequest(frame);
 }
 
 public readonly struct GetNetworkStatsResponse : ICommand<GetNetworkStatsResponse>
@@ -43,5 +43,5 @@ public readonly struct GetNetworkStatsResponse : ICommand<GetNetworkStatsRespons
     /// </summary>
     public ReadOnlyMemory<byte> Data => Frame.CommandParameters;
 
-    public static GetNetworkStatsResponse Create(DataFrame frame) => new GetNetworkStatsResponse(frame);
+    public static GetNetworkStatsResponse Create(DataFrame frame, CommandParsingContext context) => new GetNetworkStatsResponse(frame);
 }

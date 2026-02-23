@@ -68,6 +68,8 @@ Implements the Z-Wave Serial API frame-level protocol (as defined by the Z-Wave 
 - **`ZWaveSerialPortCoordinator`** — Manages the serial port, frame send/receive channels, ACK handshake, and retransmission.
 - **`Commands/`** — Each Serial API command (e.g. `SendData`, `GetInitData`, `SoftReset`) is a struct implementing `ICommand<T>` (defined in `Serial/Commands/ICommand.cs`). Commands that expect a callback implement `IRequestWithCallback<T>`.
 - **`CommandId` enum** — All Serial API function IDs.
+- **`NodeIdType`** / **`NodeIdTypeExtensions`** — Enum (`Short` = 8-bit, `Long` = 16-bit) and extension methods (`NodeIdSize()`, `WriteNodeId()`, `ReadNodeId()`) for conditional NodeID field encoding per Z-Wave Host API Specification §4.3.16.17.
+- **`CommandParsingContext`** — Record struct carrying protocol-level parsing context (currently just `NodeIdType`). Passed to `ICommand<T>.Create(DataFrame, CommandParsingContext)` so response/callback structs know how to decode variable-size NodeID fields. Decouples session state from the wire-format `DataFrame`. Request `Create()` methods accept `NodeIdType` directly and use `WriteNodeId` to encode NodeIDs.
 - **`CommandDataParsingHelpers`** — Internal shared utilities: `ParseCommandClasses` (CC byte list → `CommandClassInfo` records) and `ParseNodeBitmask` (bitmask → `HashSet<ushort>` node IDs).
 
 ### Command Classes Layer (`src/ZWave.CommandClasses/`)
@@ -83,8 +85,8 @@ Implements Z-Wave Command Classes (Z-Wave Application Specification). This proje
 
 ### High-Level Objects (`src/ZWave/`)
 
-- **`Driver`** — Entry point. Implements `IDriver`. Opens serial port, manages frame send/receive, processes unsolicited requests, coordinates request-response and callback flows.
-- **`Controller`** — Represents the Z-Wave USB controller. Runs identification sequence on startup.
+- **`Driver`** — Entry point. Implements `IDriver`. Opens serial port, manages frame send/receive, processes unsolicited requests, coordinates request-response and callback flows. Tracks `NodeIdType` (default `Short`) and creates `CommandParsingContext` instances to pass when parsing incoming frames.
+- **`Controller`** — Represents the Z-Wave USB controller. Runs identification sequence on startup. Negotiates `SetNodeIdBaseType(Long)` during init if supported by the module.
 - **`Node`** — Represents a Z-Wave network node. Implements `INode` (and thus `IEndpoint` with `EndpointIndex = 0`). Handles interviews and command class discovery. Node IDs are `ushort` throughout the codebase to support both classic (1–232) and Long Range (256+) nodes.
 
 ### Source Generators (`src/ZWave.BuildTools/`)
@@ -114,14 +116,14 @@ Response structs that contain variable-length collections use count + indexer me
 
 - Tests use **MSTest** with the `MSTest.Sdk` project SDK and the **Microsoft.Testing.Platform** runner.
 - Tests run in parallel at method level.
-- Serial API command tests inherit from `CommandTestBase` and use `TestSendableCommand` / `TestReceivableCommand` helper methods that verify frame structure round-tripping.
+- Serial API command tests inherit from `CommandTestBase` and use `TestSendableCommand` / `TestReceivableCommand` helper methods that verify frame structure round-tripping. `TestReceivableCommand` defaults to `NodeIdType.Short`; pass an explicit `CommandParsingContext` for 16-bit mode tests.
 - `CommandDataParsingHelpersTests` covers the shared parsing helpers (`ParseCommandClasses`, `ParseNodeBitmask`).
 - Test files mirror the source structure: `src/ZWave.Serial.Tests/Commands/` contains tests for each serial command.
 - **Ref struct properties** (e.g. `ReadOnlySpan<T>`) cannot be compared via reflection. Add them to `CommandTestBase.ExcludedComparisonProperties` and write dedicated assertion methods. `AssertExtensions` has a guard that fails loudly if non-excluded ref struct properties are encountered.
 
 ## Adding New Functionality
 
-**New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`. Node ID parameters are `ushort`; cast to `(byte)nodeId` when writing to the buffer. Use `CommandDataParsingHelpers` for shared parsing (node bitmasks, command class lists). Reuse existing shared types where applicable: `TransmissionOptions`, `TransmissionStatus`, `TransmissionStatusReport`, `SecurityKey`, `TxSecurityOptions`, `PowerLockType`, `DebugInterfaceProtocol`, `RoutingTableEntry` (with `RouteType`, `RouteBeamType`, `RouteSpeed`), and `NvmOperationSubCommand`/`NvmOperationStatus`.
+**New Serial API Command**: Create a struct in `src/ZWave.Serial/Commands/` implementing `ICommand<T>` (and `IRequestWithCallback<T>` if it uses callbacks). Add the command ID to `CommandId` enum. Add tests in `src/ZWave.Serial.Tests/Commands/`. Node ID parameters are `ushort`. The `ICommand<T>` interface requires `static TCommand Create(DataFrame frame, CommandParsingContext context)` — for response/callback structs that decode NodeID fields, store `context.NodeIdType` as a private property and use its `ReadNodeId(span, offset)` / `NodeIdSize()` methods; for commands without NodeIDs, simply ignore the context. For request structs, accept a `NodeIdType nodeIdType` parameter in the custom `Create()` factory method and use `nodeIdType.WriteNodeId(buffer, offset, nodeId)` to encode NodeIDs (returns the offset after the written field). Use `nodeIdType.NodeIdSize()` when computing buffer sizes. Use `CommandDataParsingHelpers` for shared parsing (node bitmasks, command class lists). Reuse existing shared types where applicable: `TransmissionOptions`, `TransmissionStatus`, `TransmissionStatusReport`, `SecurityKey`, `TxSecurityOptions`, `PowerLockType`, `DebugInterfaceProtocol`, `RoutingTableEntry` (with `RouteType`, `RouteBeamType`, `RouteSpeed`), and `NvmOperationSubCommand`/`NvmOperationStatus`.
 
 **New SerialApiSetup Sub-Command**: The `SerialApiSetupRequest` is a `partial struct`. Each sub-command adds a factory method in a separate file (e.g. `SerialApiSetupSetNodeIdBaseType.cs`) and defines its own response struct implementing `ICommand<T>` with `CommandId => CommandId.SerialApiSetup`. Add the sub-command value to `SerialApiSetupSubcommand` enum. The response's first byte is always a `WasSubcommandSupported` flag (0 = not supported). Tests go in `SerialApiSetupTests.cs`.
 

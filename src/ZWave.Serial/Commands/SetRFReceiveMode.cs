@@ -27,7 +27,7 @@ public readonly struct SetRFReceiveModeRequest : ICommand<SetRFReceiveModeReques
         return new SetRFReceiveModeRequest(frame);
     }
 
-    public static SetRFReceiveModeRequest Create(DataFrame frame) => new SetRFReceiveModeRequest(frame);
+    public static SetRFReceiveModeRequest Create(DataFrame frame, CommandParsingContext context) => new SetRFReceiveModeRequest(frame);
 }
 
 public readonly struct SetRFReceiveModeResponse : ICommand<SetRFReceiveModeResponse>
@@ -48,5 +48,5 @@ public readonly struct SetRFReceiveModeResponse : ICommand<SetRFReceiveModeRespo
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static SetRFReceiveModeResponse Create(DataFrame frame) => new SetRFReceiveModeResponse(frame);
+    public static SetRFReceiveModeResponse Create(DataFrame frame, CommandParsingContext context) => new SetRFReceiveModeResponse(frame);
 }

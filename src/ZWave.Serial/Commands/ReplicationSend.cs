@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Used when the controller is in replication mode. It sends the payload and expects the receiver to respond
@@ -23,22 +23,25 @@ public readonly struct ReplicationSendRequest : IRequestWithCallback<Replication
 
     public static ReplicationSendRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         ReadOnlySpan<byte> data,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        Span<byte> commandParameters = stackalloc byte[4 + data.Length];
-        commandParameters[0] = (byte)nodeId;
-        commandParameters[1] = (byte)data.Length;
-        data.CopyTo(commandParameters.Slice(2, data.Length));
-        commandParameters[2 + data.Length] = (byte)txOptions;
-        commandParameters[3 + data.Length] = sessionId;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[3 + nodeIdSize + data.Length];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = (byte)data.Length;
+        data.CopyTo(commandParameters.Slice(offset + 1, data.Length));
+        offset += 1 + data.Length;
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = sessionId;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new ReplicationSendRequest(frame);
     }
 
-    public static ReplicationSendRequest Create(DataFrame frame) => new ReplicationSendRequest(frame);
+    public static ReplicationSendRequest Create(DataFrame frame, CommandParsingContext context) => new ReplicationSendRequest(frame);
 }
 
 /// <summary>
@@ -67,5 +70,5 @@ public readonly struct ReplicationSendCallback : ICommand<ReplicationSendCallbac
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static ReplicationSendCallback Create(DataFrame frame) => new ReplicationSendCallback(frame);
+    public static ReplicationSendCallback Create(DataFrame frame, CommandParsingContext context) => new ReplicationSendCallback(frame);
 }

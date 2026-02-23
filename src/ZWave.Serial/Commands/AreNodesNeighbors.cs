@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Check if two nodes are marked as being within direct range of each other.
@@ -21,14 +21,20 @@ public readonly struct AreNodesNeighborsRequest : ICommand<AreNodesNeighborsRequ
     /// </summary>
     /// <param name="nodeId1">The first node ID.</param>
     /// <param name="nodeId2">The second node ID.</param>
+    /// <remarks>
+    /// This command queries the neighbor bitmask which is structurally limited to classic Z-Wave
+    /// nodes (1–232). The NodeID fields are always 8 bits.
+    /// </remarks>
     public static AreNodesNeighborsRequest Create(ushort nodeId1, ushort nodeId2)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId1, (ushort)0xFF);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId2, (ushort)0xFF);
         ReadOnlySpan<byte> commandParameters = [(byte)nodeId1, (byte)nodeId2];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AreNodesNeighborsRequest(frame);
     }
 
-    public static AreNodesNeighborsRequest Create(DataFrame frame) => new AreNodesNeighborsRequest(frame);
+    public static AreNodesNeighborsRequest Create(DataFrame frame, CommandParsingContext context) => new AreNodesNeighborsRequest(frame);
 }
 
 public readonly struct AreNodesNeighborsResponse : ICommand<AreNodesNeighborsResponse>
@@ -49,5 +55,5 @@ public readonly struct AreNodesNeighborsResponse : ICommand<AreNodesNeighborsRes
     /// </summary>
     public bool AreNeighbors => Frame.CommandParameters.Span[0] != 0;
 
-    public static AreNodesNeighborsResponse Create(DataFrame frame) => new AreNodesNeighborsResponse(frame);
+    public static AreNodesNeighborsResponse Create(DataFrame frame, CommandParsingContext context) => new AreNodesNeighborsResponse(frame);
 }

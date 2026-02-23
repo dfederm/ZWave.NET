@@ -65,7 +65,7 @@ public readonly partial struct NvmBackupRestoreRequest : ICommand<NvmBackupResto
     public static NvmBackupRestoreRequest Close()
         => Create(NvmOperationSubCommand.Close, []);
 
-    public static NvmBackupRestoreRequest Create(DataFrame frame) => new NvmBackupRestoreRequest(frame);
+    public static NvmBackupRestoreRequest Create(DataFrame frame, CommandParsingContext context) => new NvmBackupRestoreRequest(frame);
 }
 
 /// <summary>
@@ -110,5 +110,5 @@ public readonly struct NvmBackupRestoreResponse : ICommand<NvmBackupRestoreRespo
         }
     }
 
-    public static NvmBackupRestoreResponse Create(DataFrame frame) => new NvmBackupRestoreResponse(frame);
+    public static NvmBackupRestoreResponse Create(DataFrame frame, CommandParsingContext context) => new NvmBackupRestoreResponse(frame);
 }

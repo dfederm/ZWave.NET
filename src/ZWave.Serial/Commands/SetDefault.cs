@@ -27,7 +27,7 @@ public readonly struct SetDefaultRequest : IRequestWithCallback<SetDefaultReques
         return new SetDefaultRequest(frame);
     }
 
-    public static SetDefaultRequest Create(DataFrame frame) => new SetDefaultRequest(frame);
+    public static SetDefaultRequest Create(DataFrame frame, CommandParsingContext context) => new SetDefaultRequest(frame);
 }
 
 /// <summary>
@@ -51,5 +51,5 @@ public readonly struct SetDefaultCallback : ICommand<SetDefaultCallback>
     /// </summary>
     public byte SessionId => Frame.CommandParameters.Span[0];
 
-    public static SetDefaultCallback Create(DataFrame frame) => new SetDefaultCallback(frame);
+    public static SetDefaultCallback Create(DataFrame frame, CommandParsingContext context) => new SetDefaultCallback(frame);
 }

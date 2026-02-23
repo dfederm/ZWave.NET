@@ -35,5 +35,5 @@ public readonly struct SerialApiSetupGetLongRangeMaxPayloadSizeResponse : IComma
     /// </summary>
     public byte MaxPayloadSize => Frame.CommandParameters.Span[1];
 
-    public static SerialApiSetupGetLongRangeMaxPayloadSizeResponse Create(DataFrame frame) => new SerialApiSetupGetLongRangeMaxPayloadSizeResponse(frame);
+    public static SerialApiSetupGetLongRangeMaxPayloadSizeResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGetLongRangeMaxPayloadSizeResponse(frame);
 }

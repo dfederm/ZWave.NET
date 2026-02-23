@@ -31,7 +31,7 @@ public readonly struct NvmExtReadLongBufferRequest : ICommand<NvmExtReadLongBuff
         return new NvmExtReadLongBufferRequest(frame);
     }
 
-    public static NvmExtReadLongBufferRequest Create(DataFrame frame) => new NvmExtReadLongBufferRequest(frame);
+    public static NvmExtReadLongBufferRequest Create(DataFrame frame, CommandParsingContext context) => new NvmExtReadLongBufferRequest(frame);
 }
 
 public readonly struct NvmExtReadLongBufferResponse : ICommand<NvmExtReadLongBufferResponse>
@@ -52,5 +52,5 @@ public readonly struct NvmExtReadLongBufferResponse : ICommand<NvmExtReadLongBuf
     /// </summary>
     public ReadOnlyMemory<byte> Data => Frame.CommandParameters;
 
-    public static NvmExtReadLongBufferResponse Create(DataFrame frame) => new NvmExtReadLongBufferResponse(frame);
+    public static NvmExtReadLongBufferResponse Create(DataFrame frame, CommandParsingContext context) => new NvmExtReadLongBufferResponse(frame);
 }

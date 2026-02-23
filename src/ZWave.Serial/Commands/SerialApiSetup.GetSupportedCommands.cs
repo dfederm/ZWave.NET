@@ -69,5 +69,5 @@ public readonly struct SerialApiSetupGetSupportedCommandsResponse : ICommand<Ser
         }
     }
 
-    public static SerialApiSetupGetSupportedCommandsResponse Create(DataFrame frame) => new SerialApiSetupGetSupportedCommandsResponse(frame);
+    public static SerialApiSetupGetSupportedCommandsResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGetSupportedCommandsResponse(frame);
 }

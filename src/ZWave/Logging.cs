@@ -153,4 +153,10 @@ internal static partial class Logging
         Level = LogLevel.Warning,
         Message = "Callback timed out for {commandId}")]
     public static partial void LogCallbackTimeout(this ILogger logger, CommandId commandId);
+
+    [LoggerMessage(
+        EventId = 220,
+        Level = LogLevel.Information,
+        Message = "NodeID base type set to {nodeIdType}")]
+    public static partial void LogSetNodeIdBaseType(this ILogger logger, NodeIdType nodeIdType);
 }

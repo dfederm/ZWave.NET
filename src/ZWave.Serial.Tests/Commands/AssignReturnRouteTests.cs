@@ -18,8 +18,26 @@ public class AssignReturnRouteTests : CommandTestBase
                     Request: AssignReturnRouteRequest.Create(
                         sourceNodeId: 2,
                         destinationNodeId: 1,
+                        NodeIdType.Short,
                         sessionId: 3),
                     ExpectedCommandParameters: new byte[] { 0x02, 0x01, 0x03 }
+                ),
+            });
+
+    [TestMethod]
+    public void Request16Bit()
+        => TestSendableCommand(
+            DataFrameType.REQ,
+            CommandId.AssignReturnRoute,
+            new[]
+            {
+                (
+                    Request: AssignReturnRouteRequest.Create(
+                        sourceNodeId: 0x0102,
+                        destinationNodeId: 0x0103,
+                        NodeIdType.Long,
+                        sessionId: 3),
+                    ExpectedCommandParameters: new byte[] { 0x01, 0x02, 0x01, 0x03, 0x03 }
                 ),
             });
 

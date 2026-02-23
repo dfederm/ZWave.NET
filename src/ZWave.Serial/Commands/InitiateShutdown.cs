@@ -22,7 +22,7 @@ public readonly struct InitiateShutdownRequest : ICommand<InitiateShutdownReques
         return new InitiateShutdownRequest(frame);
     }
 
-    public static InitiateShutdownRequest Create(DataFrame frame) => new InitiateShutdownRequest(frame);
+    public static InitiateShutdownRequest Create(DataFrame frame, CommandParsingContext context) => new InitiateShutdownRequest(frame);
 }
 
 public readonly struct InitiateShutdownResponse : ICommand<InitiateShutdownResponse>
@@ -46,5 +46,5 @@ public readonly struct InitiateShutdownResponse : ICommand<InitiateShutdownRespo
     /// </remarks>
     public bool WasAccepted => Frame.CommandParameters.Span[0] != 0;
 
-    public static InitiateShutdownResponse Create(DataFrame frame) => new InitiateShutdownResponse(frame);
+    public static InitiateShutdownResponse Create(DataFrame frame, CommandParsingContext context) => new InitiateShutdownResponse(frame);
 }

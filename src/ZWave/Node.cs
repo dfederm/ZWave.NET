@@ -181,7 +181,7 @@ public sealed class Node : INode
                 // Reset the status again in case the previous interview task modified it.
                 InterviewStatus = NodeInterviewStatus.None;
 
-                var getNodeProtocolInfoRequest = GetNodeProtocolInfoRequest.Create(Id);
+                var getNodeProtocolInfoRequest = GetNodeProtocolInfoRequest.Create(Id, _driver.NodeIdType);
                 GetNodeProtocolInfoResponse getNodeProtocolInfoResponse = await _driver.SendCommandAsync<GetNodeProtocolInfoRequest, GetNodeProtocolInfoResponse>(
                     getNodeProtocolInfoRequest,
                     cancellationToken).ConfigureAwait(false);
@@ -205,7 +205,7 @@ public sealed class Node : INode
                 }
 
                 // This request causes unsolicited requests from the controller (kind of like a callback) with command id ApplicationControllerUpdate
-                var requestNodeInfoRequest = RequestNodeInfoRequest.Create(Id);
+                var requestNodeInfoRequest = RequestNodeInfoRequest.Create(Id, _driver.NodeIdType);
                 int requestNodeInfoRequestNum = 0;
                 ResponseStatusResponse requestNodeInfoResponse;
                 do

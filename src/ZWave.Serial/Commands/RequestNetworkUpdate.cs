@@ -53,7 +53,7 @@ public readonly struct RequestNetworkUpdateRequest : IRequestWithCallback<Reques
         return new RequestNetworkUpdateRequest(frame);
     }
 
-    public static RequestNetworkUpdateRequest Create(DataFrame frame) => new RequestNetworkUpdateRequest(frame);
+    public static RequestNetworkUpdateRequest Create(DataFrame frame, CommandParsingContext context) => new RequestNetworkUpdateRequest(frame);
 }
 
 /// <summary>
@@ -82,5 +82,5 @@ public readonly struct RequestNetworkUpdateCallback : ICommand<RequestNetworkUpd
     /// </summary>
     public RequestNetworkUpdateStatus Status => (RequestNetworkUpdateStatus)Frame.CommandParameters.Span[1];
 
-    public static RequestNetworkUpdateCallback Create(DataFrame frame) => new RequestNetworkUpdateCallback(frame);
+    public static RequestNetworkUpdateCallback Create(DataFrame frame, CommandParsingContext context) => new RequestNetworkUpdateCallback(frame);
 }

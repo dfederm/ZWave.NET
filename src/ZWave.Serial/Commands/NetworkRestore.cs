@@ -50,6 +50,16 @@ public readonly partial struct NetworkRestoreRequest : ICommand<NetworkRestoreRe
         return new NetworkRestoreRequest(frame);
     }
 
+    private static NetworkRestoreRequest Create(NetworkRestoreSubCommand subCommand, ReadOnlySpan<byte> subCommandParameters, NodeIdType nodeIdType)
+    {
+        Span<byte> commandParameters = stackalloc byte[subCommandParameters.Length + 1];
+        commandParameters[0] = (byte)subCommand;
+        subCommandParameters.CopyTo(commandParameters[1..]);
+
+        DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
+        return new NetworkRestoreRequest(frame);
+    }
+
     /// <summary>
     /// Create a request to prepare the network restore operation.
     /// </summary>
@@ -74,12 +84,13 @@ public readonly partial struct NetworkRestoreRequest : ICommand<NetworkRestoreRe
     /// </summary>
     /// <param name="nodeId">The node ID of the device.</param>
     /// <param name="protocolSpecific">Protocol-specific data (5 bytes).</param>
-    public static NetworkRestoreRequest RestoreDevice(ushort nodeId, ReadOnlySpan<byte> protocolSpecific)
+    public static NetworkRestoreRequest RestoreDevice(ushort nodeId, NodeIdType nodeIdType, ReadOnlySpan<byte> protocolSpecific)
     {
-        Span<byte> subCommandParameters = stackalloc byte[1 + protocolSpecific.Length];
-        subCommandParameters[0] = (byte)nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        protocolSpecific.CopyTo(subCommandParameters[1..]);
-        return Create(NetworkRestoreSubCommand.RestoreDevice, subCommandParameters);
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> subCommandParameters = stackalloc byte[nodeIdSize + protocolSpecific.Length];
+        int offset = nodeIdType.WriteNodeId(subCommandParameters, 0, nodeId);
+        protocolSpecific.CopyTo(subCommandParameters[offset..]);
+        return Create(NetworkRestoreSubCommand.RestoreDevice, subCommandParameters, nodeIdType);
     }
 
     /// <summary>
@@ -87,12 +98,13 @@ public readonly partial struct NetworkRestoreRequest : ICommand<NetworkRestoreRe
     /// </summary>
     /// <param name="nodeId">The node ID.</param>
     /// <param name="routingTableLine">The routing table line (29 bytes = 232 bits).</param>
-    public static NetworkRestoreRequest RestoreNeighbours(ushort nodeId, ReadOnlySpan<byte> routingTableLine)
+    public static NetworkRestoreRequest RestoreNeighbours(ushort nodeId, NodeIdType nodeIdType, ReadOnlySpan<byte> routingTableLine)
     {
-        Span<byte> subCommandParameters = stackalloc byte[1 + routingTableLine.Length];
-        subCommandParameters[0] = (byte)nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        routingTableLine.CopyTo(subCommandParameters[1..]);
-        return Create(NetworkRestoreSubCommand.RestoreNeighbours, subCommandParameters);
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> subCommandParameters = stackalloc byte[nodeIdSize + routingTableLine.Length];
+        int offset = nodeIdType.WriteNodeId(subCommandParameters, 0, nodeId);
+        routingTableLine.CopyTo(subCommandParameters[offset..]);
+        return Create(NetworkRestoreSubCommand.RestoreNeighbours, subCommandParameters, nodeIdType);
     }
 
     /// <summary>
@@ -100,17 +112,18 @@ public readonly partial struct NetworkRestoreRequest : ICommand<NetworkRestoreRe
     /// </summary>
     /// <param name="nodeId">The node ID.</param>
     /// <param name="routingEntries">The routing entries to restore.</param>
-    public static NetworkRestoreRequest RestoreRoutingEntries(ushort nodeId, ReadOnlySpan<RoutingTableEntry> routingEntries)
+    public static NetworkRestoreRequest RestoreRoutingEntries(ushort nodeId, NodeIdType nodeIdType, ReadOnlySpan<RoutingTableEntry> routingEntries)
     {
-        Span<byte> subCommandParameters = stackalloc byte[2 + (routingEntries.Length * RoutingTableEntry.Size)];
-        subCommandParameters[0] = (byte)nodeId; // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        subCommandParameters[1] = (byte)routingEntries.Length;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> subCommandParameters = stackalloc byte[nodeIdSize + 1 + (routingEntries.Length * RoutingTableEntry.Size)];
+        int offset = nodeIdType.WriteNodeId(subCommandParameters, 0, nodeId);
+        subCommandParameters[offset] = (byte)routingEntries.Length;
         for (int i = 0; i < routingEntries.Length; i++)
         {
-            routingEntries[i].WriteTo(subCommandParameters[(2 + (i * RoutingTableEntry.Size))..]);
+            routingEntries[i].WriteTo(subCommandParameters[(offset + 1 + (i * RoutingTableEntry.Size))..]);
         }
 
-        return Create(NetworkRestoreSubCommand.RestoreRoutingEntries, subCommandParameters);
+        return Create(NetworkRestoreSubCommand.RestoreRoutingEntries, subCommandParameters, nodeIdType);
     }
 
     /// <summary>
@@ -119,7 +132,7 @@ public readonly partial struct NetworkRestoreRequest : ICommand<NetworkRestoreRe
     public static NetworkRestoreRequest Finalize()
         => Create(NetworkRestoreSubCommand.Finalize, []);
 
-    public static NetworkRestoreRequest Create(DataFrame frame) => new NetworkRestoreRequest(frame);
+    public static NetworkRestoreRequest Create(DataFrame frame, CommandParsingContext context) => new NetworkRestoreRequest(frame);
 }
 
 /// <summary>
@@ -148,5 +161,5 @@ public readonly struct NetworkRestoreResponse : ICommand<NetworkRestoreResponse>
     /// </summary>
     public NetworkRestoreStatus Status => (NetworkRestoreStatus)Frame.CommandParameters.Span[1];
 
-    public static NetworkRestoreResponse Create(DataFrame frame) => new NetworkRestoreResponse(frame);
+    public static NetworkRestoreResponse Create(DataFrame frame, CommandParsingContext context) => new NetworkRestoreResponse(frame);
 }

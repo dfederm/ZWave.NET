@@ -22,7 +22,7 @@ public class NlsTests : CommandTestBase
             new[]
             {
                 (
-                    Request: ZWave.Serial.Commands.EnableNodeNlsRequest.Create(nodeId: 5),
+                    Request: ZWave.Serial.Commands.EnableNodeNlsRequest.Create(nodeId: 5, NodeIdType.Short),
                     ExpectedCommandParameters: new byte[] { 0x05 }
                 ),
             });
@@ -48,7 +48,7 @@ public class NlsTests : CommandTestBase
             new[]
             {
                 (
-                    Request: ZWave.Serial.Commands.GetNodeNlsStateRequest.Create(nodeId: 5),
+                    Request: ZWave.Serial.Commands.GetNodeNlsStateRequest.Create(nodeId: 5, NodeIdType.Short),
                     ExpectedCommandParameters: new byte[] { 0x05 }
                 ),
             });

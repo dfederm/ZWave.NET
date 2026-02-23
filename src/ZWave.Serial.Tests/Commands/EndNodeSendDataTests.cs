@@ -20,6 +20,7 @@ public class EndNodeSendDataTests : CommandTestBase
                 (
                     Request: EndNodeSendDataRequest.Create(
                         destinationNodeId: 5,
+                        NodeIdType.Short,
                         data: new byte[] { 0x62, 0x01 },
                         txOptions: TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore,
                         txSecurityOptions: TxSecurityOptions.None,

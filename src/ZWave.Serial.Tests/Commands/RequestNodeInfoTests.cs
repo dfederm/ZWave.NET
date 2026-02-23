@@ -14,6 +14,6 @@ public class RequestNodeInfoTests : CommandTestBase
             CommandId.RequestNodeInfo,
             new[]
             {
-                (Request: RequestNodeInfoRequest.Create(2), ExpectedCommandParameters: new byte[] { 0x02 }),
+                (Request: RequestNodeInfoRequest.Create(2, NodeIdType.Short), ExpectedCommandParameters: new byte[] { 0x02 }),
             });
 }

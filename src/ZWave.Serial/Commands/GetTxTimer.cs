@@ -24,7 +24,7 @@ public readonly struct GetTxTimerRequest : ICommand<GetTxTimerRequest>
         return new GetTxTimerRequest(frame);
     }
 
-    public static GetTxTimerRequest Create(DataFrame frame) => new GetTxTimerRequest(frame);
+    public static GetTxTimerRequest Create(DataFrame frame, CommandParsingContext context) => new GetTxTimerRequest(frame);
 }
 
 public readonly struct GetTxTimerResponse : ICommand<GetTxTimerResponse>
@@ -45,5 +45,5 @@ public readonly struct GetTxTimerResponse : ICommand<GetTxTimerResponse>
     /// </summary>
     public uint TimerTicks => Frame.CommandParameters.Span[0..4].ToUInt32BE();
 
-    public static GetTxTimerResponse Create(DataFrame frame) => new GetTxTimerResponse(frame);
+    public static GetTxTimerResponse Create(DataFrame frame, CommandParsingContext context) => new GetTxTimerResponse(frame);
 }

@@ -33,5 +33,5 @@ public readonly struct ApplicationNodeInformationRequest : ICommand<ApplicationN
         return new ApplicationNodeInformationRequest(frame);
     }
 
-    public static ApplicationNodeInformationRequest Create(DataFrame frame) => new ApplicationNodeInformationRequest(frame);
+    public static ApplicationNodeInformationRequest Create(DataFrame frame, CommandParsingContext context) => new ApplicationNodeInformationRequest(frame);
 }

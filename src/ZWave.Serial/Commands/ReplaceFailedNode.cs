@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The status of the replace failed node operation.
@@ -39,18 +39,22 @@ public readonly struct ReplaceFailedNodeRequest : IRequestWithCallback<ReplaceFa
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[1];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static ReplaceFailedNodeRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 1];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new ReplaceFailedNodeRequest(frame);
     }
 
-    public static ReplaceFailedNodeRequest Create(DataFrame frame) => new ReplaceFailedNodeRequest(frame);
+    public static ReplaceFailedNodeRequest Create(DataFrame frame, CommandParsingContext context) => new ReplaceFailedNodeRequest(frame);
 }
 
 /// <summary>
@@ -79,5 +83,5 @@ public readonly struct ReplaceFailedNodeCallback : ICommand<ReplaceFailedNodeCal
     /// </summary>
     public ReplaceFailedNodeStatus Status => (ReplaceFailedNodeStatus)Frame.CommandParameters.Span[1];
 
-    public static ReplaceFailedNodeCallback Create(DataFrame frame) => new ReplaceFailedNodeCallback(frame);
+    public static ReplaceFailedNodeCallback Create(DataFrame frame, CommandParsingContext context) => new ReplaceFailedNodeCallback(frame);
 }

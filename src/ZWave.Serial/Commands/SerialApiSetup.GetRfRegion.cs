@@ -35,5 +35,5 @@ public readonly struct SerialApiSetupGetRfRegionResponse : ICommand<SerialApiSet
     /// </summary>
     public RfRegion Region => (RfRegion)Frame.CommandParameters.Span[1];
 
-    public static SerialApiSetupGetRfRegionResponse Create(DataFrame frame) => new SerialApiSetupGetRfRegionResponse(frame);
+    public static SerialApiSetupGetRfRegionResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGetRfRegionResponse(frame);
 }

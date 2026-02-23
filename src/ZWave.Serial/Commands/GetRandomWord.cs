@@ -27,7 +27,7 @@ public readonly struct GetRandomWordRequest : ICommand<GetRandomWordRequest>
         return new GetRandomWordRequest(frame);
     }
 
-    public static GetRandomWordRequest Create(DataFrame frame) => new GetRandomWordRequest(frame);
+    public static GetRandomWordRequest Create(DataFrame frame, CommandParsingContext context) => new GetRandomWordRequest(frame);
 }
 
 public readonly struct GetRandomWordResponse : ICommand<GetRandomWordResponse>
@@ -58,5 +58,5 @@ public readonly struct GetRandomWordResponse : ICommand<GetRandomWordResponse>
     /// </summary>
     public ReadOnlyMemory<byte> RandomBytes => Frame.CommandParameters.Slice(2, Count);
 
-    public static GetRandomWordResponse Create(DataFrame frame) => new GetRandomWordResponse(frame);
+    public static GetRandomWordResponse Create(DataFrame frame, CommandParsingContext context) => new GetRandomWordResponse(frame);
 }

@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Set the Priority Route for a destination node.
@@ -22,18 +22,19 @@ public readonly struct SetPriorityRouteRequest : ICommand<SetPriorityRouteReques
     /// <param name="nodeId">The destination node ID.</param>
     /// <param name="repeaters">The 4-byte repeater list.</param>
     /// <param name="speed">The speed setting for the route.</param>
-    public static SetPriorityRouteRequest Create(ushort nodeId, ReadOnlySpan<byte> repeaters, PriorityRouteSpeed speed)
+    public static SetPriorityRouteRequest Create(ushort nodeId, NodeIdType nodeIdType, ReadOnlySpan<byte> repeaters, PriorityRouteSpeed speed)
     {
-        Span<byte> commandParameters = stackalloc byte[6];
-        commandParameters[0] = (byte)nodeId;
-        repeaters.CopyTo(commandParameters[1..]);
-        commandParameters[5] = (byte)speed;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 5];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        repeaters.CopyTo(commandParameters[offset..]);
+        commandParameters[offset + 4] = (byte)speed;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SetPriorityRouteRequest(frame);
     }
 
-    public static SetPriorityRouteRequest Create(DataFrame frame) => new SetPriorityRouteRequest(frame);
+    public static SetPriorityRouteRequest Create(DataFrame frame, CommandParsingContext context) => new SetPriorityRouteRequest(frame);
 }
 
 public readonly struct SetPriorityRouteResponse : ICommand<SetPriorityRouteResponse>
@@ -54,5 +55,5 @@ public readonly struct SetPriorityRouteResponse : ICommand<SetPriorityRouteRespo
     /// </summary>
     public bool Success => Frame.CommandParameters.Span[0] != 0;
 
-    public static SetPriorityRouteResponse Create(DataFrame frame) => new SetPriorityRouteResponse(frame);
+    public static SetPriorityRouteResponse Create(DataFrame frame, CommandParsingContext context) => new SetPriorityRouteResponse(frame);
 }

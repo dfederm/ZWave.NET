@@ -79,7 +79,7 @@ public class RadioDebugTests : CommandTestBase
             DataFrameType.RES,
             CommandId.RadioDebugGetProtocolList,
             new byte[] { 0x02, 0x02, 0x00, 0x00, 0x00, 0x01 });
-        RadioDebugGetProtocolListResponse response = RadioDebugGetProtocolListResponse.Create(dataFrame);
+        RadioDebugGetProtocolListResponse response = RadioDebugGetProtocolListResponse.Create(dataFrame, new CommandParsingContext(NodeIdType.Short));
 
         Assert.AreEqual((byte)0x02, response.RadioDebugCommandsVersion);
         Assert.AreEqual(2, response.ProtocolCount);

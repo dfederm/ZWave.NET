@@ -45,7 +45,7 @@ public readonly struct GetProtocolVersionRequest : ICommand<GetProtocolVersionRe
         return new GetProtocolVersionRequest(frame);
     }
 
-    public static GetProtocolVersionRequest Create(DataFrame frame) => new GetProtocolVersionRequest(frame);
+    public static GetProtocolVersionRequest Create(DataFrame frame, CommandParsingContext context) => new GetProtocolVersionRequest(frame);
 }
 
 /// <summary>
@@ -98,5 +98,5 @@ public readonly struct GetProtocolVersionResponse : ICommand<GetProtocolVersionR
         // The git commit hash may be omitted
         => Frame.CommandParameters.Span.Length < 22 ? [] : Frame.CommandParameters.Span.Slice(6, 16);
 
-    public static GetProtocolVersionResponse Create(DataFrame frame) => new GetProtocolVersionResponse(frame);
+    public static GetProtocolVersionResponse Create(DataFrame frame, CommandParsingContext context) => new GetProtocolVersionResponse(frame);
 }

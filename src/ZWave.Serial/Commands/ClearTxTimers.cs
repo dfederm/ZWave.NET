@@ -22,5 +22,5 @@ public readonly struct ClearTxTimersRequest : ICommand<ClearTxTimersRequest>
         return new ClearTxTimersRequest(frame);
     }
 
-    public static ClearTxTimersRequest Create(DataFrame frame) => new ClearTxTimersRequest(frame);
+    public static ClearTxTimersRequest Create(DataFrame frame, CommandParsingContext context) => new ClearTxTimersRequest(frame);
 }

@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Read out neighbor information from the protocol for a given node.
@@ -19,11 +19,15 @@ public readonly struct GetNeighborTableLineRequest : ICommand<GetNeighborTableLi
     /// <param name="nodeId">The node ID to get the neighbor table line for.</param>
     /// <param name="removeBadLink">Remove the latest bad link from the neighbor table line.</param>
     /// <param name="removeNonRepeaters">Remove non-repeater nodes from the neighbor table line.</param>
+    /// <remarks>
+    /// Per Z-Wave Host API Specification, the NodeID field is always 8 bits for this command.
+    /// </remarks>
     public static GetNeighborTableLineRequest Create(ushort nodeId, bool removeBadLink, bool removeNonRepeaters)
     {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         ReadOnlySpan<byte> commandParameters =
         [
-            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
+            (byte)nodeId,
             (byte)(removeBadLink ? 1 : 0),
             (byte)(removeNonRepeaters ? 1 : 0),
         ];
@@ -31,7 +35,7 @@ public readonly struct GetNeighborTableLineRequest : ICommand<GetNeighborTableLi
         return new GetNeighborTableLineRequest(frame);
     }
 
-    public static GetNeighborTableLineRequest Create(DataFrame frame) => new GetNeighborTableLineRequest(frame);
+    public static GetNeighborTableLineRequest Create(DataFrame frame, CommandParsingContext context) => new GetNeighborTableLineRequest(frame);
 }
 
 public readonly struct GetNeighborTableLineResponse : ICommand<GetNeighborTableLineResponse>
@@ -53,5 +57,5 @@ public readonly struct GetNeighborTableLineResponse : ICommand<GetNeighborTableL
     public IReadOnlySet<ushort> NeighborNodeIds
         => CommandDataParsingHelpers.ParseNodeBitmask(Frame.CommandParameters.Span, baseNodeId: 1);
 
-    public static GetNeighborTableLineResponse Create(DataFrame frame) => new GetNeighborTableLineResponse(frame);
+    public static GetNeighborTableLineResponse Create(DataFrame frame, CommandParsingContext context) => new GetNeighborTableLineResponse(frame);
 }

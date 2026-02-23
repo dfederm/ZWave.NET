@@ -40,5 +40,5 @@ public readonly struct SerialApiSetupGet16BitPowerlevelResponse : ICommand<Seria
     /// </summary>
     public short Measured0dBmPowerlevelDeciDbm => Frame.CommandParameters.Span[3..5].ToInt16BE();
 
-    public static SerialApiSetupGet16BitPowerlevelResponse Create(DataFrame frame) => new SerialApiSetupGet16BitPowerlevelResponse(frame);
+    public static SerialApiSetupGet16BitPowerlevelResponse Create(DataFrame frame, CommandParsingContext context) => new SerialApiSetupGet16BitPowerlevelResponse(frame);
 }

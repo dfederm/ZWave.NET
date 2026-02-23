@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 public readonly struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfoRequest>
 {
@@ -13,17 +13,16 @@ public readonly struct GetNodeProtocolInfoRequest : ICommand<GetNodeProtocolInfo
 
     public DataFrame Frame { get; }
 
-    public static GetNodeProtocolInfoRequest Create(ushort nodeId)
+    public static GetNodeProtocolInfoRequest Create(ushort nodeId, NodeIdType nodeIdType)
     {
-        ReadOnlySpan<byte> commandParameters =
-        [
-            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-        ];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize];
+        nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new GetNodeProtocolInfoRequest(frame);
     }
 
-    public static GetNodeProtocolInfoRequest Create(DataFrame frame) => new GetNodeProtocolInfoRequest(frame);
+    public static GetNodeProtocolInfoRequest Create(DataFrame frame, CommandParsingContext context) => new GetNodeProtocolInfoRequest(frame);
 }
 
 public readonly struct GetNodeProtocolInfoResponse : ICommand<GetNodeProtocolInfoResponse>
@@ -116,5 +115,5 @@ public readonly struct GetNodeProtocolInfoResponse : ICommand<GetNodeProtocolInf
     /// </summary>
     public byte SpecificDeviceClass => HasSpecificDeviceClass ? Frame.CommandParameters.Span[5] : (byte)0;
 
-    public static GetNodeProtocolInfoResponse Create(DataFrame frame) => new GetNodeProtocolInfoResponse(frame);
+    public static GetNodeProtocolInfoResponse Create(DataFrame frame, CommandParsingContext context) => new GetNodeProtocolInfoResponse(frame);
 }

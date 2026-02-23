@@ -22,5 +22,5 @@ public readonly struct WatchdogEnableRequest : ICommand<WatchdogEnableRequest>
         return new WatchdogEnableRequest(frame);
     }
 
-    public static WatchdogEnableRequest Create(DataFrame frame) => new WatchdogEnableRequest(frame);
+    public static WatchdogEnableRequest Create(DataFrame frame, CommandParsingContext context) => new WatchdogEnableRequest(frame);
 }

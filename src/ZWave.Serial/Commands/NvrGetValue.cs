@@ -23,7 +23,7 @@ public readonly struct NvrGetValueRequest : ICommand<NvrGetValueRequest>
         return new NvrGetValueRequest(frame);
     }
 
-    public static NvrGetValueRequest Create(DataFrame frame) => new NvrGetValueRequest(frame);
+    public static NvrGetValueRequest Create(DataFrame frame, CommandParsingContext context) => new NvrGetValueRequest(frame);
 }
 
 public readonly struct NvrGetValueResponse : ICommand<NvrGetValueResponse>
@@ -44,5 +44,5 @@ public readonly struct NvrGetValueResponse : ICommand<NvrGetValueResponse>
     /// </summary>
     public ReadOnlyMemory<byte> Data => Frame.CommandParameters;
 
-    public static NvrGetValueResponse Create(DataFrame frame) => new NvrGetValueResponse(frame);
+    public static NvrGetValueResponse Create(DataFrame frame, CommandParsingContext context) => new NvrGetValueResponse(frame);
 }

@@ -19,5 +19,5 @@ public readonly struct SoftResetRequest : ICommand<SoftResetRequest>
         return new SoftResetRequest(frame);
     }
 
-    public static SoftResetRequest Create(DataFrame frame) => new SoftResetRequest(frame);
+    public static SoftResetRequest Create(DataFrame frame, CommandParsingContext context) => new SoftResetRequest(frame);
 }

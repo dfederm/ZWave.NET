@@ -27,7 +27,7 @@ public readonly struct GetRoutingTableEntriesRequest : ICommand<GetRoutingTableE
         return new GetRoutingTableEntriesRequest(frame);
     }
 
-    public static GetRoutingTableEntriesRequest Create(DataFrame frame) => new GetRoutingTableEntriesRequest(frame);
+    public static GetRoutingTableEntriesRequest Create(DataFrame frame, CommandParsingContext context) => new GetRoutingTableEntriesRequest(frame);
 }
 
 public readonly struct GetRoutingTableEntriesResponse : ICommand<GetRoutingTableEntriesResponse>
@@ -63,5 +63,5 @@ public readonly struct GetRoutingTableEntriesResponse : ICommand<GetRoutingTable
         return new RoutingTableEntry(Frame.CommandParameters.Slice(offset, 6));
     }
 
-    public static GetRoutingTableEntriesResponse Create(DataFrame frame) => new GetRoutingTableEntriesResponse(frame);
+    public static GetRoutingTableEntriesResponse Create(DataFrame frame, CommandParsingContext context) => new GetRoutingTableEntriesResponse(frame);
 }

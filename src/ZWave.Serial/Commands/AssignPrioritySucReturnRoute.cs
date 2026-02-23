@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Assign an application defined Priority SUC Return Route to a routing or an enhanced slave.
@@ -18,25 +18,27 @@ public readonly struct AssignPrioritySucReturnRouteRequest : IRequestWithCallbac
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[6];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static AssignPrioritySucReturnRouteRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         ReadOnlySpan<byte> route,
         byte routeSpeed,
         byte sessionId)
     {
-        Span<byte> commandParameters = stackalloc byte[7];
-        commandParameters[0] = (byte)nodeId;
-        route.CopyTo(commandParameters.Slice(1, 4));
-        commandParameters[5] = routeSpeed;
-        commandParameters[6] = sessionId;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[6 + nodeIdSize];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        route.CopyTo(commandParameters.Slice(offset, 4));
+        commandParameters[offset + 4] = routeSpeed;
+        commandParameters[offset + 5] = sessionId;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new AssignPrioritySucReturnRouteRequest(frame);
     }
 
-    public static AssignPrioritySucReturnRouteRequest Create(DataFrame frame) => new AssignPrioritySucReturnRouteRequest(frame);
+    public static AssignPrioritySucReturnRouteRequest Create(DataFrame frame, CommandParsingContext context) => new AssignPrioritySucReturnRouteRequest(frame);
 }
 
 /// <summary>
@@ -65,5 +67,5 @@ public readonly struct AssignPrioritySucReturnRouteCallback : ICommand<AssignPri
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static AssignPrioritySucReturnRouteCallback Create(DataFrame frame) => new AssignPrioritySucReturnRouteCallback(frame);
+    public static AssignPrioritySucReturnRouteCallback Create(DataFrame frame, CommandParsingContext context) => new AssignPrioritySucReturnRouteCallback(frame);
 }

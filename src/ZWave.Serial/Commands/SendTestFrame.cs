@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Send a test frame directly to nodeID without any routing.
@@ -18,19 +18,24 @@ public readonly struct SendTestFrameRequest : IRequestWithCallback<SendTestFrame
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[2];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static SendTestFrameRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         byte powerLevel,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters = [(byte)nodeId, powerLevel, sessionId];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 2];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = powerLevel;
+        commandParameters[offset + 1] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendTestFrameRequest(frame);
     }
 
-    public static SendTestFrameRequest Create(DataFrame frame) => new SendTestFrameRequest(frame);
+    public static SendTestFrameRequest Create(DataFrame frame, CommandParsingContext context) => new SendTestFrameRequest(frame);
 }
 
 /// <summary>
@@ -59,5 +64,5 @@ public readonly struct SendTestFrameCallback : ICommand<SendTestFrameCallback>
     /// </summary>
     public TransmissionStatus Status => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static SendTestFrameCallback Create(DataFrame frame) => new SendTestFrameCallback(frame);
+    public static SendTestFrameCallback Create(DataFrame frame, CommandParsingContext context) => new SendTestFrameCallback(frame);
 }

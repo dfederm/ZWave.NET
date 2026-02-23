@@ -18,6 +18,7 @@ public class SetSucNodeIdTests : CommandTestBase
                 (
                     Request: SetSucNodeIdRequest.Create(
                         nodeId: 1,
+                        NodeIdType.Short,
                         enableSuc: true,
                         capabilities: SetSucNodeIdRequestCapabilities.SucFuncNodeIdServer,
                         transmissionOptions: TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore,

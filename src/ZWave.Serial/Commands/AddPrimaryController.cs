@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The mode for the add primary controller operation.
@@ -85,7 +85,7 @@ public readonly struct AddPrimaryControllerRequest : ICommand<AddPrimaryControll
         return new AddPrimaryControllerRequest(frame);
     }
 
-    public static AddPrimaryControllerRequest Create(DataFrame frame) => new AddPrimaryControllerRequest(frame);
+    public static AddPrimaryControllerRequest Create(DataFrame frame, CommandParsingContext context) => new AddPrimaryControllerRequest(frame);
 }
 
 /// <summary>
@@ -147,5 +147,5 @@ public readonly struct AddPrimaryControllerCallback : ICommand<AddPrimaryControl
         }
     }
 
-    public static AddPrimaryControllerCallback Create(DataFrame frame) => new AddPrimaryControllerCallback(frame);
+    public static AddPrimaryControllerCallback Create(DataFrame frame, CommandParsingContext context) => new AddPrimaryControllerCallback(frame);
 }

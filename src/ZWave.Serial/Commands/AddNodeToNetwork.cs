@@ -1,4 +1,4 @@
-﻿using static ZWave.Serial.Commands.CommandDataParsingHelpers;
+using static ZWave.Serial.Commands.CommandDataParsingHelpers;
 
 namespace ZWave.Serial.Commands;
 
@@ -187,7 +187,7 @@ public readonly struct AddNodeToNetworkRequest : ICommand<AddNodeToNetworkReques
         return new AddNodeToNetworkRequest(frame);
     }
 
-    public static AddNodeToNetworkRequest Create(DataFrame frame) => new AddNodeToNetworkRequest(frame);
+    public static AddNodeToNetworkRequest Create(DataFrame frame, CommandParsingContext context) => new AddNodeToNetworkRequest(frame);
 }
 
 public readonly struct AddNodeToNetworkCallback : ICommand<AddNodeToNetworkCallback>
@@ -228,5 +228,5 @@ public readonly struct AddNodeToNetworkCallback : ICommand<AddNodeToNetworkCallb
         }
     }
 
-    public static AddNodeToNetworkCallback Create(DataFrame frame) => new AddNodeToNetworkCallback(frame);
+    public static AddNodeToNetworkCallback Create(DataFrame frame, CommandParsingContext context) => new AddNodeToNetworkCallback(frame);
 }

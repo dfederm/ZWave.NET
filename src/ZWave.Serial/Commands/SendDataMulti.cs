@@ -21,26 +21,35 @@ public readonly struct SendDataMultiRequest : IRequestWithCallback<SendDataMulti
     public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static SendDataMultiRequest Create(
-        ReadOnlySpan<byte> nodeList,
+        ReadOnlySpan<ushort> nodeIds,
+        NodeIdType nodeIdType,
         ReadOnlySpan<byte> data,
         TransmissionOptions txOptions,
         byte sessionId)
     {
-        byte nodeCount = (byte)nodeList.Length;
-        int total = 1 + nodeCount + 1 + data.Length + 1 + 1;
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        byte nodeCount = (byte)nodeIds.Length;
+        int nodeListBytes = nodeCount * nodeIdSize;
+        int total = 1 + nodeListBytes + 1 + data.Length + 1 + 1;
         Span<byte> commandParameters = stackalloc byte[total];
         commandParameters[0] = nodeCount;
-        nodeList.CopyTo(commandParameters.Slice(1, nodeCount));
-        commandParameters[1 + nodeCount] = (byte)data.Length;
-        data.CopyTo(commandParameters.Slice(2 + nodeCount, data.Length));
-        commandParameters[2 + nodeCount + data.Length] = (byte)txOptions;
-        commandParameters[3 + nodeCount + data.Length] = sessionId;
+        int offset = 1;
+        for (int i = 0; i < nodeCount; i++)
+        {
+            offset = nodeIdType.WriteNodeId(commandParameters, offset, nodeIds[i]);
+        }
+
+        commandParameters[offset] = (byte)data.Length;
+        data.CopyTo(commandParameters.Slice(offset + 1, data.Length));
+        offset += 1 + data.Length;
+        commandParameters[offset] = (byte)txOptions;
+        commandParameters[offset + 1] = sessionId;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SendDataMultiRequest(frame);
     }
 
-    public static SendDataMultiRequest Create(DataFrame frame) => new SendDataMultiRequest(frame);
+    public static SendDataMultiRequest Create(DataFrame frame, CommandParsingContext context) => new SendDataMultiRequest(frame);
 }
 
 /// <summary>
@@ -69,5 +78,5 @@ public readonly struct SendDataMultiCallback : ICommand<SendDataMultiCallback>
     /// </summary>
     public TransmissionStatus TransmissionStatus => (TransmissionStatus)Frame.CommandParameters.Span[1];
 
-    public static SendDataMultiCallback Create(DataFrame frame) => new SendDataMultiCallback(frame);
+    public static SendDataMultiCallback Create(DataFrame frame, CommandParsingContext context) => new SendDataMultiCallback(frame);
 }

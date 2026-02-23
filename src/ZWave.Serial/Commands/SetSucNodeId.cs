@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 public enum SetSucNodeIdRequestCapabilities : byte
 {
@@ -39,28 +39,28 @@ public readonly struct SetSucNodeIdRequest : IRequestWithCallback<SetSucNodeIdRe
 
     public DataFrame Frame { get; }
 
-    public byte SessionId => Frame.CommandParameters.Span[4];
+    public byte SessionId => Frame.CommandParameters.Span[^1];
 
     public static SetSucNodeIdRequest Create(
         ushort nodeId,
+        NodeIdType nodeIdType,
         bool enableSuc,
         SetSucNodeIdRequestCapabilities capabilities,
         TransmissionOptions transmissionOptions,
         byte sessionId)
     {
-        ReadOnlySpan<byte> commandParameters =
-        [
-            (byte)nodeId, // TODO: This may be 16 bits if the node base type is set to 16 bit mode.
-            (byte)(enableSuc ? 1 : 0),
-            (byte)transmissionOptions,
-            (byte)capabilities,
-            sessionId,
-        ];
+        int nodeIdSize = nodeIdType.NodeIdSize();
+        Span<byte> commandParameters = stackalloc byte[nodeIdSize + 4];
+        int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
+        commandParameters[offset] = (byte)(enableSuc ? 1 : 0);
+        commandParameters[offset + 1] = (byte)transmissionOptions;
+        commandParameters[offset + 2] = (byte)capabilities;
+        commandParameters[offset + 3] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
         return new SetSucNodeIdRequest(frame);
     }
 
-    public static SetSucNodeIdRequest Create(DataFrame frame) => new SetSucNodeIdRequest(frame);
+    public static SetSucNodeIdRequest Create(DataFrame frame, CommandParsingContext context) => new SetSucNodeIdRequest(frame);
 }
 
 public readonly struct SetSucNodeIdCallback : ICommand<SetSucNodeIdCallback>
@@ -83,5 +83,5 @@ public readonly struct SetSucNodeIdCallback : ICommand<SetSucNodeIdCallback>
     /// </summary>
     public SetSucNodeIdStatus SetSucNodeIdStatus => (SetSucNodeIdStatus)Frame.CommandParameters.Span[1];
 
-    public static SetSucNodeIdCallback Create(DataFrame frame) => new SetSucNodeIdCallback(frame);
+    public static SetSucNodeIdCallback Create(DataFrame frame, CommandParsingContext context) => new SetSucNodeIdCallback(frame);
 }

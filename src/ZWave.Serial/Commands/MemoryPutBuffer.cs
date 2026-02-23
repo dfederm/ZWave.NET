@@ -38,7 +38,7 @@ public readonly struct MemoryPutBufferRequest : IRequestWithCallback<MemoryPutBu
         return new MemoryPutBufferRequest(frame);
     }
 
-    public static MemoryPutBufferRequest Create(DataFrame frame) => new MemoryPutBufferRequest(frame);
+    public static MemoryPutBufferRequest Create(DataFrame frame, CommandParsingContext context) => new MemoryPutBufferRequest(frame);
 }
 
 /// <summary>
@@ -70,7 +70,7 @@ public readonly struct MemoryPutBufferResponse : ICommand<MemoryPutBufferRespons
     /// </summary>
     public bool Success => ReturnValue != 0;
 
-    public static MemoryPutBufferResponse Create(DataFrame frame) => new MemoryPutBufferResponse(frame);
+    public static MemoryPutBufferResponse Create(DataFrame frame, CommandParsingContext context) => new MemoryPutBufferResponse(frame);
 }
 
 /// <summary>
@@ -94,5 +94,5 @@ public readonly struct MemoryPutBufferCallback : ICommand<MemoryPutBufferCallbac
     /// </summary>
     public byte SessionId => Frame.CommandParameters.Span[0];
 
-    public static MemoryPutBufferCallback Create(DataFrame frame) => new MemoryPutBufferCallback(frame);
+    public static MemoryPutBufferCallback Create(DataFrame frame, CommandParsingContext context) => new MemoryPutBufferCallback(frame);
 }

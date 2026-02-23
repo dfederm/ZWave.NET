@@ -27,7 +27,7 @@ public readonly struct RFPowerlevelRediscoverySetRequest : ICommand<RFPowerlevel
         return new RFPowerlevelRediscoverySetRequest(frame);
     }
 
-    public static RFPowerlevelRediscoverySetRequest Create(DataFrame frame) => new RFPowerlevelRediscoverySetRequest(frame);
+    public static RFPowerlevelRediscoverySetRequest Create(DataFrame frame, CommandParsingContext context) => new RFPowerlevelRediscoverySetRequest(frame);
 }
 
 public readonly struct RFPowerlevelRediscoverySetResponse : ICommand<RFPowerlevelRediscoverySetResponse>
@@ -48,5 +48,5 @@ public readonly struct RFPowerlevelRediscoverySetResponse : ICommand<RFPowerleve
     /// </summary>
     public byte PowerLevel => Frame.CommandParameters.Span[0];
 
-    public static RFPowerlevelRediscoverySetResponse Create(DataFrame frame) => new RFPowerlevelRediscoverySetResponse(frame);
+    public static RFPowerlevelRediscoverySetResponse Create(DataFrame frame, CommandParsingContext context) => new RFPowerlevelRediscoverySetResponse(frame);
 }

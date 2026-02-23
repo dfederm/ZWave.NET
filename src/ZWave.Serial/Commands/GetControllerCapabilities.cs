@@ -56,7 +56,7 @@ public readonly struct GetControllerCapabilitiesRequest : ICommand<GetController
         return new GetControllerCapabilitiesRequest(frame);
     }
 
-    public static GetControllerCapabilitiesRequest Create(DataFrame frame) => new GetControllerCapabilitiesRequest(frame);
+    public static GetControllerCapabilitiesRequest Create(DataFrame frame, CommandParsingContext context) => new GetControllerCapabilitiesRequest(frame);
 }
 
 public readonly struct GetControllerCapabilitiesResponse : ICommand<GetControllerCapabilitiesResponse>
@@ -74,5 +74,5 @@ public readonly struct GetControllerCapabilitiesResponse : ICommand<GetControlle
 
     public ControllerCapabilities Capabilities => (ControllerCapabilities)Frame.CommandParameters.Span[0];
 
-    public static GetControllerCapabilitiesResponse Create(DataFrame frame) => new GetControllerCapabilitiesResponse(frame);
+    public static GetControllerCapabilitiesResponse Create(DataFrame frame, CommandParsingContext context) => new GetControllerCapabilitiesResponse(frame);
 }

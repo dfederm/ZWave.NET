@@ -1,4 +1,4 @@
-﻿namespace ZWave.Serial.Commands;
+namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Remove a specific node from a Z-Wave network.
@@ -42,7 +42,7 @@ public readonly struct RemoveNodeIdFromNetworkRequest : ICommand<RemoveNodeIdFro
         return new RemoveNodeIdFromNetworkRequest(frame);
     }
 
-    public static RemoveNodeIdFromNetworkRequest Create(DataFrame frame) => new RemoveNodeIdFromNetworkRequest(frame);
+    public static RemoveNodeIdFromNetworkRequest Create(DataFrame frame, CommandParsingContext context) => new RemoveNodeIdFromNetworkRequest(frame);
 }
 
 /// <summary>
@@ -76,5 +76,5 @@ public readonly struct RemoveNodeIdFromNetworkCallback : ICommand<RemoveNodeIdFr
     /// </summary>
     public ushort NodeId => Frame.CommandParameters.Span[2];
 
-    public static RemoveNodeIdFromNetworkCallback Create(DataFrame frame) => new RemoveNodeIdFromNetworkCallback(frame);
+    public static RemoveNodeIdFromNetworkCallback Create(DataFrame frame, CommandParsingContext context) => new RemoveNodeIdFromNetworkCallback(frame);
 }

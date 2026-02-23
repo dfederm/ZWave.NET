@@ -126,5 +126,5 @@ public readonly struct SerialApiStartedRequest : ICommand<SerialApiStartedReques
             ? (SerialApiStartedSupportedProtocols)Frame.CommandParameters.Span[6 + CommandClassesLength]
             : 0x00;
 
-    public static SerialApiStartedRequest Create(DataFrame frame) => new SerialApiStartedRequest(frame);
+    public static SerialApiStartedRequest Create(DataFrame frame, CommandParsingContext context) => new SerialApiStartedRequest(frame);
 }

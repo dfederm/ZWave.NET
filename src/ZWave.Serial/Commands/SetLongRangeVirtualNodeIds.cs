@@ -27,5 +27,5 @@ public readonly struct SetLongRangeVirtualNodeIdsRequest : ICommand<SetLongRange
         return new SetLongRangeVirtualNodeIdsRequest(frame);
     }
 
-    public static SetLongRangeVirtualNodeIdsRequest Create(DataFrame frame) => new SetLongRangeVirtualNodeIdsRequest(frame);
+    public static SetLongRangeVirtualNodeIdsRequest Create(DataFrame frame, CommandParsingContext context) => new SetLongRangeVirtualNodeIdsRequest(frame);
 }

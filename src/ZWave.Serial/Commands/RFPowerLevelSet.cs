@@ -27,7 +27,7 @@ public readonly struct RFPowerLevelSetRequest : ICommand<RFPowerLevelSetRequest>
         return new RFPowerLevelSetRequest(frame);
     }
 
-    public static RFPowerLevelSetRequest Create(DataFrame frame) => new RFPowerLevelSetRequest(frame);
+    public static RFPowerLevelSetRequest Create(DataFrame frame, CommandParsingContext context) => new RFPowerLevelSetRequest(frame);
 }
 
 public readonly struct RFPowerLevelSetResponse : ICommand<RFPowerLevelSetResponse>
@@ -48,5 +48,5 @@ public readonly struct RFPowerLevelSetResponse : ICommand<RFPowerLevelSetRespons
     /// </summary>
     public byte PowerLevel => Frame.CommandParameters.Span[0];
 
-    public static RFPowerLevelSetResponse Create(DataFrame frame) => new RFPowerLevelSetResponse(frame);
+    public static RFPowerLevelSetResponse Create(DataFrame frame, CommandParsingContext context) => new RFPowerLevelSetResponse(frame);
 }

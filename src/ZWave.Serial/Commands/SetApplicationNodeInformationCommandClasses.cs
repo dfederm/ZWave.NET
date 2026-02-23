@@ -49,5 +49,5 @@ public readonly struct SetApplicationNodeInformationCommandClassesRequest : ICom
         return new SetApplicationNodeInformationCommandClassesRequest(frame);
     }
 
-    public static SetApplicationNodeInformationCommandClassesRequest Create(DataFrame frame) => new SetApplicationNodeInformationCommandClassesRequest(frame);
+    public static SetApplicationNodeInformationCommandClassesRequest Create(DataFrame frame, CommandParsingContext context) => new SetApplicationNodeInformationCommandClassesRequest(frame);
 }
