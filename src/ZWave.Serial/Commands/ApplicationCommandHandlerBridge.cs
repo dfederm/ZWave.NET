@@ -1,8 +1,8 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// This command is used by a Z-Wave module to notify a host application that a Z-Wave frame has been received
-/// to the Bridge Controller or an existing virtual slave node.
+/// to the Bridge Controller or an existing virtual node.
 /// </summary>
 public readonly struct ApplicationCommandHandlerBridge : ICommand<ApplicationCommandHandlerBridge>
 {

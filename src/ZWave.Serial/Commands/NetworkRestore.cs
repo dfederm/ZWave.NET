@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Network restore sub-commands.
@@ -25,7 +25,7 @@ public enum NetworkRestoreStatus : byte
 }
 
 /// <summary>
-/// Write the firmware data of the Z-Wave API Module in an implementation-independent way.
+/// Write the network data to the Z-Wave API Module in an implementation-independent way.
 /// </summary>
 public readonly partial struct NetworkRestoreRequest : ICommand<NetworkRestoreRequest>
 {

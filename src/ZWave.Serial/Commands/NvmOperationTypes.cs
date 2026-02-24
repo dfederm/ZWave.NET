@@ -1,7 +1,7 @@
 namespace ZWave.Serial.Commands;
 
 /// <summary>
-/// NVM backup/restore sub-commands.
+/// NVM operation sub-commands.
 /// </summary>
 public enum NvmOperationSubCommand : byte
 {
@@ -12,7 +12,7 @@ public enum NvmOperationSubCommand : byte
 }
 
 /// <summary>
-/// Status of an NVM backup/restore operation.
+/// Status of an NVM operation.
 /// </summary>
 public enum NvmOperationStatus : byte
 {
@@ -20,5 +20,6 @@ public enum NvmOperationStatus : byte
     Error = 0x01,
     OperationMismatch = 0x02,
     OperationInterference = 0x03,
+    SubCommandNotSupported = 0x04,
     EndOfFile = 0xFF,
 }

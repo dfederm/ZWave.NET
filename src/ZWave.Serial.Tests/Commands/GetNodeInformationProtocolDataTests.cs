@@ -3,9 +3,9 @@
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
-public class GetNodeProtocolInfoTests : CommandTestBase
+public class GetNodeInformationProtocolDataTests : CommandTestBase
 {
-    private record GetNodeProtocolInfoResponseData(
+    private record GetNodeInformationProtocolDataResponseData(
         bool IsListening,
         bool IsRouting,
         IReadOnlyList<int> SupportedSpeeds,
@@ -24,23 +24,23 @@ public class GetNodeProtocolInfoTests : CommandTestBase
     public void Request()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.GetNodeProtocolInfo,
+            CommandId.GetNodeInformationProtocolData,
             new[]
             {
-                (Request: GetNodeProtocolInfoRequest.Create(1, NodeIdType.Short), ExpectedCommandParameters: new byte[] { 0x01 }),
-                (Request: GetNodeProtocolInfoRequest.Create(2, NodeIdType.Short), ExpectedCommandParameters: new byte[] { 0x02 }),
+                (Request: GetNodeInformationProtocolDataRequest.Create(1, NodeIdType.Short), ExpectedCommandParameters: new byte[] { 0x01 }),
+                (Request: GetNodeInformationProtocolDataRequest.Create(2, NodeIdType.Short), ExpectedCommandParameters: new byte[] { 0x02 }),
             });
 
     [TestMethod]
     public void Response()
-        => TestReceivableCommand<GetNodeProtocolInfoResponse, GetNodeProtocolInfoResponseData>(
+        => TestReceivableCommand<GetNodeInformationProtocolDataResponse, GetNodeInformationProtocolDataResponseData>(
             DataFrameType.RES,
-            CommandId.GetNodeProtocolInfo,
+            CommandId.GetNodeInformationProtocolData,
             new[]
             {
                 (
                     CommandParameters: new byte[] { 0x93, 0x16, 0x01, 0x02, 0x02, 0x01 },
-                    ExpectedData: new GetNodeProtocolInfoResponseData(
+                    ExpectedData: new GetNodeInformationProtocolDataResponseData(
                         IsListening: true,
                         IsRouting: false,
                         SupportedSpeeds: new[] { 40000, 100000 },
@@ -57,7 +57,7 @@ public class GetNodeProtocolInfoTests : CommandTestBase
                 ),
                 (
                     CommandParameters: new byte[] { 0xd3, 0x9c, 0x01, 0x04, 0x11, 0x01 },
-                    ExpectedData: new GetNodeProtocolInfoResponseData(
+                    ExpectedData: new GetNodeInformationProtocolDataResponseData(
                         IsListening: true,
                         IsRouting: true,
                         SupportedSpeeds: new[] { 40000, 100000 },

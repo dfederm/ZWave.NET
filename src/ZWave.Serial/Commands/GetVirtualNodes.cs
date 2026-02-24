@@ -1,7 +1,7 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
-/// Request a buffer containing available Virtual Slave nodes in the Z-Wave network.
+/// Request a buffer containing available Virtual Nodes in the Z-Wave network.
 /// </summary>
 public readonly struct GetVirtualNodesRequest : ICommand<GetVirtualNodesRequest>
 {
@@ -39,12 +39,12 @@ public readonly struct GetVirtualNodesResponse : ICommand<GetVirtualNodesRespons
     public DataFrame Frame { get; }
 
     /// <summary>
-    /// The bitmask of available Virtual Slave nodes.
+    /// The bitmask of available Virtual Nodes.
     /// </summary>
     public ReadOnlyMemory<byte> NodeBitmask => Frame.CommandParameters;
 
     /// <summary>
-    /// The set of Virtual Slave node IDs parsed from the bitmask.
+    /// The set of Virtual Node IDs parsed from the bitmask.
     /// </summary>
     public IReadOnlySet<ushort> NodeIds
     {

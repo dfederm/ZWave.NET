@@ -1,18 +1,18 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
-/// Used to set node information for all Virtual Slave Nodes in the embedded module.
+/// Used to set node information for all Virtual Nodes in the embedded module.
 /// </summary>
-public readonly struct SerialApiApplicationSlaveNodeInformationRequest : ICommand<SerialApiApplicationSlaveNodeInformationRequest>
+public readonly struct SetVirtualNodesApplicationNodeInformationRequest : ICommand<SetVirtualNodesApplicationNodeInformationRequest>
 {
-    public SerialApiApplicationSlaveNodeInformationRequest(DataFrame frame)
+    public SetVirtualNodesApplicationNodeInformationRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.SerialApiApplicationSlaveNodeInformation;
+    public static CommandId CommandId => CommandId.SetVirtualNodesApplicationNodeInformation;
 
     public DataFrame Frame { get; }
 
@@ -20,7 +20,7 @@ public readonly struct SerialApiApplicationSlaveNodeInformationRequest : IComman
     /// Per Z-Wave Host API Specification, the Virtual NodeID field MUST be encoded using 8 bits
     /// regardless of the configured NodeID base Type.
     /// </remarks>
-    public static SerialApiApplicationSlaveNodeInformationRequest Create(
+    public static SetVirtualNodesApplicationNodeInformationRequest Create(
         ushort nodeId,
         byte deviceOptionMask,
         byte genericType,
@@ -37,8 +37,8 @@ public readonly struct SerialApiApplicationSlaveNodeInformationRequest : IComman
         commandClasses.CopyTo(commandParameters.Slice(5, commandClasses.Length));
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new SerialApiApplicationSlaveNodeInformationRequest(frame);
+        return new SetVirtualNodesApplicationNodeInformationRequest(frame);
     }
 
-    public static SerialApiApplicationSlaveNodeInformationRequest Create(DataFrame frame, CommandParsingContext context) => new SerialApiApplicationSlaveNodeInformationRequest(frame);
+    public static SetVirtualNodesApplicationNodeInformationRequest Create(DataFrame frame, CommandParsingContext context) => new SetVirtualNodesApplicationNodeInformationRequest(frame);
 }

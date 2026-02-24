@@ -1,11 +1,11 @@
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
-public class NvmBackupRestoreTests : CommandTestBase
+public class NvmOperationsTests : CommandTestBase
 {
-    private record NvmBackupRestoreResponseData(
+    private record NvmOperationsResponseData(
         NvmOperationStatus Status,
         ushort AddressOffsetOrNvmSize,
         ReadOnlyMemory<byte> FirmwareData);
@@ -14,11 +14,11 @@ public class NvmBackupRestoreTests : CommandTestBase
     public void OpenRequest()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.NvmBackupRestore,
+            CommandId.NvmOperations,
             new[]
             {
                 (
-                    Request: NvmBackupRestoreRequest.Open(),
+                    Request: NvmOperationsRequest.Open(),
                     ExpectedCommandParameters: new byte[] { 0x00 }
                 ),
             });
@@ -27,11 +27,11 @@ public class NvmBackupRestoreTests : CommandTestBase
     public void ReadRequest()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.NvmBackupRestore,
+            CommandId.NvmOperations,
             new[]
             {
                 (
-                    Request: NvmBackupRestoreRequest.Read(length: 64, offset: 0x0100),
+                    Request: NvmOperationsRequest.Read(length: 64, offset: 0x0100),
                     ExpectedCommandParameters: new byte[] { 0x01, 0x40, 0x01, 0x00 }
                 ),
             });
@@ -40,11 +40,11 @@ public class NvmBackupRestoreTests : CommandTestBase
     public void WriteRequest()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.NvmBackupRestore,
+            CommandId.NvmOperations,
             new[]
             {
                 (
-                    Request: NvmBackupRestoreRequest.Write(offset: 0x0200, data: new byte[] { 0xAA, 0xBB }),
+                    Request: NvmOperationsRequest.Write(offset: 0x0200, data: new byte[] { 0xAA, 0xBB }),
                     ExpectedCommandParameters: new byte[] { 0x02, 0x02, 0x02, 0x00, 0xAA, 0xBB }
                 ),
             });
@@ -53,25 +53,25 @@ public class NvmBackupRestoreTests : CommandTestBase
     public void CloseRequest()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.NvmBackupRestore,
+            CommandId.NvmOperations,
             new[]
             {
                 (
-                    Request: NvmBackupRestoreRequest.Close(),
+                    Request: NvmOperationsRequest.Close(),
                     ExpectedCommandParameters: new byte[] { 0x03 }
                 ),
             });
 
     [TestMethod]
     public void Response()
-        => TestReceivableCommand<NvmBackupRestoreResponse, NvmBackupRestoreResponseData>(
+        => TestReceivableCommand<NvmOperationsResponse, NvmOperationsResponseData>(
             DataFrameType.RES,
-            CommandId.NvmBackupRestore,
+            CommandId.NvmOperations,
             new[]
             {
                 (
                     CommandParameters: new byte[] { 0x00, 0x02, 0x01, 0x00, 0xAB, 0xCD },
-                    ExpectedData: new NvmBackupRestoreResponseData(
+                    ExpectedData: new NvmOperationsResponseData(
                         Status: NvmOperationStatus.OK,
                         AddressOffsetOrNvmSize: 0x0100,
                         FirmwareData: new byte[] { 0xAB, 0xCD })

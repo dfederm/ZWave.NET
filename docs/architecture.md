@@ -1,4 +1,4 @@
-# Architecture
+﻿# Architecture
 
 This document describes the layered architecture of ZWave.NET and how the major components interact.
 
@@ -105,9 +105,9 @@ Each Z-Wave Serial API function is represented as a struct. These map to the fun
 
 **Communication patterns:**
 - **Fire-and-forget:** Host sends a REQ with no response expected (e.g. `SoftReset`, `SendDataAbort`, `WatchdogKick`)
-- **Request → Response:** Host sends a REQ, chip replies with a RES (e.g. `MemoryGetId`, `GetLibraryVersion`, `GetRoutingInfo`, `IsFailedNode`)
+- **Request → Response:** Host sends a REQ, chip replies with a RES (e.g. `GetNetworkIds`, `GetLibraryVersion`, `GetRoutingInfo`, `IsNodeFailed`)
 - **Request → Response + Callback:** Host sends a REQ, chip replies with a RES (status), then later sends an unsolicited REQ as a callback (e.g. `SendData`, `SetSucNodeId`, `RemoveFailedNode`). The callback is correlated by `SessionId`.
-- **Request → Callback (no response):** Host sends a REQ, chip later sends an unsolicited REQ as a callback without an initial RES (e.g. `SetDefault`, `SetLearnMode`, `RequestNodeNeighborUpdate`)
+- **Request → Callback (no response):** Host sends a REQ, chip later sends an unsolicited REQ as a callback without an initial RES (e.g. `SetDefault`, `SetLearnMode`, `RequestNodeNeighborDiscovery`)
 - **Set only:** Host sends a REQ to configure the chip with no response (e.g. `ApplicationNodeInformation`, `SetPromiscuousMode`)
 - **Unsolicited request:** Chip sends a REQ without the host asking (e.g. `ApplicationCommandHandler`, `ApplicationUpdate`, `ApplicationCommandHandlerBridge`, `SerialApiStarted`)
 

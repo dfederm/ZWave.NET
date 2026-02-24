@@ -1,49 +1,47 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
-/// Firmware update sub-commands for the legacy 500-series Firmware Update API (0x78).
+/// Firmware update sub-commands.
 /// </summary>
 public enum FirmwareUpdateSubCommand : byte
 {
-    /// <summary>
-    /// Initialize the Firmware Update functionality.
-    /// </summary>
-    Init = 0x00,
-
-    /// <summary>
-    /// Set the NEWIMAGE marker in NVM.
-    /// </summary>
-    SetNewImage = 0x01,
-
-    /// <summary>
-    /// Get the NEWIMAGE marker from NVM.
-    /// </summary>
-    GetNewImage = 0x02,
-
-    /// <summary>
-    /// Calculate CRC16 for a specified NVM block of data.
-    /// </summary>
-    UpdateCRC16 = 0x03,
-
-    /// <summary>
-    /// Check if firmware present in NVM is valid using CRC16.
-    /// </summary>
-    IsValidCRC16 = 0x04,
-
-    /// <summary>
-    /// Write a firmware image block to NVM.
-    /// </summary>
-    Write = 0x05,
+    Prepare = 0x00,
+    WriteChunk = 0x01,
+    PerformUpdate = 0x02,
 }
 
 /// <summary>
-/// The legacy 500-series Firmware Update API provides functionality for implementing
-/// firmware update via external NVM.
+/// Status of a firmware update operation.
 /// </summary>
-/// <remarks>
-/// All sub-commands are sent using a single Serial API function ID (0x78).
-/// The application MUST call Init prior to calling any other sub-command.
-/// </remarks>
+public enum FirmwareUpdateStatus : byte
+{
+    OK = 0x00,
+    ErrorTooBig = 0x01,
+    ErrorFirmwareUpdateNotSupported = 0x02,
+    ErrorBootloaderUpdateNotSupported = 0x03,
+    ErrorWrongChecksum = 0x04,
+    ErrorInvalidFileHeader = 0x05,
+    ErrorInvalidSignature = 0x06,
+    ErrorFirmwareDoesNotMatch = 0x07,
+    ErrorHardwareVersionDoesNotMatch = 0x08,
+    ErrorDowngradeNotSupported = 0x09,
+    ErrorUnsupportedTarget = 0x0A,
+    ErrorFailedToPrepare = 0x0B,
+    ErrorSubCommandNotSupported = 0xFF,
+}
+
+/// <summary>
+/// Firmware update target.
+/// </summary>
+public enum FirmwareUpdateTarget : byte
+{
+    Firmware = 0x01,
+    Bootloader = 0x02,
+}
+
+/// <summary>
+/// Perform Z-Wave API Module firmware and bootloader update.
+/// </summary>
 public readonly partial struct FirmwareUpdateRequest : ICommand<FirmwareUpdateRequest>
 {
     public FirmwareUpdateRequest(DataFrame frame)
@@ -59,7 +57,7 @@ public readonly partial struct FirmwareUpdateRequest : ICommand<FirmwareUpdateRe
 
     private static FirmwareUpdateRequest Create(FirmwareUpdateSubCommand subCommand, ReadOnlySpan<byte> subCommandParameters)
     {
-        Span<byte> commandParameters = stackalloc byte[1 + subCommandParameters.Length];
+        Span<byte> commandParameters = stackalloc byte[subCommandParameters.Length + 1];
         commandParameters[0] = (byte)subCommand;
         subCommandParameters.CopyTo(commandParameters[1..]);
 
@@ -68,67 +66,33 @@ public readonly partial struct FirmwareUpdateRequest : ICommand<FirmwareUpdateRe
     }
 
     /// <summary>
-    /// Create a request to initialize the Firmware Update functionality.
+    /// Create a request to prepare for a firmware update.
     /// </summary>
-    /// <remarks>
-    /// Returns whether the attached NVM supports firmware update.
-    /// </remarks>
-    public static FirmwareUpdateRequest Init()
-        => Create(FirmwareUpdateSubCommand.Init, []);
+    public static FirmwareUpdateRequest Prepare()
+        => Create(FirmwareUpdateSubCommand.Prepare, []);
 
     /// <summary>
-    /// Create a request to set the NEWIMAGE marker in NVM.
+    /// Create a request to write a firmware chunk.
     /// </summary>
-    /// <param name="value">The value to set the NEWIMAGE marker to.</param>
-    public static FirmwareUpdateRequest SetNewImage(byte value)
-        => Create(FirmwareUpdateSubCommand.SetNewImage, [value]);
-
-    /// <summary>
-    /// Create a request to get the NEWIMAGE marker from NVM.
-    /// </summary>
-    public static FirmwareUpdateRequest GetNewImage()
-        => Create(FirmwareUpdateSubCommand.GetNewImage, []);
-
-    /// <summary>
-    /// Create a request to calculate CRC16 for a block of NVM data.
-    /// </summary>
-    /// <param name="offset">24-bit offset into NVM (full address space).</param>
-    /// <param name="length">Size of the block to calculate CRC16 on.</param>
-    /// <param name="seedCrc16">Seed CRC16 value to start calculation with.</param>
-    public static FirmwareUpdateRequest UpdateCRC16(uint offset, ushort length, ushort seedCrc16)
+    /// <param name="offset">The 32-bit offset for the chunk.</param>
+    /// <param name="data">The firmware data chunk.</param>
+    public static FirmwareUpdateRequest WriteChunk(uint offset, ReadOnlySpan<byte> data)
     {
-        Span<byte> subCommandParameters = stackalloc byte[7];
-        // 3-byte big-endian offset
-        subCommandParameters[0] = (byte)(offset >> 16);
-        subCommandParameters[1] = (byte)(offset >> 8);
-        subCommandParameters[2] = (byte)offset;
-        length.WriteBytesBE(subCommandParameters[3..5]);
-        seedCrc16.WriteBytesBE(subCommandParameters[5..7]);
-        return Create(FirmwareUpdateSubCommand.UpdateCRC16, subCommandParameters);
+        Span<byte> subCommandParameters = stackalloc byte[6 + data.Length];
+        offset.WriteBytesBE(subCommandParameters[..4]);
+        ((ushort)data.Length).WriteBytesBE(subCommandParameters[4..6]);
+        data.CopyTo(subCommandParameters[6..]);
+        return Create(FirmwareUpdateSubCommand.WriteChunk, subCommandParameters);
     }
 
     /// <summary>
-    /// Create a request to check if firmware in NVM is valid using CRC16.
+    /// Create a request to perform the firmware update.
     /// </summary>
-    public static FirmwareUpdateRequest IsValidCRC16()
-        => Create(FirmwareUpdateSubCommand.IsValidCRC16, []);
-
-    /// <summary>
-    /// Create a request to write a firmware image block to NVM.
-    /// </summary>
-    /// <param name="offset">24-bit offset in firmware where the data should be written.</param>
-    /// <param name="length">Size of the block to write.</param>
-    /// <param name="data">The firmware data to write.</param>
-    public static FirmwareUpdateRequest Write(uint offset, ushort length, ReadOnlySpan<byte> data)
+    /// <param name="target">The update target (firmware or bootloader).</param>
+    public static FirmwareUpdateRequest PerformUpdate(FirmwareUpdateTarget target)
     {
-        Span<byte> subCommandParameters = stackalloc byte[5 + data.Length];
-        // 3-byte big-endian offset
-        subCommandParameters[0] = (byte)(offset >> 16);
-        subCommandParameters[1] = (byte)(offset >> 8);
-        subCommandParameters[2] = (byte)offset;
-        length.WriteBytesBE(subCommandParameters[3..5]);
-        data.CopyTo(subCommandParameters[5..]);
-        return Create(FirmwareUpdateSubCommand.Write, subCommandParameters);
+        ReadOnlySpan<byte> subCommandParameters = [(byte)target];
+        return Create(FirmwareUpdateSubCommand.PerformUpdate, subCommandParameters);
     }
 
     public static FirmwareUpdateRequest Create(DataFrame frame, CommandParsingContext context) => new FirmwareUpdateRequest(frame);
@@ -156,20 +120,9 @@ public readonly struct FirmwareUpdateResponse : ICommand<FirmwareUpdateResponse>
     public FirmwareUpdateSubCommand SubCommand => (FirmwareUpdateSubCommand)Frame.CommandParameters.Span[0];
 
     /// <summary>
-    /// The return value byte. Meaning depends on sub-command.
+    /// The status of the firmware update operation.
     /// </summary>
-    public byte ReturnValue => Frame.CommandParameters.Span[1];
-
-    /// <summary>
-    /// For <see cref="FirmwareUpdateSubCommand.UpdateCRC16"/>: the resulting CRC16 value (big-endian).
-    /// </summary>
-    public ushort CRC16 => (ushort)((Frame.CommandParameters.Span[1] << 8) | Frame.CommandParameters.Span[2]);
-
-    /// <summary>
-    /// For <see cref="FirmwareUpdateSubCommand.IsValidCRC16"/>: the resulting CRC16 value (big-endian).
-    /// Available when <see cref="ReturnValue"/> is TRUE.
-    /// </summary>
-    public ushort ValidCRC16 => (ushort)((Frame.CommandParameters.Span[2] << 8) | Frame.CommandParameters.Span[3]);
+    public FirmwareUpdateStatus Status => (FirmwareUpdateStatus)Frame.CommandParameters.Span[1];
 
     public static FirmwareUpdateResponse Create(DataFrame frame, CommandParsingContext context) => new FirmwareUpdateResponse(frame);
 }

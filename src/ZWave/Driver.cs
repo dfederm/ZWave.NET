@@ -1,4 +1,4 @@
-using System.Threading.Channels;
+﻿using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using ZWave.CommandClasses;
 using ZWave.Serial;
@@ -539,7 +539,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
     private async Task SendFrameAsync(DataFrame request, CancellationToken cancellationToken)
     {
         // Per the Z-Wave Host API Specification, the host MUST NOT send commands that are not
-        // indicated as supported in the GetSerialApiCapabilities response bitmask.
+        // indicated as supported in the GetCapabilities response bitmask.
         IReadOnlySet<CommandId>? supportedCommandIds = Controller.SupportedCommandIds;
         if (supportedCommandIds != null && !supportedCommandIds.Contains(request.CommandId))
         {
