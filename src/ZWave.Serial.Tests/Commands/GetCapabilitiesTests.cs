@@ -3,9 +3,9 @@
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
-public class GetSerialApiCapabilitiesTests : CommandTestBase
+public class GetCapabilitiesTests : CommandTestBase
 {
-    private record GetSerialApiCapabilitiesResponseData(
+    private record GetCapabilitiesResponseData(
         byte SerialApiVersion,
         byte SerialApiRevision,
         ushort ManufacturerId,
@@ -17,17 +17,17 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
     public void Request()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.GetSerialApiCapabilities,
+            CommandId.GetCapabilities,
             new[]
             {
-                (Request: GetSerialApiCapabilitiesRequest.Create(), ExpectedCommandParameters: Array.Empty<byte>()),
+                (Request: GetCapabilitiesRequest.Create(), ExpectedCommandParameters: Array.Empty<byte>()),
             });
 
     [TestMethod]
     public void Response()
-        => TestReceivableCommand<GetSerialApiCapabilitiesResponse, GetSerialApiCapabilitiesResponseData>(
+        => TestReceivableCommand<GetCapabilitiesResponse, GetCapabilitiesResponseData>(
             DataFrameType.RES,
-            CommandId.GetSerialApiCapabilities,
+            CommandId.GetCapabilities,
             new[]
             {
                 (
@@ -39,7 +39,7 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                         0x00, 0x80, 0x86, 0x00, 0x01, 0x00, 0xe8, 0x73,
                         0x00, 0x80, 0x0f, 0x00, 0x00, 0x60, 0x00, 0x00
                     },
-                    ExpectedData: new GetSerialApiCapabilitiesResponseData(
+                    ExpectedData: new GetCapabilitiesResponseData(
                         SerialApiVersion: 1,
                         SerialApiRevision: 2,
                         ManufacturerId: 134,
@@ -52,7 +52,7 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             CommandId.ApplicationCommandHandler,
                             CommandId.GetControllerCapabilities,
                             CommandId.SerialApiSetTimeouts,
-                            CommandId.GetSerialApiCapabilities,
+                            CommandId.GetCapabilities,
                             CommandId.SoftReset,
                             CommandId.GetProtocolVersion,
                             CommandId.SerialApiStarted,
@@ -66,7 +66,7 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             CommandId.SendDataAbort,
                             CommandId.RFPowerLevelSet,
                             CommandId.GetRandomWord,
-                            CommandId.MemoryGetId,
+                            CommandId.GetNetworkIds,
                             CommandId.MemoryGetByte,
                             CommandId.MemoryPutByte,
                             CommandId.MemoryGetBuffer,
@@ -86,14 +86,14 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             CommandId.GetNetworkStats,
                             CommandId.GetBackgroundRSSI,
                             CommandId.SetListenBeforeTalkThreshold,
-                            CommandId.RemoveNodeIdFromNetwork,
-                            CommandId.GetNodeProtocolInfo,
+                            CommandId.RemoveSpecificNodeFromNetwork,
+                            CommandId.GetNodeInformationProtocolData,
                             CommandId.SetDefault,
                             CommandId.ReplicationReceiveComplete,
                             CommandId.ReplicationSend,
                             CommandId.AssignReturnRoute,
                             CommandId.DeleteReturnRoute,
-                            CommandId.RequestNodeNeighborUpdate,
+                            CommandId.RequestNodeNeighborDiscovery,
                             CommandId.ApplicationUpdate,
                             CommandId.AddNodeToNetwork,
                             CommandId.RemoveNodeFromNetwork,
@@ -112,13 +112,13 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             CommandId.ExploreRequestExclusion,
                             CommandId.RequestNodeInfo,
                             CommandId.RemoveFailedNode,
-                            CommandId.IsFailedNode,
+                            CommandId.IsNodeFailed,
                             CommandId.ReplaceFailedNode,
                             (CommandId)102,
                             (CommandId)103,
-                            CommandId.FirmwareUpdate,
+                            CommandId.LegacyFirmwareUpdate,
                             CommandId.GetNeighborTableLine,
-                            CommandId.LockRoute,
+                            CommandId.LockUnlockLastRoute,
                             CommandId.GetPriorityRoute,
                             CommandId.SetPriorityRoute,
                             (CommandId)152,
@@ -129,14 +129,14 @@ public class GetSerialApiCapabilitiesTests : CommandTestBase
                             CommandId.WatchdogKick,
                             CommandId.SetExtIntLevel,
                             CommandId.RFPowerLevelGet,
-                            CommandId.TypeLibrary,
+                            CommandId.GetLibraryType,
                             CommandId.SendTestFrame,
                             CommandId.GetProtocolStatus,
                             CommandId.SetPromiscuousMode,
                             (CommandId)209,
                             (CommandId)210,
                             (CommandId)211,
-                            CommandId.SetRoutingMax,
+                            CommandId.SetMaximumRoutingAttempts,
                             (CommandId)238,
                             (CommandId)239,
                         })

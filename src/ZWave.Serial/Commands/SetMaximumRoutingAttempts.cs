@@ -1,18 +1,18 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Set the maximum number of source routing attempts before the next mechanism kicks in.
 /// </summary>
-public readonly struct SetRoutingMaxRequest : ICommand<SetRoutingMaxRequest>
+public readonly struct SetMaximumRoutingAttemptsRequest : ICommand<SetMaximumRoutingAttemptsRequest>
 {
-    public SetRoutingMaxRequest(DataFrame frame)
+    public SetMaximumRoutingAttemptsRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.SetRoutingMax;
+    public static CommandId CommandId => CommandId.SetMaximumRoutingAttempts;
 
     public DataFrame Frame { get; }
 
@@ -20,12 +20,12 @@ public readonly struct SetRoutingMaxRequest : ICommand<SetRoutingMaxRequest>
     /// Create a request to set the maximum number of routing attempts.
     /// </summary>
     /// <param name="maxRoutingAttempts">The maximum number of routing attempts.</param>
-    public static SetRoutingMaxRequest Create(byte maxRoutingAttempts)
+    public static SetMaximumRoutingAttemptsRequest Create(byte maxRoutingAttempts)
     {
         ReadOnlySpan<byte> commandParameters = [maxRoutingAttempts];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new SetRoutingMaxRequest(frame);
+        return new SetMaximumRoutingAttemptsRequest(frame);
     }
 
-    public static SetRoutingMaxRequest Create(DataFrame frame, CommandParsingContext context) => new SetRoutingMaxRequest(frame);
+    public static SetMaximumRoutingAttemptsRequest Create(DataFrame frame, CommandParsingContext context) => new SetMaximumRoutingAttemptsRequest(frame);
 }

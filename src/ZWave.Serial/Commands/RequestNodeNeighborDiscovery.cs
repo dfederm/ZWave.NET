@@ -1,9 +1,9 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// The status of the neighbor update request.
 /// </summary>
-public enum RequestNodeNeighborUpdateStatus : byte
+public enum RequestNodeNeighborDiscoveryStatus : byte
 {
     /// <summary>
     /// The neighbor update process has started.
@@ -22,18 +22,18 @@ public enum RequestNodeNeighborUpdateStatus : byte
 }
 
 /// <summary>
-/// Get the neighbors from the specified node.
+/// Request node neighbor discovery from the specified node.
 /// </summary>
-public readonly struct RequestNodeNeighborUpdateRequest : IRequestWithCallback<RequestNodeNeighborUpdateRequest>
+public readonly struct RequestNodeNeighborDiscoveryRequest : IRequestWithCallback<RequestNodeNeighborDiscoveryRequest>
 {
-    public RequestNodeNeighborUpdateRequest(DataFrame frame)
+    public RequestNodeNeighborDiscoveryRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.RequestNodeNeighborUpdate;
+    public static CommandId CommandId => CommandId.RequestNodeNeighborDiscovery;
 
     public static bool ExpectsResponseStatus => false;
 
@@ -41,7 +41,7 @@ public readonly struct RequestNodeNeighborUpdateRequest : IRequestWithCallback<R
 
     public byte SessionId => Frame.CommandParameters.Span[^1];
 
-    public static RequestNodeNeighborUpdateRequest Create(
+    public static RequestNodeNeighborDiscoveryRequest Create(
         ushort nodeId,
         NodeIdType nodeIdType,
         byte sessionId)
@@ -51,25 +51,25 @@ public readonly struct RequestNodeNeighborUpdateRequest : IRequestWithCallback<R
         int offset = nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
         commandParameters[offset] = sessionId;
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new RequestNodeNeighborUpdateRequest(frame);
+        return new RequestNodeNeighborDiscoveryRequest(frame);
     }
 
-    public static RequestNodeNeighborUpdateRequest Create(DataFrame frame, CommandParsingContext context) => new RequestNodeNeighborUpdateRequest(frame);
+    public static RequestNodeNeighborDiscoveryRequest Create(DataFrame frame, CommandParsingContext context) => new RequestNodeNeighborDiscoveryRequest(frame);
 }
 
 /// <summary>
-/// Callback for the <see cref="RequestNodeNeighborUpdateRequest"/> command.
+/// Callback for the <see cref="RequestNodeNeighborDiscoveryRequest"/> command.
 /// </summary>
-public readonly struct RequestNodeNeighborUpdateCallback : ICommand<RequestNodeNeighborUpdateCallback>
+public readonly struct RequestNodeNeighborDiscoveryCallback : ICommand<RequestNodeNeighborDiscoveryCallback>
 {
-    public RequestNodeNeighborUpdateCallback(DataFrame frame)
+    public RequestNodeNeighborDiscoveryCallback(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.RequestNodeNeighborUpdate;
+    public static CommandId CommandId => CommandId.RequestNodeNeighborDiscovery;
 
     public DataFrame Frame { get; }
 
@@ -81,7 +81,7 @@ public readonly struct RequestNodeNeighborUpdateCallback : ICommand<RequestNodeN
     /// <summary>
     /// The status of the neighbor update request.
     /// </summary>
-    public RequestNodeNeighborUpdateStatus Status => (RequestNodeNeighborUpdateStatus)Frame.CommandParameters.Span[1];
+    public RequestNodeNeighborDiscoveryStatus Status => (RequestNodeNeighborDiscoveryStatus)Frame.CommandParameters.Span[1];
 
-    public static RequestNodeNeighborUpdateCallback Create(DataFrame frame, CommandParsingContext context) => new RequestNodeNeighborUpdateCallback(frame);
+    public static RequestNodeNeighborDiscoveryCallback Create(DataFrame frame, CommandParsingContext context) => new RequestNodeNeighborDiscoveryCallback(frame);
 }

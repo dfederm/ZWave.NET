@@ -1,22 +1,22 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Remove a specific node from a Z-Wave network.
 /// </summary>
-public readonly struct RemoveNodeIdFromNetworkRequest : ICommand<RemoveNodeIdFromNetworkRequest>
+public readonly struct RemoveSpecificNodeFromNetworkRequest : ICommand<RemoveSpecificNodeFromNetworkRequest>
 {
-    public RemoveNodeIdFromNetworkRequest(DataFrame frame)
+    public RemoveSpecificNodeFromNetworkRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.RemoveNodeIdFromNetwork;
+    public static CommandId CommandId => CommandId.RemoveSpecificNodeFromNetwork;
 
     public DataFrame Frame { get; }
 
-    public static RemoveNodeIdFromNetworkRequest Create(
+    public static RemoveSpecificNodeFromNetworkRequest Create(
         bool isHighPower,
         bool isNetworkWide,
         RemoveNodeMode removeMode,
@@ -39,25 +39,25 @@ public readonly struct RemoveNodeIdFromNetworkRequest : ICommand<RemoveNodeIdFro
         commandParameters[1] = sessionId;
 
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new RemoveNodeIdFromNetworkRequest(frame);
+        return new RemoveSpecificNodeFromNetworkRequest(frame);
     }
 
-    public static RemoveNodeIdFromNetworkRequest Create(DataFrame frame, CommandParsingContext context) => new RemoveNodeIdFromNetworkRequest(frame);
+    public static RemoveSpecificNodeFromNetworkRequest Create(DataFrame frame, CommandParsingContext context) => new RemoveSpecificNodeFromNetworkRequest(frame);
 }
 
 /// <summary>
-/// Callback for the <see cref="RemoveNodeIdFromNetworkRequest"/> command.
+/// Callback for the <see cref="RemoveSpecificNodeFromNetworkRequest"/> command.
 /// </summary>
-public readonly struct RemoveNodeIdFromNetworkCallback : ICommand<RemoveNodeIdFromNetworkCallback>
+public readonly struct RemoveSpecificNodeFromNetworkCallback : ICommand<RemoveSpecificNodeFromNetworkCallback>
 {
-    public RemoveNodeIdFromNetworkCallback(DataFrame frame)
+    public RemoveSpecificNodeFromNetworkCallback(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.RemoveNodeIdFromNetwork;
+    public static CommandId CommandId => CommandId.RemoveSpecificNodeFromNetwork;
 
     public DataFrame Frame { get; }
 
@@ -76,5 +76,5 @@ public readonly struct RemoveNodeIdFromNetworkCallback : ICommand<RemoveNodeIdFr
     /// </summary>
     public ushort NodeId => Frame.CommandParameters.Span[2];
 
-    public static RemoveNodeIdFromNetworkCallback Create(DataFrame frame, CommandParsingContext context) => new RemoveNodeIdFromNetworkCallback(frame);
+    public static RemoveSpecificNodeFromNetworkCallback Create(DataFrame frame, CommandParsingContext context) => new RemoveSpecificNodeFromNetworkCallback(frame);
 }

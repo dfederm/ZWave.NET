@@ -10,22 +10,22 @@ public enum ReceivedStatus : byte
     /// </summary>
     LowPower = 1 << 1,
 
-    // Bit 2 is reserved
-
     /// <summary>
     /// The Z-Wave frame has been received using broadcast addressing.
     /// </summary>
-    BroadcastAddressing = 1 << 3,
+    BroadcastAddressing = 1 << 2,
 
     /// <summary>
     /// The Z-Wave frame has been received using multicast addressing.
     /// </summary>
-    MulticastAddressing = 1 << 4,
+    MulticastAddressing = 1 << 3,
 
     /// <summary>
-    /// the Z-Wave frame has been received using an Explore NPDU.
+    /// The Z-Wave frame has been received using an Explore NPDU.
     /// </summary>
-    Explore = 1 << 5,
+    Explore = 1 << 4,
+
+    // Bit 5 is reserved
 
     /// <summary>
     /// The frame not addressed to the Z-Wave Module. This is useful only in promiscuous mode.

@@ -1,18 +1,18 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Test if a node ID is stored in the failed node ID list.
 /// </summary>
-public readonly struct IsFailedNodeRequest : ICommand<IsFailedNodeRequest>
+public readonly struct IsNodeFailedRequest : ICommand<IsNodeFailedRequest>
 {
-    public IsFailedNodeRequest(DataFrame frame)
+    public IsNodeFailedRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.IsFailedNode;
+    public static CommandId CommandId => CommandId.IsNodeFailed;
 
     public DataFrame Frame { get; }
 
@@ -20,35 +20,35 @@ public readonly struct IsFailedNodeRequest : ICommand<IsFailedNodeRequest>
     /// Create a request to check if a node is in the failed node list.
     /// </summary>
     /// <param name="nodeId">The node ID to check.</param>
-    public static IsFailedNodeRequest Create(ushort nodeId, NodeIdType nodeIdType)
+    public static IsNodeFailedRequest Create(ushort nodeId, NodeIdType nodeIdType)
     {
         int nodeIdSize = nodeIdType.NodeIdSize();
         Span<byte> commandParameters = stackalloc byte[nodeIdSize];
         nodeIdType.WriteNodeId(commandParameters, 0, nodeId);
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new IsFailedNodeRequest(frame);
+        return new IsNodeFailedRequest(frame);
     }
 
-    public static IsFailedNodeRequest Create(DataFrame frame, CommandParsingContext context) => new IsFailedNodeRequest(frame);
+    public static IsNodeFailedRequest Create(DataFrame frame, CommandParsingContext context) => new IsNodeFailedRequest(frame);
 }
 
-public readonly struct IsFailedNodeResponse : ICommand<IsFailedNodeResponse>
+public readonly struct IsNodeFailedResponse : ICommand<IsNodeFailedResponse>
 {
-    public IsFailedNodeResponse(DataFrame frame)
+    public IsNodeFailedResponse(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.RES;
 
-    public static CommandId CommandId => CommandId.IsFailedNode;
+    public static CommandId CommandId => CommandId.IsNodeFailed;
 
     public DataFrame Frame { get; }
 
     /// <summary>
     /// Indicates whether the node is in the failed node list.
     /// </summary>
-    public bool IsFailedNode => Frame.CommandParameters.Span[0] != 0;
+    public bool IsNodeFailed => Frame.CommandParameters.Span[0] != 0;
 
-    public static IsFailedNodeResponse Create(DataFrame frame, CommandParsingContext context) => new IsFailedNodeResponse(frame);
+    public static IsNodeFailedResponse Create(DataFrame frame, CommandParsingContext context) => new IsNodeFailedResponse(frame);
 }

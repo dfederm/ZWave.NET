@@ -1,4 +1,4 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Nonce management sub-commands.
@@ -19,16 +19,16 @@ public enum NonceSubCommand : byte
 /// <summary>
 /// Enable Nonce Generation on the Z-Wave Module.
 /// </summary>
-public readonly struct NonceManagementRequest : ICommand<NonceManagementRequest>
+public readonly struct NonceGenerationSetModeRequest : ICommand<NonceGenerationSetModeRequest>
 {
-    public NonceManagementRequest(DataFrame frame)
+    public NonceGenerationSetModeRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.NonceManagement;
+    public static CommandId CommandId => CommandId.NonceGenerationSetMode;
 
     public DataFrame Frame { get; }
 
@@ -36,7 +36,7 @@ public readonly struct NonceManagementRequest : ICommand<NonceManagementRequest>
     /// Create a request to set the nonce generation mode.
     /// </summary>
     /// <param name="enable">Whether to enable (true) or disable (false) nonce generation.</param>
-    public static NonceManagementRequest Create(bool enable)
+    public static NonceGenerationSetModeRequest Create(bool enable)
     {
         ReadOnlySpan<byte> commandParameters =
         [
@@ -44,25 +44,25 @@ public readonly struct NonceManagementRequest : ICommand<NonceManagementRequest>
             enable ? (byte)0x01 : (byte)0x00,
         ];
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new NonceManagementRequest(frame);
+        return new NonceGenerationSetModeRequest(frame);
     }
 
-    public static NonceManagementRequest Create(DataFrame frame, CommandParsingContext context) => new NonceManagementRequest(frame);
+    public static NonceGenerationSetModeRequest Create(DataFrame frame, CommandParsingContext context) => new NonceGenerationSetModeRequest(frame);
 }
 
 /// <summary>
-/// Response to a <see cref="NonceManagementRequest"/> command.
+/// Response to a <see cref="NonceGenerationSetModeRequest"/> command.
 /// </summary>
-public readonly struct NonceManagementResponse : ICommand<NonceManagementResponse>
+public readonly struct NonceGenerationSetModeResponse : ICommand<NonceGenerationSetModeResponse>
 {
-    public NonceManagementResponse(DataFrame frame)
+    public NonceGenerationSetModeResponse(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.RES;
 
-    public static CommandId CommandId => CommandId.NonceManagement;
+    public static CommandId CommandId => CommandId.NonceGenerationSetMode;
 
     public DataFrame Frame { get; }
 
@@ -76,7 +76,7 @@ public readonly struct NonceManagementResponse : ICommand<NonceManagementRespons
     /// </summary>
     public byte CommandStatus => Frame.CommandParameters.Span[1];
 
-    public static NonceManagementResponse Create(DataFrame frame, CommandParsingContext context) => new NonceManagementResponse(frame);
+    public static NonceGenerationSetModeResponse Create(DataFrame frame, CommandParsingContext context) => new NonceGenerationSetModeResponse(frame);
 }
 
 /// <summary>
@@ -107,7 +107,7 @@ public readonly struct NonceUpdate : ICommand<NonceUpdate>
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.NonceManagement;
+    public static CommandId CommandId => CommandId.NonceGenerationSetMode;
 
     public DataFrame Frame { get; }
 

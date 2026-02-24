@@ -3,33 +3,33 @@
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
-public class IsFailedNodeTests : CommandTestBase
+public class IsNodeFailedTests : CommandTestBase
 {
-    private record IsFailedNodeResponseData(bool IsFailedNode);
+    private record IsNodeFailedResponseData(bool IsNodeFailed);
 
     [TestMethod]
     public void Request()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.IsFailedNode,
+            CommandId.IsNodeFailed,
             new[]
             {
                 (
-                    Request: IsFailedNodeRequest.Create(nodeId: 5, NodeIdType.Short),
+                    Request: IsNodeFailedRequest.Create(nodeId: 5, NodeIdType.Short),
                     ExpectedCommandParameters: new byte[] { 0x05 }
                 ),
             });
 
     [TestMethod]
     public void Response()
-        => TestReceivableCommand<IsFailedNodeResponse, IsFailedNodeResponseData>(
+        => TestReceivableCommand<IsNodeFailedResponse, IsNodeFailedResponseData>(
             DataFrameType.RES,
-            CommandId.IsFailedNode,
+            CommandId.IsNodeFailed,
             new[]
             {
                 (
                     CommandParameters: new byte[] { 0x01 },
-                    ExpectedData: new IsFailedNodeResponseData(IsFailedNode: true)
+                    ExpectedData: new IsNodeFailedResponseData(IsNodeFailed: true)
                 )
             });
 }

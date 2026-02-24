@@ -181,8 +181,8 @@ public sealed class Node : INode
                 // Reset the status again in case the previous interview task modified it.
                 InterviewStatus = NodeInterviewStatus.None;
 
-                var getNodeProtocolInfoRequest = GetNodeProtocolInfoRequest.Create(Id, _driver.NodeIdType);
-                GetNodeProtocolInfoResponse getNodeProtocolInfoResponse = await _driver.SendCommandAsync<GetNodeProtocolInfoRequest, GetNodeProtocolInfoResponse>(
+                var getNodeProtocolInfoRequest = GetNodeInformationProtocolDataRequest.Create(Id, _driver.NodeIdType);
+                GetNodeInformationProtocolDataResponse getNodeProtocolInfoResponse = await _driver.SendCommandAsync<GetNodeInformationProtocolDataRequest, GetNodeInformationProtocolDataResponse>(
                     getNodeProtocolInfoRequest,
                     cancellationToken).ConfigureAwait(false);
                 IsListening = getNodeProtocolInfoResponse.IsListening;

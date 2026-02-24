@@ -113,16 +113,16 @@ public sealed class Controller
         {
             _logger.LogControllerIdentifying();
 
-            var memoryGetIdRequest = MemoryGetIdRequest.Create();
-            MemoryGetIdResponse memoryGetIdResponse = await _driver.SendCommandAsync<MemoryGetIdRequest, MemoryGetIdResponse>(
+            var memoryGetIdRequest = GetNetworkIdsRequest.Create();
+            GetNetworkIdsResponse memoryGetIdResponse = await _driver.SendCommandAsync<GetNetworkIdsRequest, GetNetworkIdsResponse>(
                 memoryGetIdRequest,
                 cancellationToken).ConfigureAwait(false);
             HomeId = memoryGetIdResponse.HomeId;
             NodeId = memoryGetIdResponse.NodeId;
             _logger.LogControllerIdentity(HomeId, NodeId);
 
-            var getSerialCapabilitiesRequest = GetSerialApiCapabilitiesRequest.Create();
-            GetSerialApiCapabilitiesResponse getSerialCapabilitiesResponse = await _driver.SendCommandAsync<GetSerialApiCapabilitiesRequest, GetSerialApiCapabilitiesResponse>(
+            var getSerialCapabilitiesRequest = GetCapabilitiesRequest.Create();
+            GetCapabilitiesResponse getSerialCapabilitiesResponse = await _driver.SendCommandAsync<GetCapabilitiesRequest, GetCapabilitiesResponse>(
                 getSerialCapabilitiesRequest,
                 cancellationToken).ConfigureAwait(false);
 

@@ -1,35 +1,35 @@
-using ZWave.Serial.Commands;
+﻿using ZWave.Serial.Commands;
 
 namespace ZWave.Serial.Tests.Commands;
 
 [TestClass]
-public class NonceManagementTests : CommandTestBase
+public class NonceGenerationSetModeTests : CommandTestBase
 {
-    private record NonceManagementResponseData(NonceSubCommand SubCommand, byte CommandStatus);
+    private record NonceGenerationSetModeResponseData(NonceSubCommand SubCommand, byte CommandStatus);
 
     [TestMethod]
     public void Request()
         => TestSendableCommand(
             DataFrameType.REQ,
-            CommandId.NonceManagement,
+            CommandId.NonceGenerationSetMode,
             new[]
             {
                 (
-                    Request: NonceManagementRequest.Create(enable: true),
+                    Request: NonceGenerationSetModeRequest.Create(enable: true),
                     ExpectedCommandParameters: new byte[] { 0x01, 0x01 }
                 ),
             });
 
     [TestMethod]
     public void Response()
-        => TestReceivableCommand<NonceManagementResponse, NonceManagementResponseData>(
+        => TestReceivableCommand<NonceGenerationSetModeResponse, NonceGenerationSetModeResponseData>(
             DataFrameType.RES,
-            CommandId.NonceManagement,
+            CommandId.NonceGenerationSetMode,
             new[]
             {
                 (
                     CommandParameters: new byte[] { 0x01, 0x01 },
-                    ExpectedData: new NonceManagementResponseData(
+                    ExpectedData: new NonceGenerationSetModeResponseData(
                         SubCommand: NonceSubCommand.SetMode,
                         CommandStatus: 0x01)
                 ),

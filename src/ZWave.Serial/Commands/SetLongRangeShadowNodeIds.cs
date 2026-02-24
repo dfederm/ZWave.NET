@@ -1,18 +1,18 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
 /// Enable the use of Shadow NodeIDs in the Long Range capable controller.
 /// </summary>
-public readonly struct SetLongRangeVirtualNodeIdsRequest : ICommand<SetLongRangeVirtualNodeIdsRequest>
+public readonly struct SetLongRangeShadowNodeIdsRequest : ICommand<SetLongRangeShadowNodeIdsRequest>
 {
-    public SetLongRangeVirtualNodeIdsRequest(DataFrame frame)
+    public SetLongRangeShadowNodeIdsRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.SetLongRangeVirtualNodeIds;
+    public static CommandId CommandId => CommandId.SetLongRangeShadowNodeIds;
 
     public DataFrame Frame { get; }
 
@@ -20,12 +20,12 @@ public readonly struct SetLongRangeVirtualNodeIdsRequest : ICommand<SetLongRange
     /// Create a request to set Long Range virtual node IDs.
     /// </summary>
     /// <param name="nodeIdBitmask">The node ID bitmask. Bits 0-3 enable node IDs 4002-4005.</param>
-    public static SetLongRangeVirtualNodeIdsRequest Create(byte nodeIdBitmask)
+    public static SetLongRangeShadowNodeIdsRequest Create(byte nodeIdBitmask)
     {
         ReadOnlySpan<byte> commandParameters = [nodeIdBitmask];
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new SetLongRangeVirtualNodeIdsRequest(frame);
+        return new SetLongRangeShadowNodeIdsRequest(frame);
     }
 
-    public static SetLongRangeVirtualNodeIdsRequest Create(DataFrame frame, CommandParsingContext context) => new SetLongRangeVirtualNodeIdsRequest(frame);
+    public static SetLongRangeShadowNodeIdsRequest Create(DataFrame frame, CommandParsingContext context) => new SetLongRangeShadowNodeIdsRequest(frame);
 }

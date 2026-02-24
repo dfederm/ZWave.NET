@@ -1,7 +1,7 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
-/// Status of an extended NVM backup/restore operation.
+/// Status of an extended NVM operation.
 /// </summary>
 public enum ExtendedNvmOperationStatus : byte
 {
@@ -14,43 +14,43 @@ public enum ExtendedNvmOperationStatus : byte
 }
 
 /// <summary>
-/// Read and write the firmware data of the Z-Wave API Module using 32-bit addresses.
+/// Read and write the NVM data of the Z-Wave API Module using 32-bit addresses.
 /// </summary>
-public readonly partial struct ExtendedNvmBackupRestoreRequest : ICommand<ExtendedNvmBackupRestoreRequest>
+public readonly partial struct ExtendedNvmOperationsRequest : ICommand<ExtendedNvmOperationsRequest>
 {
-    public ExtendedNvmBackupRestoreRequest(DataFrame frame)
+    public ExtendedNvmOperationsRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.ExtendedNvmBackupRestore;
+    public static CommandId CommandId => CommandId.ExtendedNvmOperations;
 
     public DataFrame Frame { get; }
 
-    private static ExtendedNvmBackupRestoreRequest Create(NvmOperationSubCommand subCommand, ReadOnlySpan<byte> subCommandParameters)
+    private static ExtendedNvmOperationsRequest Create(NvmOperationSubCommand subCommand, ReadOnlySpan<byte> subCommandParameters)
     {
         Span<byte> commandParameters = stackalloc byte[subCommandParameters.Length + 1];
         commandParameters[0] = (byte)subCommand;
         subCommandParameters.CopyTo(commandParameters[1..]);
 
         DataFrame frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new ExtendedNvmBackupRestoreRequest(frame);
+        return new ExtendedNvmOperationsRequest(frame);
     }
 
     /// <summary>
-    /// Create a request to open the NVM for backup or restore.
+    /// Create a request to open the NVM for read or write.
     /// </summary>
-    public static ExtendedNvmBackupRestoreRequest Open()
+    public static ExtendedNvmOperationsRequest Open()
         => Create(NvmOperationSubCommand.Open, []);
 
     /// <summary>
-    /// Create a request to read firmware data from the NVM.
+    /// Create a request to read NVM data from the NVM.
     /// </summary>
     /// <param name="length">The number of bytes to read.</param>
     /// <param name="offset">The 32-bit address offset.</param>
-    public static ExtendedNvmBackupRestoreRequest Read(byte length, uint offset)
+    public static ExtendedNvmOperationsRequest Read(byte length, uint offset)
     {
         Span<byte> subCommandParameters = stackalloc byte[5];
         subCommandParameters[0] = length;
@@ -59,11 +59,11 @@ public readonly partial struct ExtendedNvmBackupRestoreRequest : ICommand<Extend
     }
 
     /// <summary>
-    /// Create a request to write firmware data to the NVM.
+    /// Create a request to write NVM data to the NVM.
     /// </summary>
     /// <param name="offset">The 32-bit address offset.</param>
     /// <param name="data">The data to write.</param>
-    public static ExtendedNvmBackupRestoreRequest Write(uint offset, ReadOnlySpan<byte> data)
+    public static ExtendedNvmOperationsRequest Write(uint offset, ReadOnlySpan<byte> data)
     {
         Span<byte> subCommandParameters = stackalloc byte[5 + data.Length];
         subCommandParameters[0] = (byte)data.Length;
@@ -73,27 +73,27 @@ public readonly partial struct ExtendedNvmBackupRestoreRequest : ICommand<Extend
     }
 
     /// <summary>
-    /// Create a request to close the NVM backup or restore operation.
+    /// Create a request to close the NVM read or write operation.
     /// </summary>
-    public static ExtendedNvmBackupRestoreRequest Close()
+    public static ExtendedNvmOperationsRequest Close()
         => Create(NvmOperationSubCommand.Close, []);
 
-    public static ExtendedNvmBackupRestoreRequest Create(DataFrame frame, CommandParsingContext context) => new ExtendedNvmBackupRestoreRequest(frame);
+    public static ExtendedNvmOperationsRequest Create(DataFrame frame, CommandParsingContext context) => new ExtendedNvmOperationsRequest(frame);
 }
 
 /// <summary>
-/// Response to an <see cref="ExtendedNvmBackupRestoreRequest"/> command.
+/// Response to an <see cref="ExtendedNvmOperationsRequest"/> command.
 /// </summary>
-public readonly struct ExtendedNvmBackupRestoreResponse : ICommand<ExtendedNvmBackupRestoreResponse>
+public readonly struct ExtendedNvmOperationsResponse : ICommand<ExtendedNvmOperationsResponse>
 {
-    public ExtendedNvmBackupRestoreResponse(DataFrame frame)
+    public ExtendedNvmOperationsResponse(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.RES;
 
-    public static CommandId CommandId => CommandId.ExtendedNvmBackupRestore;
+    public static CommandId CommandId => CommandId.ExtendedNvmOperations;
 
     public DataFrame Frame { get; }
 
@@ -110,7 +110,7 @@ public readonly struct ExtendedNvmBackupRestoreResponse : ICommand<ExtendedNvmBa
     public uint AddressOffsetOrNvmSize => Frame.CommandParameters.Span[2..6].ToUInt32BE();
 
     /// <summary>
-    /// The firmware data returned by the operation.
+    /// The NVM data returned by the operation.
     /// For Open responses, this contains the supported sub-command bitmask.
     /// </summary>
     public ReadOnlyMemory<byte> FirmwareData
@@ -124,5 +124,5 @@ public readonly struct ExtendedNvmBackupRestoreResponse : ICommand<ExtendedNvmBa
         }
     }
 
-    public static ExtendedNvmBackupRestoreResponse Create(DataFrame frame, CommandParsingContext context) => new ExtendedNvmBackupRestoreResponse(frame);
+    public static ExtendedNvmOperationsResponse Create(DataFrame frame, CommandParsingContext context) => new ExtendedNvmOperationsResponse(frame);
 }

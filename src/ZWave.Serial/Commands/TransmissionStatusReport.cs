@@ -178,7 +178,7 @@ public readonly struct TransmissionStatusReport
     }
 
     /// <summary>
-    /// When a route failed, indicates the first non-functional NodeID in the last used route.
+    /// The measured noise floor during the outgoing transmission.
     /// </summary>
     public RssiMeasurement? MeasuredNoiseFloor
         => _data.Length > 20

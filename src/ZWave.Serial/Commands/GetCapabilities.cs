@@ -1,37 +1,37 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
-public readonly struct GetSerialApiCapabilitiesRequest : ICommand<GetSerialApiCapabilitiesRequest>
+public readonly struct GetCapabilitiesRequest : ICommand<GetCapabilitiesRequest>
 {
-    public GetSerialApiCapabilitiesRequest(DataFrame frame)
+    public GetCapabilitiesRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.GetSerialApiCapabilities;
+    public static CommandId CommandId => CommandId.GetCapabilities;
 
     public DataFrame Frame { get; }
 
-    public static GetSerialApiCapabilitiesRequest Create()
+    public static GetCapabilitiesRequest Create()
     {
         var frame = DataFrame.Create(Type, CommandId);
-        return new GetSerialApiCapabilitiesRequest(frame);
+        return new GetCapabilitiesRequest(frame);
     }
 
-    public static GetSerialApiCapabilitiesRequest Create(DataFrame frame, CommandParsingContext context) => new GetSerialApiCapabilitiesRequest(frame);
+    public static GetCapabilitiesRequest Create(DataFrame frame, CommandParsingContext context) => new GetCapabilitiesRequest(frame);
 }
 
-public readonly struct GetSerialApiCapabilitiesResponse : ICommand<GetSerialApiCapabilitiesResponse>
+public readonly struct GetCapabilitiesResponse : ICommand<GetCapabilitiesResponse>
 {
-    public GetSerialApiCapabilitiesResponse(DataFrame frame)
+    public GetCapabilitiesResponse(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.RES;
 
-    public static CommandId CommandId => CommandId.GetSerialApiCapabilities;
+    public static CommandId CommandId => CommandId.GetCapabilities;
 
     public DataFrame Frame { get; }
 
@@ -97,5 +97,5 @@ public readonly struct GetSerialApiCapabilitiesResponse : ICommand<GetSerialApiC
         }
     }
 
-    public static GetSerialApiCapabilitiesResponse Create(DataFrame frame, CommandParsingContext context) => new GetSerialApiCapabilitiesResponse(frame);
+    public static GetCapabilitiesResponse Create(DataFrame frame, CommandParsingContext context) => new GetCapabilitiesResponse(frame);
 }

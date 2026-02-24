@@ -1,60 +1,60 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
-/// The slave learn mode to set.
+/// The Virtual Node learn mode to set.
 /// </summary>
-public enum SlaveLearnMode : byte
+public enum VirtualNodeLearnMode : byte
 {
     /// <summary>
-    /// Disable slave learn mode.
+    /// Disable Virtual Node learn mode.
     /// </summary>
     Disable = 0x00,
 
     /// <summary>
-    /// Enable slave learn mode.
+    /// Enable Virtual Node learn mode.
     /// </summary>
     Enable = 0x01,
 
     /// <summary>
-    /// Add a virtual slave node.
+    /// Add a virtual node.
     /// </summary>
     Add = 0x02,
 
     /// <summary>
-    /// Remove a virtual slave node.
+    /// Remove a virtual node.
     /// </summary>
     Remove = 0x03,
 }
 
 /// <summary>
-/// The status of the slave learn mode operation.
+/// The status of the Virtual Node learn mode operation.
 /// </summary>
-public enum SlaveLearnModeStatus : byte
+public enum VirtualNodeLearnModeStatus : byte
 {
     /// <summary>
-    /// The slave learn mode operation has completed successfully.
+    /// The Virtual Node learn mode operation has completed successfully.
     /// </summary>
     Done = 0x06,
 
     /// <summary>
-    /// The slave learn mode operation has failed.
+    /// The Virtual Node learn mode operation has failed.
     /// </summary>
     Failed = 0x07,
 }
 
 /// <summary>
-/// Enable or disable "Slave Learn Mode" to allow controllers to add or remove Virtual Slave Nodes.
+/// Enable or disable "Virtual Node Learn Mode" to allow controllers to add or remove Virtual Nodes.
 /// </summary>
-public readonly struct SetSlaveLearnModeRequest : IRequestWithCallback<SetSlaveLearnModeRequest>
+public readonly struct SetVirtualNodeLearnModeRequest : IRequestWithCallback<SetVirtualNodeLearnModeRequest>
 {
-    public SetSlaveLearnModeRequest(DataFrame frame)
+    public SetVirtualNodeLearnModeRequest(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.SetSlaveLearnMode;
+    public static CommandId CommandId => CommandId.SetVirtualNodeLearnMode;
 
     public static bool ExpectsResponseStatus => true;
 
@@ -66,33 +66,33 @@ public readonly struct SetSlaveLearnModeRequest : IRequestWithCallback<SetSlaveL
     /// Per Z-Wave Host API Specification, the NodeID field MUST be encoded using 8 bits regardless
     /// of the configured NodeID base Type.
     /// </remarks>
-    public static SetSlaveLearnModeRequest Create(
+    public static SetVirtualNodeLearnModeRequest Create(
         ushort nodeId,
-        SlaveLearnMode mode,
+        VirtualNodeLearnMode mode,
         byte sessionId)
     {
         ArgumentOutOfRangeException.ThrowIfGreaterThan(nodeId, (ushort)0xFF);
         ReadOnlySpan<byte> commandParameters = [(byte)nodeId, (byte)mode, sessionId];
         var frame = DataFrame.Create(Type, CommandId, commandParameters);
-        return new SetSlaveLearnModeRequest(frame);
+        return new SetVirtualNodeLearnModeRequest(frame);
     }
 
-    public static SetSlaveLearnModeRequest Create(DataFrame frame, CommandParsingContext context) => new SetSlaveLearnModeRequest(frame);
+    public static SetVirtualNodeLearnModeRequest Create(DataFrame frame, CommandParsingContext context) => new SetVirtualNodeLearnModeRequest(frame);
 }
 
 /// <summary>
-/// Callback for the <see cref="SetSlaveLearnModeRequest"/> command.
+/// Callback for the <see cref="SetVirtualNodeLearnModeRequest"/> command.
 /// </summary>
-public readonly struct SetSlaveLearnModeCallback : ICommand<SetSlaveLearnModeCallback>
+public readonly struct SetVirtualNodeLearnModeCallback : ICommand<SetVirtualNodeLearnModeCallback>
 {
-    public SetSlaveLearnModeCallback(DataFrame frame)
+    public SetVirtualNodeLearnModeCallback(DataFrame frame)
     {
         Frame = frame;
     }
 
     public static DataFrameType Type => DataFrameType.REQ;
 
-    public static CommandId CommandId => CommandId.SetSlaveLearnMode;
+    public static CommandId CommandId => CommandId.SetVirtualNodeLearnMode;
 
     public DataFrame Frame { get; }
 
@@ -102,9 +102,9 @@ public readonly struct SetSlaveLearnModeCallback : ICommand<SetSlaveLearnModeCal
     public byte SessionId => Frame.CommandParameters.Span[0];
 
     /// <summary>
-    /// The status of the slave learn mode operation.
+    /// The status of the Virtual Node learn mode operation.
     /// </summary>
-    public SlaveLearnModeStatus Status => (SlaveLearnModeStatus)Frame.CommandParameters.Span[1];
+    public VirtualNodeLearnModeStatus Status => (VirtualNodeLearnModeStatus)Frame.CommandParameters.Span[1];
 
     /// <summary>
     /// The original node ID.
@@ -116,5 +116,5 @@ public readonly struct SetSlaveLearnModeCallback : ICommand<SetSlaveLearnModeCal
     /// </summary>
     public ushort NewNodeId => Frame.CommandParameters.Span[3];
 
-    public static SetSlaveLearnModeCallback Create(DataFrame frame, CommandParsingContext context) => new SetSlaveLearnModeCallback(frame);
+    public static SetVirtualNodeLearnModeCallback Create(DataFrame frame, CommandParsingContext context) => new SetVirtualNodeLearnModeCallback(frame);
 }

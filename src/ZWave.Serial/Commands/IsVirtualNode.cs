@@ -1,7 +1,7 @@
-namespace ZWave.Serial.Commands;
+﻿namespace ZWave.Serial.Commands;
 
 /// <summary>
-/// Checks if a node is a Virtual Slave node.
+/// Checks if a node is a Virtual Node.
 /// </summary>
 public readonly struct IsVirtualNodeRequest : ICommand<IsVirtualNodeRequest>
 {
@@ -49,7 +49,7 @@ public readonly struct IsVirtualNodeResponse : ICommand<IsVirtualNodeResponse>
     public DataFrame Frame { get; }
 
     /// <summary>
-    /// Indicates whether the node is a Virtual Slave node.
+    /// Indicates whether the node is a Virtual Node.
     /// </summary>
     public bool IsVirtual => Frame.CommandParameters.Span[0] != 0;
 

@@ -32,17 +32,17 @@ public enum CommandId : byte
     GetControllerCapabilities = 0x05,
 
     /// <summary>
-    /// Set the timeout in the Serial API
+    /// Set the timeout in the Serial API.
     /// </summary>
     SerialApiSetTimeouts = 0x06,
 
     /// <summary>
-    /// Determine exactly which Serial API functions a specific Serial API Z-Wave Module supports
+    /// Determine exactly which Serial API functions a specific Serial API Z-Wave Module supports.
     /// </summary>
-    GetSerialApiCapabilities = 0x07,
+    GetCapabilities = 0x07,
 
     /// <summary>
-    /// Request the Z-Wave Module to perform a soft reset
+    /// Request the Z-Wave Module to perform a soft reset.
     /// </summary>
     SoftReset = 0x08,
 
@@ -79,12 +79,12 @@ public enum CommandId : byte
     EndNodeSendDataMulticast = 0x0f,
 
     /// <summary>
-    /// Power down the RF when not in use
+    /// Power down the RF when not in use.
     /// </summary>
     SetRFReceiveMode = 0x10,
 
     /// <summary>
-    /// Set the SoC in a specified power down mode
+    /// Set the SoC in a specified power down mode.
     /// </summary>
     SetSleepMode = 0x11,
 
@@ -114,12 +114,12 @@ public enum CommandId : byte
     SendDataAbort = 0x16,
 
     /// <summary>
-    /// Set the power level used for RF transmission
+    /// Set the power level used for RF transmission.
     /// </summary>
     RFPowerLevelSet = 0x17,
 
     /// <summary>
-    /// Overwrite the current neighbor information for a given node ID in the protocol locally
+    /// Overwrite the current neighbor information for a given node ID in the protocol locally.
     /// </summary>
     SetRoutingInfo = 0x1b,
 
@@ -130,22 +130,22 @@ public enum CommandId : byte
     GetRandomWord = 0x1c,
 
     /// <summary>
-    /// Returns a pseudo-random number
+    /// Returns a pseudo-random number.
     /// </summary>
     Random = 0x1d,
 
     /// <summary>
     /// Set the power level locally in the node when finding neighbors.
     /// </summary>
-    RFPowerlevelRediscoverySet = 0x1e,
+    SetRFPowerLevelRediscovery = 0x1e,
 
     /// <summary>
-    /// Get the Home-ID and Node-ID from the controller.
+    /// Get the Home ID and Node ID from the controller.
     /// </summary>
-    MemoryGetId = 0x20,
+    GetNetworkIds = 0x20,
 
     /// <summary>
-    /// Read one byte from the NVM allocated for the application
+    /// Read one byte from the NVM allocated for the application.
     /// </summary>
     MemoryGetByte = 0x21,
 
@@ -175,7 +175,7 @@ public enum CommandId : byte
     NvrGetValue = 0x28,
 
     /// <summary>
-    /// Get NVM ID from external NVM
+    /// Get NVM ID from external NVM.
     /// </summary>
     NvmGetId = 0x29,
 
@@ -200,17 +200,17 @@ public enum CommandId : byte
     NvmExtWriteLongByte = 0x2d,
 
     /// <summary>
-    /// Read and write the firmware data of the Z-Wave API Module using 16-bit addresses.
+    /// Read and write the NVM data of the Z-Wave API Module using 16-bit addresses.
     /// </summary>
-    NvmBackupRestore = 0x2e,
+    NvmOperations = 0x2e,
 
     /// <summary>
-    /// Write the firmware data of the Z-Wave API Module in an implementation-independent way.
+    /// Write the network data to the Z-Wave API Module in an implementation-independent way.
     /// </summary>
     NetworkRestore = 0x2f,
 
     /// <summary>
-    /// Clears the protocols internal tx timers
+    /// Clears the protocol's internal tx timers.
     /// </summary>
     ClearTxTimers = 0x37,
 
@@ -220,7 +220,7 @@ public enum CommandId : byte
     GetTxTimer = 0x38,
 
     /// <summary>
-    /// Clears the current Network Statistics collected by the Z-Wave protocol
+    /// Clears the current Network Statistics collected by the Z-Wave protocol.
     /// </summary>
     ClearNetworkStats = 0x39,
 
@@ -230,38 +230,38 @@ public enum CommandId : byte
     GetNetworkStats = 0x3a,
 
     /// <summary>
-    /// Returns the most recent background RSSI levels detected
+    /// Returns the most recent background RSSI levels detected.
     /// </summary>
     GetBackgroundRSSI = 0x3b,
 
     /// <summary>
-    /// Sets the “Listen Before Talk” threshold that controlles at what RSSI level a Z-Wave node
+    /// Sets the “Listen Before Talk” threshold that controls at what RSSI level a Z-Wave node
     /// will refuse to transmit because of noise.
     /// </summary>
     SetListenBeforeTalkThreshold = 0x3c,
 
     /// <summary>
-    /// Read and write the firmware data of the Z-Wave API Module using 32-bit addresses.
+    /// Read and write the NVM data of the Z-Wave API Module using 32-bit addresses.
     /// </summary>
-    ExtendedNvmBackupRestore = 0x3d,
+    ExtendedNvmOperations = 0x3d,
 
     /// <summary>
     /// Perform Z-Wave API Module firmware and bootloader update.
     /// </summary>
-    FirmwareUpdateNvm = 0x3e,
+    FirmwareUpdate = 0x3e,
 
     /// <summary>
     /// Remove a specific node from a Z-Wave network.
     /// </summary>
-    RemoveNodeIdFromNetwork = 0x3f,
+    RemoveSpecificNodeFromNetwork = 0x3f,
 
     /// <summary>
     /// Return the Node Information Frame without command classes from the NVM for a given node ID.
     /// </summary>
-    GetNodeProtocolInfo = 0x41,
+    GetNodeInformationProtocolData = 0x41,
 
     /// <summary>
-    /// Set the Controller back to the factory default state.
+    /// Set the controller back to the factory default state.
     /// </summary>
     SetDefault = 0x42,
 
@@ -273,7 +273,7 @@ public enum CommandId : byte
 
     /// <summary>
     /// Used when the controller is in replication mode. It sends the payload and expects the receiver to respond
-    /// with a command complete message
+    /// with a command complete message.
     /// </summary>
     ReplicationSend = 0x45,
 
@@ -288,12 +288,12 @@ public enum CommandId : byte
     DeleteReturnRoute = 0x47,
 
     /// <summary>
-    /// Get the neighbors from the specified node.
+    /// Request node neighbor discovery from the specified node.
     /// </summary>
-    RequestNodeNeighborUpdate = 0x48,
+    RequestNodeNeighborDiscovery = 0x48,
 
     /// <summary>
-    /// Update local data structures or to control smart start inclusion
+    /// Update local data structures or to control smart start inclusion.
     /// </summary>
     ApplicationUpdate = 0x49,
 
@@ -318,7 +318,7 @@ public enum CommandId : byte
     AddPrimaryController = 0x4d,
 
     /// <summary>
-    /// Assign a application defined Priority Return Route to a routing or an enhanced slave that always will be
+    /// Assign an application defined Priority Return Route to a routing or an enhanced slave that always will be
     /// tried as the first return route attempt.
     /// </summary>
     AssignPriorityReturnRoute = 0x4f,
@@ -360,7 +360,7 @@ public enum CommandId : byte
     SendSucId = 0x57,
 
     /// <summary>
-    /// Assign a application defined Priority SUC Return Route to a routing or an enhanced slave that always
+    /// Assign an application defined Priority SUC Return Route to a routing or an enhanced slave that always
     /// will be tried as the first return route attempt.
     /// </summary>
     AssignPrioritySucReturnRoute = 0x58,
@@ -381,12 +381,12 @@ public enum CommandId : byte
     IsNodeWithinDirectRange = 0x5d,
 
     /// <summary>
-    /// Initiate a Network-Wide Inclusion process
+    /// Initiate a Network-Wide Inclusion process.
     /// </summary>
     ExploreRequestInclusion = 0x5e,
 
     /// <summary>
-    /// Initiate a Network-Wide Exclusion process
+    /// Initiate a Network-Wide Exclusion process.
     /// </summary>
     ExploreRequestExclusion = 0x5f,
 
@@ -403,10 +403,10 @@ public enum CommandId : byte
     /// <summary>
     /// Test if a node ID is stored in the failed node ID list.
     /// </summary>
-    IsFailedNode = 0x62,
+    IsNodeFailed = 0x62,
 
     /// <summary>
-    /// Replaces a non-responding node with a new one in the requesting controller.
+    /// Replace a non-responding node with a new one in the requesting controller.
     /// </summary>
     ReplaceFailedNode = 0x63,
 
@@ -441,10 +441,9 @@ public enum CommandId : byte
     RequestProtocolCcEncryption = 0x6c,
 
     /// <summary>
-    /// The Firmware Update API provides functionality which together with the SDK supplied ZW_Bootloader
-    /// module and a big enough external NVM makes it possible to implement firmware update
+    /// Legacy 500-series Firmware Update API for reading and writing firmware data via external NVM.
     /// </summary>
-    FirmwareUpdate = 0x78,
+    LegacyFirmwareUpdate = 0x78,
 
     /// <summary>
     /// Read out neighbor information from the protocol for a given node.
@@ -477,17 +476,17 @@ public enum CommandId : byte
     GetRoutingTableEntries = 0x85,
 
     /// <summary>
-    /// Locks or unlocks response route for a given node ID.
+    /// Lock or unlock the last working route for a given node ID.
     /// </summary>
-    LockRoute = 0x90,
+    LockUnlockLastRoute = 0x90,
 
     /// <summary>
-    /// Get the route with the highest priority
+    /// Get the route with the highest priority.
     /// </summary>
     GetPriorityRoute = 0x92,
 
     /// <summary>
-    /// Set the Priority Routefor a destination node
+    /// Set the Priority Route for a destination node.
     /// </summary>
     SetPriorityRoute = 0x93,
 
@@ -503,29 +502,29 @@ public enum CommandId : byte
     ApplicationSecurityEvent = 0x9d,
 
     /// <summary>
-    /// Used to set node information for all Virtual Slave Nodes in the embedded module
+    /// Set node information for all Virtual Nodes in the embedded module.
     /// </summary>
-    SerialApiApplicationSlaveNodeInformation = 0xa0,
+    SetVirtualNodesApplicationNodeInformation = 0xa0,
 
     /// <summary>
-    /// Create and transmit a Virtual Slave node “Node Information” frame a Virtual Slave node.
+    /// Create and transmit a Virtual Node “Node Information” frame a Virtual Node.
     /// </summary>
-    SendSlaveNodeInformation = 0xa2,
+    VirtualNodeSendNodeInformation = 0xa2,
 
     /// <summary>
-    /// enables the possibility for enabling or disabling “Slave Learn Mode”, which when enabled
-    /// makes it possible for other controllers (primary or inclusion controllers) to add or remove
-    /// a Virtual Slave Node to the Z-Wave network.
+    /// Enable or disable “Virtual Node Learn Mode”, which when enabled
+    /// makes it possible for other controllers to add or remove
+    /// a Virtual Node to the Z-Wave network.
     /// </summary>
-    SetSlaveLearnMode = 0xa4,
+    SetVirtualNodeLearnMode = 0xa4,
 
     /// <summary>
-    /// Request a buffer containing available Virtual Slave nodes in the Z-Wave network.
+    /// Request a buffer containing available Virtual Nodes in the Z-Wave network.
     /// </summary>
     GetVirtualNodes = 0xa5,
 
     /// <summary>
-    /// Checks if a node is a Virtual Slave node.
+    /// Check if a node is a Virtual Node.
     /// </summary>
     IsVirtualNode = 0xa6,
 
@@ -542,7 +541,7 @@ public enum CommandId : byte
 
     /// <summary>
     /// Called when an application command has been received from another node to the Bridge
-    /// Controller or an existing virtual slave node.
+    /// Controller or an existing virtual node.
     /// </summary>
     ApplicationCommandHandlerBridge = 0xa8,
 
@@ -552,7 +551,7 @@ public enum CommandId : byte
     SendDataBridge = 0xa9,
 
     /// <summary>
-    /// Set the WUT timer interval
+    /// Set the WUT timer interval.
     /// </summary>
     SetWutTimeout = 0xb4,
 
@@ -567,12 +566,12 @@ public enum CommandId : byte
     WatchdogDisable = 0xb7,
 
     /// <summary>
-    /// Keep the watchdog timer from resetting the 500 Series Z-Wave SoC
+    /// Keep the watchdog timer from resetting the 500 Series Z-Wave SoC.
     /// </summary>
     WatchdogKick = 0xb8,
 
     /// <summary>
-    /// Set the trigger level for external interrupts
+    /// Set the trigger level for external interrupts.
     /// </summary>
     SetExtIntLevel = 0xb9,
 
@@ -587,14 +586,14 @@ public enum CommandId : byte
     GetNeighborCount = 0xbb,
 
     /// <summary>
-    /// Check if two nodes are marked as being within direct range of each other
+    /// Check if two nodes are marked as being within direct range of each other.
     /// </summary>
     AreNodesNeighbors = 0xbc,
 
     /// <summary>
     /// Get the Z-Wave library type.
     /// </summary>
-    TypeLibrary = 0xbd,
+    GetLibraryType = 0xbd,
 
     /// <summary>
     /// Send a test frame directly to nodeID without any routing.
@@ -602,7 +601,7 @@ public enum CommandId : byte
     SendTestFrame = 0xbe,
 
     /// <summary>
-    /// Request the status of the protocol
+    /// Request the status of the protocol.
     /// </summary>
     GetProtocolStatus = 0xbf,
 
@@ -633,14 +632,14 @@ public enum CommandId : byte
     StopWatchdog = 0xd3,
 
     /// <summary>
-    /// set the maximum number of source routing attempts before the next mechanism kicks-in.
+    /// Set the maximum number of source routing attempts before the next mechanism kicks in.
     /// </summary>
-    SetRoutingMax = 0xd4,
+    SetMaximumRoutingAttempts = 0xd4,
 
     /// <summary>
-    /// Set the maximum interval between SmartStart inclusion requests
+    /// Set the maximum interval between SmartStart inclusion requests.
     /// </summary>
-    NetworkManagementSetMaxInclusionRequestIntervals = 0xd6,
+    SetSmartStartMaxInclusionRequestInterval = 0xd6,
 
     /// <summary>
     /// Keep the Z-Wave module awake.
@@ -658,7 +657,7 @@ public enum CommandId : byte
     InitiateShutdown = 0xd9,
 
     /// <summary>
-    /// Obtain the list of Long Range nodes
+    /// Obtain the list of Long Range nodes.
     /// </summary>
     SerialApiGetLongRangeNodes = 0xda,
 
@@ -675,15 +674,15 @@ public enum CommandId : byte
     /// <summary>
     /// Enable the use of Shadow NodeIDs in the Long Range capable controller.
     /// </summary>
-    SetLongRangeVirtualNodeIds = 0xdd,
+    SetLongRangeShadowNodeIds = 0xdd,
 
     /// <summary>
-    /// Get the DCDC Configuration
+    /// Get the DCDC configuration.
     /// </summary>
     GetDcdcConfig = 0xde,
 
     /// <summary>
-    /// Set the DCDC Configuration
+    /// Set the DCDC configuration.
     /// </summary>
     SetDcdcConfig = 0xdf,
 
@@ -715,5 +714,5 @@ public enum CommandId : byte
     /// <summary>
     /// Enable Nonce Generation on the Z-Wave Module and receive nonce update notifications.
     /// </summary>
-    NonceManagement = 0xeb,
+    NonceGenerationSetMode = 0xeb,
 }
