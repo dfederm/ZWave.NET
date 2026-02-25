@@ -1,5 +1,3 @@
-using static ZWave.Serial.Commands.CommandDataParsingHelpers;
-
 namespace ZWave.Serial.Commands;
 
 /// <summary>
@@ -146,7 +144,7 @@ public readonly struct ApplicationUpdateGeneric
         {
             byte length = _data.Span[_nodeIdType.NodeIdSize()];
             ReadOnlySpan<byte> allCommandClasses = _data.Span.Slice(_nodeIdType.NodeIdSize() + 4, length);
-            return ParseCommandClasses(allCommandClasses);
+            return CommandClassInfo.ParseList(allCommandClasses);
         }
     }
 }
@@ -187,7 +185,7 @@ public readonly struct ApplicationUpdateSmartStartPrime
         {
             byte length = _data.Span[_nodeIdType.NodeIdSize() + 5];
             ReadOnlySpan<byte> allCommandClasses = _data.Span.Slice(_nodeIdType.NodeIdSize() + 9, length);
-            return ParseCommandClasses(allCommandClasses);
+            return CommandClassInfo.ParseList(allCommandClasses);
         }
     }
 }

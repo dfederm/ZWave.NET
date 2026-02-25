@@ -1,5 +1,3 @@
-using static ZWave.Serial.Commands.CommandDataParsingHelpers;
-
 namespace ZWave.Serial.Commands;
 
 public enum AddNodeMode : byte
@@ -224,7 +222,7 @@ public readonly struct AddNodeToNetworkCallback : ICommand<AddNodeToNetworkCallb
         {
             byte length = Frame.CommandParameters.Span[3];
             ReadOnlySpan<byte> allCommandClasses = Frame.CommandParameters.Span.Slice(7, length);
-            return ParseCommandClasses(allCommandClasses);
+            return CommandClassInfo.ParseList(allCommandClasses);
         }
     }
 

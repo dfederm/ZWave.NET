@@ -27,6 +27,7 @@ Please make sure the build is clean before opening a PR.
 | `src/ZWave.CommandClasses/` | Command class implementations |
 | `src/ZWave/` | Driver - orchestration layer (Driver, Controller, Node) |
 | `src/ZWave.Serial.Tests/` | Unit tests for the serial layer (MSTest) |
+| `src/ZWave.CommandClasses.Tests/` | Unit tests for command classes (MSTest) |
 | `src/ZWave.Server/` | Blazor Server demo app for manual testing with real hardware |
 | `src/ZWave.BuildTools/` | Roslyn source generators that run at compile time |
 
