@@ -198,7 +198,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
                         if (Controller.Nodes.TryGetValue(applicationCommandHandler.NodeId, out Node? node))
                         {
                             var commandClassFrame = new CommandClassFrame(applicationCommandHandler.Payload);
-                            node.ProcessCommand(commandClassFrame);
+                            node.ProcessCommand(commandClassFrame, 0);
                         }
                         else
                         {
