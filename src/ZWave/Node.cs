@@ -8,18 +8,22 @@ namespace ZWave;
 /// <summary>
 /// Represents a Z-Wave network node.
 /// </summary>
+/// <remarks>
+/// A node IS endpoint 0 (the "Root Device"). Endpoints 1–127 are child endpoints
+/// discovered via the Multi Channel Command Class. Each endpoint has its own set of
+/// supported command classes.
+/// </remarks>
 public sealed class Node : INode
 {
     private readonly Driver _driver;
 
-    private readonly ILogger _logger;
-
     private readonly AsyncAutoResetEvent _nodeInfoRecievedEvent = new AsyncAutoResetEvent();
 
-    // Copy-on-write dictionary for lock-free reads. Writes are protected by _commandClassesWriteLock.
-    // NOTE! Any operation which uses this dictionary MUST be aware that it can be replaced at any time, so reading it to a local variable is recommended.
-    private volatile Dictionary<CommandClassId, CommandClass> _commandClasses = new Dictionary<CommandClassId, CommandClass>();
-    private readonly object _commandClassesWriteLock = new object();
+    // Command class storage, shared implementation with Endpoint via composition.
+    private readonly CommandClassCollection _commandClassCollection;
+
+    // Child endpoints (1–127). TODO: Populate.
+    private readonly Dictionary<byte, Endpoint> _endpoints = [];
 
     private readonly object _interviewStateLock = new object();
 
@@ -31,7 +35,7 @@ public sealed class Node : INode
     {
         Id = id;
         _driver = driver ?? throw new ArgumentNullException(nameof(driver));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _commandClassCollection = new CommandClassCollection(driver, this, logger);
     }
 
     /// <summary>
@@ -91,57 +95,76 @@ public sealed class Node : INode
     public bool SupportsSecurity { get; private set; }
 
     /// <inheritdoc />
-    public IReadOnlyDictionary<CommandClassId, CommandClassInfo> CommandClasses
-    {
-        get
-        {
-            Dictionary<CommandClassId, CommandClass> commandClasses = _commandClasses;
-            var commandClassInfos = new Dictionary<CommandClassId, CommandClassInfo>(commandClasses.Count);
-            foreach (KeyValuePair<CommandClassId, CommandClass> pair in commandClasses)
-            {
-                commandClassInfos.Add(pair.Key, pair.Value.Info);
-            }
-
-            return commandClassInfos;
-        }
-    }
+    public IReadOnlyDictionary<CommandClassId, CommandClassInfo> CommandClasses => _commandClassCollection.CommandClasses;
 
     /// <summary>
     /// Gets a specific command class by its CLR type.
     /// </summary>
     public TCommandClass GetCommandClass<TCommandClass>()
         where TCommandClass : CommandClass
-        => (TCommandClass)GetCommandClass(CommandClassFactory.GetCommandClassId<TCommandClass>());
+        => _commandClassCollection.GetCommandClass<TCommandClass>();
 
     /// <summary>
     /// Tries to get a specific command class by its CLR type.
     /// </summary>
-    public bool TryGetCommandClass<TCommandClass>([NotNullWhen(true)]out TCommandClass? commandClass)
+    public bool TryGetCommandClass<TCommandClass>([NotNullWhen(true)] out TCommandClass? commandClass)
         where TCommandClass : CommandClass
-    {
-        if (TryGetCommandClass(CommandClassFactory.GetCommandClassId<TCommandClass>(), out CommandClass? commandClassBase))
-        {
-            commandClass = (TCommandClass)commandClassBase;
-            return true;
-    }
-        else
-        {
-            commandClass = null;
-            return false;
-        }
-    }
+        => _commandClassCollection.TryGetCommandClass(out commandClass);
 
     /// <inheritdoc />
     public CommandClass GetCommandClass(CommandClassId commandClassId)
-        => !TryGetCommandClass(commandClassId, out CommandClass? commandClass)
-            ? throw new ZWaveException(ZWaveErrorCode.CommandClassNotImplemented, $"The command class {commandClassId} is not implemented by this node.")
-            : commandClass;
+        => _commandClassCollection.GetCommandClass(commandClassId);
 
     /// <summary>
     /// Tries to get a specific command class by its command class ID.
     /// </summary>
     public bool TryGetCommandClass(CommandClassId commandClassId, [NotNullWhen(true)] out CommandClass? commandClass)
-        => _commandClasses.TryGetValue(commandClassId, out commandClass);
+        => _commandClassCollection.TryGetCommandClass(commandClassId, out commandClass);
+
+    /// <summary>
+    /// Gets the child endpoints (1–127) discovered via the Multi Channel Command Class.
+    /// </summary>
+    /// <remarks>
+    /// This does not include endpoint 0 (the Root Device / this node). Use the node directly
+    /// for endpoint 0 operations.
+    /// </remarks>
+    public IReadOnlyDictionary<byte, Endpoint> Endpoints => _endpoints;
+
+    /// <summary>
+    /// Gets a specific endpoint by its index.
+    /// </summary>
+    /// <param name="endpointIndex">The endpoint index. Zero returns this node as an <see cref="IEndpoint"/>.</param>
+    /// <returns>The endpoint, or this node if <paramref name="endpointIndex"/> is zero.</returns>
+    /// <exception cref="KeyNotFoundException">The endpoint does not exist.</exception>
+    public IEndpoint GetEndpoint(byte endpointIndex)
+    {
+        if (endpointIndex == 0)
+        {
+            return this;
+        }
+
+        Dictionary<byte, Endpoint> endpoints = _endpoints;
+        if (endpoints.TryGetValue(endpointIndex, out Endpoint? endpoint))
+        {
+            return endpoint;
+        }
+
+        throw new KeyNotFoundException($"Endpoint {endpointIndex} does not exist on node {Id}.");
+    }
+
+    /// <summary>
+    /// Gets all endpoints, including this node as endpoint 0.
+    /// </summary>
+    public IEnumerable<IEndpoint> GetAllEndpoints()
+    {
+        yield return this;
+
+        Dictionary<byte, Endpoint> endpoints = _endpoints;
+        foreach (KeyValuePair<byte, Endpoint> pair in endpoints)
+        {
+            yield return pair.Value;
+        }
+    }
 
     /// <summary>
     /// Interviews the node.
@@ -225,7 +248,7 @@ public sealed class Node : INode
                 await _nodeInfoRecievedEvent.WaitAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
                 InterviewStatus = NodeInterviewStatus.NodeInfo;
 
-                await InterviewCommandClassesAsync(cancellationToken).ConfigureAwait(false);
+                await _commandClassCollection.InterviewCommandClassesAsync(cancellationToken).ConfigureAwait(false);
                 InterviewStatus = NodeInterviewStatus.Complete;
             },
             cancellationToken);
@@ -237,127 +260,28 @@ public sealed class Node : INode
     internal void NotifyNodeInfoReceived(ApplicationUpdateRequest nodeInfoReceived)
     {
         // TODO: Log
-        AddCommandClasses(nodeInfoReceived.Generic.CommandClasses);
+        _commandClassCollection.AddCommandClasses(nodeInfoReceived.Generic.CommandClasses);
 
         _nodeInfoRecievedEvent.Set();
     }
 
-    private void AddCommandClasses(IReadOnlyList<CommandClassInfo> commandClassInfos)
+    internal void ProcessCommand(CommandClassFrame frame, byte endpointIndex)
     {
-        if (commandClassInfos.Count == 0)
+        if (endpointIndex == 0)
         {
-            return;
+            _commandClassCollection.ProcessCommand(frame);
         }
-
-        lock (_commandClassesWriteLock)
+        else
         {
-            Dictionary<CommandClassId, CommandClass> currentDict = _commandClasses;
-
-            // First pass: check if we need to create a new dictionary
-            bool needsNewDict = false;
-            foreach (CommandClassInfo commandClassInfo in commandClassInfos)
+            Dictionary<byte, Endpoint> endpoints = _endpoints;
+            if (endpoints.TryGetValue(endpointIndex, out Endpoint? endpoint))
             {
-                if (!currentDict.ContainsKey(commandClassInfo.CommandClass))
-                {
-                    needsNewDict = true;
-                    break;
-                }
-            }
-
-            if (needsNewDict)
-            {
-                // Copy-on-write: create new dictionary with all entries
-                var newDict = new Dictionary<CommandClassId, CommandClass>(currentDict.Count + commandClassInfos.Count);
-                foreach (KeyValuePair<CommandClassId, CommandClass> pair in currentDict)
-                {
-                    newDict.Add(pair.Key, pair.Value);
-                }
-
-                foreach (CommandClassInfo commandClassInfo in commandClassInfos)
-                {
-                    if (newDict.TryGetValue(commandClassInfo.CommandClass, out CommandClass? existingCommandClass))
-                    {
-                        existingCommandClass.MergeInfo(commandClassInfo);
-                    }
-                    else
-                    {
-                        CommandClass commandClass = CommandClassFactory.Create(commandClassInfo, _driver, this, _logger);
-                        newDict.Add(commandClassInfo.CommandClass, commandClass);
-                    }
-                }
-
-                _commandClasses = newDict;
+                endpoint.ProcessCommand(frame);
             }
             else
             {
-                // All command classes already exist, just merge
-                foreach (CommandClassInfo commandClassInfo in commandClassInfos)
-                {
-                    currentDict[commandClassInfo.CommandClass].MergeInfo(commandClassInfo);
-                }
+                // TODO: Log unknown endpoint
             }
         }
-    }
-
-    private async Task InterviewCommandClassesAsync(CancellationToken cancellationToken)
-    {
-        /*
-            Command classes may depend on other command classes, so we need to interview them in topographical order.
-            Instead of sorting them completely out of the gate, we'll just create a list of all the command classes (list A) and if its dependencies
-            are met interview it and if not add to another list (list B). After exhausing the list A, swap list A and B and repeat until both are empty.
-        */
-        Dictionary<CommandClassId, CommandClass> currentCommandClasses = _commandClasses;
-        Queue<CommandClass> commandClasses = new(currentCommandClasses.Count);
-        foreach ((_, CommandClass commandClass) in currentCommandClasses)
-        {
-            commandClasses.Enqueue(commandClass);
-        }
-
-        HashSet<CommandClassId> interviewedCommandClasses = new(currentCommandClasses.Count);
-        Queue<CommandClass> blockedCommandClasses = new(currentCommandClasses.Count);
-        while (commandClasses.Count > 0)
-        {
-            while (commandClasses.Count > 0)
-            {
-                CommandClass commandClass = commandClasses.Dequeue();
-                CommandClassId commandClassId = commandClass.Info.CommandClass;
-
-                bool isBlocked = false;
-                CommandClassId[] commandClassDependencies = commandClass.Dependencies;
-                for (int i = 0; i < commandClassDependencies.Length; i++)
-                {
-                    if (!interviewedCommandClasses.Contains(commandClassDependencies[i]))
-                    {
-                        isBlocked = true;
-                        break;
-                    }
-                }
-
-                if (isBlocked)
-                {
-                    blockedCommandClasses.Enqueue(commandClass);
-                }
-                else
-                {
-                    await commandClass.InterviewAsync(cancellationToken);
-                    interviewedCommandClasses.Add(commandClassId);
-                }
-            }
-
-            Queue<CommandClass> tmp = commandClasses;
-            commandClasses = blockedCommandClasses;
-            blockedCommandClasses = tmp;
-        }
-    }
-
-    internal void ProcessCommand(CommandClassFrame frame)
-    {
-        if (!TryGetCommandClass(frame.CommandClassId, out CommandClass? commandClass))
-        {
-            // TODO: Log
-            return;
-        }
-
-        commandClass.ProcessCommand(frame);
     }
 }
