@@ -110,6 +110,8 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
         return info;
     }
 
+    internal override CommandClassCategory Category => CommandClassCategory.Management;
+
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
     {
         _ = await GetAsync(cancellationToken).ConfigureAwait(false);

@@ -144,6 +144,8 @@ public sealed class WakeUpCommandClass : CommandClass<WakeUpCommand>
         return capabilities;
     }
 
+    internal override CommandClassCategory Category => CommandClassCategory.Management;
+
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
     {
         _ = await GetIntervalAsync(cancellationToken).ConfigureAwait(false);

@@ -34,6 +34,16 @@ public sealed class Endpoint : IEndpoint
     /// <inheritdoc />
     public byte EndpointIndex { get; }
 
+    /// <summary>
+    /// Gets the Generic Device Class of this endpoint, as reported by the Multi Channel Capability Report.
+    /// </summary>
+    public byte GenericDeviceClass { get; internal set; }
+
+    /// <summary>
+    /// Gets the Specific Device Class of this endpoint, as reported by the Multi Channel Capability Report.
+    /// </summary>
+    public byte SpecificDeviceClass { get; internal set; }
+
     /// <inheritdoc />
     public IReadOnlyDictionary<CommandClassId, CommandClassInfo> CommandClasses => _commandClassCollection.CommandClasses;
 
@@ -67,6 +77,11 @@ public sealed class Endpoint : IEndpoint
     internal void ProcessCommand(CommandClassFrame frame)
         => _commandClassCollection.ProcessCommand(frame);
 
-    internal Task InterviewCommandClassesAsync(CancellationToken cancellationToken)
-        => _commandClassCollection.InterviewCommandClassesAsync(cancellationToken);
+    internal async Task InterviewCommandClassesAsync(CancellationToken cancellationToken)
+    {
+        HashSet<CommandClassId> interviewedCommandClasses = new HashSet<CommandClassId>();
+        await _commandClassCollection.InterviewCommandClassesAsync(CommandClassCategory.Management, interviewedCommandClasses, cancellationToken).ConfigureAwait(false);
+        await _commandClassCollection.InterviewCommandClassesAsync(CommandClassCategory.Transport, interviewedCommandClasses, cancellationToken).ConfigureAwait(false);
+        await _commandClassCollection.InterviewCommandClassesAsync(CommandClassCategory.Application, interviewedCommandClasses, cancellationToken).ConfigureAwait(false);
+    }
 }

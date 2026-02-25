@@ -85,6 +85,8 @@ public sealed partial class MultiChannelCommandClass : CommandClass<MultiChannel
             _ => false,
         };
 
+    internal override CommandClassCategory Category => CommandClassCategory.Transport;
+
     /// <summary>
     /// Per spec §6.4.2.1, the Multi Channel CC interview discovers endpoints and their CCs.
     /// </summary>

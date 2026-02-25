@@ -215,6 +215,8 @@ public sealed class VersionCommandClass : CommandClass<VersionCommand>
     // Overriding since the base class implementation is to depend on this CC.
     internal override CommandClassId[] Dependencies => Array.Empty<CommandClassId>();
 
+    internal override CommandClassCategory Category => CommandClassCategory.Management;
+
     /// <summary>
     /// Request the library type, protocol version and application version from a device that supports
     /// the Version Command Class

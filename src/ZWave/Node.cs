@@ -16,14 +16,16 @@ namespace ZWave;
 public sealed class Node : INode
 {
     private readonly Driver _driver;
+    private readonly ILogger _logger;
 
     private readonly AsyncAutoResetEvent _nodeInfoRecievedEvent = new AsyncAutoResetEvent();
 
     // Command class storage, shared implementation with Endpoint via composition.
     private readonly CommandClassCollection _commandClassCollection;
 
-    // Child endpoints (1–127). TODO: Populate.
-    private readonly Dictionary<byte, Endpoint> _endpoints = [];
+    // Child endpoints (1–127). Writes protected by _endpointsWriteLock.
+    private volatile Dictionary<byte, Endpoint> _endpoints = [];
+    private readonly object _endpointsWriteLock = new();
 
     private readonly object _interviewStateLock = new object();
 
@@ -35,6 +37,7 @@ public sealed class Node : INode
     {
         Id = id;
         _driver = driver ?? throw new ArgumentNullException(nameof(driver));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _commandClassCollection = new CommandClassCollection(driver, this, logger);
     }
 
@@ -167,6 +170,44 @@ public sealed class Node : INode
     }
 
     /// <summary>
+    /// Gets or creates a child endpoint with the given index.
+    /// </summary>
+    private Endpoint GetOrAddEndpoint(byte endpointIndex)
+    {
+        if (endpointIndex == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(endpointIndex), "Endpoint index 0 is the Root Device (this node). Use the Node directly.");
+        }
+
+        Dictionary<byte, Endpoint> endpoints = _endpoints;
+        if (endpoints.TryGetValue(endpointIndex, out Endpoint? existing))
+        {
+            return existing;
+        }
+
+        lock (_endpointsWriteLock)
+        {
+            endpoints = _endpoints;
+            if (endpoints.TryGetValue(endpointIndex, out existing))
+            {
+                return existing;
+            }
+
+            // Copy-on-write
+            Dictionary<byte, Endpoint> newDict = new Dictionary<byte, Endpoint>(endpoints.Count + 1);
+            foreach (KeyValuePair<byte, Endpoint> pair in endpoints)
+            {
+                newDict.Add(pair.Key, pair.Value);
+            }
+
+            Endpoint endpoint = new(Id, endpointIndex, _driver, _logger);
+            newDict.Add(endpointIndex, endpoint);
+            _endpoints = newDict;
+            return endpoint;
+        }
+    }
+
+    /// <summary>
     /// Interviews the node.
     /// </summary>
     /// <remarks>
@@ -248,7 +289,36 @@ public sealed class Node : INode
                 await _nodeInfoRecievedEvent.WaitAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
                 InterviewStatus = NodeInterviewStatus.NodeInfo;
 
-                await _commandClassCollection.InterviewCommandClassesAsync(cancellationToken).ConfigureAwait(false);
+                // Before interviewing CCs, subscribe to Multi Channel CC endpoint discovery
+                // so endpoints are created as the MC CC interview discovers them.
+                if (TryGetCommandClass(CommandClassId.MultiChannel, out CommandClass? multiChannelCC)
+                    && multiChannelCC is MultiChannelCommandClass mcCC)
+                {
+                    mcCC.OnCapabilityReportReceived = HandleEndpointDiscovered;
+                }
+
+                // Interview CCs in phases per spec recommendation (CL:0000.00.22.01.1):
+                // 1. Management CCs (Version, Z-Wave Plus Info, etc.)
+                // 2. Transport CCs (Multi Channel — discovers endpoints)
+                // 3. Application CCs (actuators, sensors, etc.)
+                HashSet<CommandClassId> interviewedCommandClasses = new HashSet<CommandClassId>();
+                await _commandClassCollection.InterviewCommandClassesAsync(CommandClassCategory.Management, interviewedCommandClasses, cancellationToken).ConfigureAwait(false);
+                await _commandClassCollection.InterviewCommandClassesAsync(CommandClassCategory.Transport, interviewedCommandClasses, cancellationToken).ConfigureAwait(false);
+                await _commandClassCollection.InterviewCommandClassesAsync(CommandClassCategory.Application, interviewedCommandClasses, cancellationToken).ConfigureAwait(false);
+
+                // Per spec §6.1.3.1: "Multi Channel Command Class (and repeat the above order for each End Point, if any)"
+                // After the root device's CCs are interviewed, interview each endpoint's CCs.
+                Dictionary<byte, Endpoint> endpoints = _endpoints;
+                if (endpoints.Count > 0)
+                {
+                    InterviewStatus = NodeInterviewStatus.Endpoints;
+
+                    foreach (KeyValuePair<byte, Endpoint> pair in endpoints)
+                    {
+                        await pair.Value.InterviewCommandClassesAsync(cancellationToken).ConfigureAwait(false);
+                    }
+                }
+
                 InterviewStatus = NodeInterviewStatus.Complete;
             },
             cancellationToken);
@@ -263,6 +333,18 @@ public sealed class Node : INode
         _commandClassCollection.AddCommandClasses(nodeInfoReceived.Generic.CommandClasses);
 
         _nodeInfoRecievedEvent.Set();
+    }
+
+    /// <summary>
+    /// Called by the Multi Channel CC when an endpoint is discovered during interview.
+    /// Creates or updates the endpoint and populates its command classes.
+    /// </summary>
+    private void HandleEndpointDiscovered(MultiChannelCapabilityReport capability)
+    {
+        Endpoint endpoint = GetOrAddEndpoint(capability.EndpointIndex);
+        endpoint.GenericDeviceClass = capability.GenericDeviceClass;
+        endpoint.SpecificDeviceClass = capability.SpecificDeviceClass;
+        endpoint.AddCommandClasses(capability.CommandClasses);
     }
 
     internal void ProcessCommand(CommandClassFrame frame, byte endpointIndex)
