@@ -113,6 +113,8 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         return deviceId;
     }
 
+    internal override CommandClassCategory Category => CommandClassCategory.Management;
+
     internal override async Task InterviewAsync(CancellationToken cancellationToken)
     {
         _ = await GetAsync(cancellationToken).ConfigureAwait(false);

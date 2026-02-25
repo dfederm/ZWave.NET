@@ -114,6 +114,15 @@ public abstract class CommandClass
     /// </summary>
     internal virtual CommandClassId[] Dependencies => DefaultDependencies;
 
+    /// <summary>
+    /// Gets the category of this command class, which determines its interview phase.
+    /// </summary>
+    /// <remarks>
+    /// Defaults to <see cref="CommandClassCategory.Application"/>. Management and Transport
+    /// CCs should override this to ensure they are interviewed in the correct phase.
+    /// </remarks>
+    internal virtual CommandClassCategory Category => CommandClassCategory.Application;
+
     protected abstract bool? IsCommandSupported(byte command);
 
     internal void ProcessCommand(CommandClassFrame frame)

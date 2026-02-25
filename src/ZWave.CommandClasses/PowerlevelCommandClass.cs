@@ -224,6 +224,8 @@ public sealed class PowerlevelCommandClass : CommandClass<PowerlevelCommand>
         return result;
     }
 
+    internal override CommandClassCategory Category => CommandClassCategory.Management;
+
     internal override Task InterviewAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
     protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)

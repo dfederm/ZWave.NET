@@ -18,6 +18,11 @@ public enum NodeInterviewStatus
     NodeInfo,
 
     /// <summary>
+    /// The node's Multi Channel endpoints are being discovered and interviewed.
+    /// </summary>
+    Endpoints,
+
+    /// <summary>
     /// The node has been fully interviewed.
     /// </summary>
     Complete,

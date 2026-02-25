@@ -139,7 +139,10 @@ internal sealed class CommandClassCollection
         commandClass.ProcessCommand(frame);
     }
 
-    internal async Task InterviewCommandClassesAsync(CancellationToken cancellationToken)
+    internal async Task InterviewCommandClassesAsync(
+        CommandClassCategory category,
+        HashSet<CommandClassId> interviewedCommandClasses,
+        CancellationToken cancellationToken)
     {
         /*
             Command classes may depend on other command classes, so we need to interview them in topographical order.
@@ -150,11 +153,13 @@ internal sealed class CommandClassCollection
         Queue<CommandClass> commandClasses = new Queue<CommandClass>(currentCommandClasses.Count);
         foreach ((_, CommandClass commandClass) in currentCommandClasses)
         {
-            commandClasses.Enqueue(commandClass);
+            if (commandClass.Category == category)
+            {
+                commandClasses.Enqueue(commandClass);
+            }
         }
 
-        HashSet<CommandClassId> interviewedCommandClasses = new HashSet<CommandClassId>(currentCommandClasses.Count);
-        Queue<CommandClass> blockedCommandClasses = new Queue<CommandClass>(currentCommandClasses.Count);
+        Queue<CommandClass> blockedCommandClasses = new Queue<CommandClass>(commandClasses.Count);
         while (commandClasses.Count > 0)
         {
             while (commandClasses.Count > 0)
