@@ -56,6 +56,11 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
     /// </summary>
     public BasicReport? LastReport { get; private set; }
 
+    /// <summary>
+    /// Event raised when a Basic Report is received, both solicited and unsolicited.
+    /// </summary>
+    public Action<BasicReport>? OnBasicReportReceived { get; set; }
+
     /// <inheritdoc />
     public override bool? IsCommandSupported(BasicCommand command)
         => command switch
@@ -80,6 +85,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
         CommandClassFrame reportFrame = await AwaitNextReportAsync<BasicReportCommand>(cancellationToken).ConfigureAwait(false);
         BasicReport report = BasicReportCommand.Parse(reportFrame, Logger);
         LastReport = report;
+        OnBasicReportReceived?.Invoke(report);
         return report;
     }
 
@@ -96,20 +102,17 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
     {
         switch ((BasicCommand)frame.CommandId)
         {
-            case BasicCommand.Set:
-            case BasicCommand.Get:
-            {
-                break;
-            }
             case BasicCommand.Report:
             {
-                LastReport = BasicReportCommand.Parse(frame, Logger);
+                BasicReport report = BasicReportCommand.Parse(frame, Logger);
+                LastReport = report;
+                OnBasicReportReceived?.Invoke(report);
                 break;
             }
         }
     }
 
-    private readonly struct BasicSetCommand : ICommand
+    internal readonly struct BasicSetCommand : ICommand
     {
         public BasicSetCommand(CommandClassFrame frame)
         {
@@ -130,7 +133,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
         }
     }
 
-    private readonly struct BasicGetCommand : ICommand
+    internal readonly struct BasicGetCommand : ICommand
     {
         public BasicGetCommand(CommandClassFrame frame)
         {
@@ -150,7 +153,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
         }
     }
 
-    private readonly struct BasicReportCommand : ICommand
+    internal readonly struct BasicReportCommand : ICommand
     {
         public BasicReportCommand(CommandClassFrame frame)
         {

@@ -76,11 +76,11 @@
                     </tr>
                 }
 
-                @if (state.Disconnected.HasValue)
+                @if (state.IsDisconnected.HasValue)
                 {
                     <tr>
                         <th scope="row">Disconnected</th>
-                        <td>@state.Disconnected.Value</td>
+                        <td>@state.IsDisconnected.Value</td>
                     </tr>
                 }
             </tbody>
