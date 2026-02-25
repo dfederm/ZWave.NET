@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ZWave" />
+    <InternalsVisibleTo Include="ZWave.CommandClasses.Tests" />
   </ItemGroup>
 
   <ItemGroup>

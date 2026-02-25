@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-ZWave.NET is a .NET library implementing the Z-Wave serial protocol for communicating with Z-Wave USB controllers (e.g. UZB-7, Aeotec Z-Stick). It uses **C# preview** features (static abstract interface members). Check `global.json` for the required SDK version and the `.csproj` files for target frameworks. The solution has seven projects:
+ZWave.NET is a .NET library implementing the Z-Wave serial protocol for communicating with Z-Wave USB controllers (e.g. UZB-7, Aeotec Z-Stick). It uses **C# preview** features (static abstract interface members). Check `global.json` for the required SDK version and the `.csproj` files for target frameworks. The solution has eight projects:
 
 | Project | Path | Purpose |
 |---|---|---|
@@ -11,6 +11,7 @@ ZWave.NET is a .NET library implementing the Z-Wave serial protocol for communic
 | **ZWave.CommandClasses** | `src/ZWave.CommandClasses/` | Command class implementations (references Protocol, NOT Serial) |
 | **ZWave** | `src/ZWave/` | Driver — orchestration layer (Driver, Controller, Node) |
 | **ZWave.Serial.Tests** | `src/ZWave.Serial.Tests/` | Unit tests for the serial layer (MSTest with `MSTest.Sdk`) |
+| **ZWave.CommandClasses.Tests** | `src/ZWave.CommandClasses.Tests/` | Unit tests for command classes (MSTest with `MSTest.Sdk`) |
 | **ZWave.Server** | `src/ZWave.Server/` | Blazor Server demo app |
 | **ZWave.BuildTools** | `src/ZWave.BuildTools/` | Roslyn source generators (targets `netstandard2.0`) |
 
@@ -110,7 +111,7 @@ Response structs that contain variable-length collections use count + indexer me
 - **No `var`** — explicit types preferred (`csharp_style_var_*` = `false`).
 - Allman-style braces (`csharp_new_line_before_open_brace = all`).
 - NuGet package versions are centrally managed in `Directory.Packages.props`. When adding a package, add the version there and reference it without a version in the `.csproj`.
-- `InternalsVisibleTo` is set: `ZWave.Serial` → `ZWave.Serial.Tests`, `ZWave.CommandClasses` → `ZWave`.
+- `InternalsVisibleTo` is set: `ZWave.Serial` → `ZWave.Serial.Tests`, `ZWave.CommandClasses` → `ZWave` and `ZWave.CommandClasses.Tests`.
 
 ## Testing Patterns
 
@@ -118,7 +119,7 @@ Response structs that contain variable-length collections use count + indexer me
 - Tests run in parallel at method level.
 - Serial API command tests inherit from `CommandTestBase` and use `TestSendableCommand` / `TestReceivableCommand` helper methods that verify frame structure round-tripping. `TestReceivableCommand` defaults to `NodeIdType.Short`; pass an explicit `CommandParsingContext` for 16-bit mode tests.
 - `CommandDataParsingHelpersTests` covers the shared parsing helpers (`ParseCommandClasses`, `ParseNodeBitmask`).
-- Test files mirror the source structure: `src/ZWave.Serial.Tests/Commands/` contains tests for each serial command.
+- Test files mirror the source structure: `src/ZWave.Serial.Tests/Commands/` contains tests for each serial command; `src/ZWave.CommandClasses.Tests/` contains tests for command class implementations.
 - **Ref struct properties** (e.g. `ReadOnlySpan<T>`) cannot be compared via reflection. Add them to `CommandTestBase.ExcludedComparisonProperties` and write dedicated assertion methods. `AssertExtensions` has a guard that fails loudly if non-excluded ref struct properties are encountered.
 
 ## Adding New Functionality
@@ -129,7 +130,7 @@ Response structs that contain variable-length collections use count + indexer me
 
 **New Sub-Command Based Command**: Several Serial API commands use sub-commands (e.g. `NvmBackupRestore`, `ExtendedNvmBackupRestore`, `NetworkRestore`, `FirmwareUpdateNvm`, `NonceManagement`). These use a `partial struct` with static factory methods for each sub-command. Define the sub-command enum and status enum alongside the struct. The response struct reads the sub-command byte and status from the command parameters.
 
-**New Command Class**: Create a class in `src/ZWave.CommandClasses/` inheriting `CommandClass<TEnum>`. Apply `[CommandClass(CommandClassId.X)]`. Constructor takes `(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)`. Define private inner structs for each command (Set/Get/Report) implementing `ICommand`. The source generator auto-registers it. Use `Endpoint` property to access the endpoint (e.g. `Endpoint.NodeId`, `Endpoint.CommandClasses`).
+**New Command Class**: Create a class in `src/ZWave.CommandClasses/` inheriting `CommandClass<TEnum>`. Apply `[CommandClass(CommandClassId.X)]`. Constructor takes `(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)`. Define private inner structs for each command (Set/Get/Report) implementing `ICommand`. The source generator auto-registers it. Use `Endpoint` property to access the endpoint (e.g. `Endpoint.NodeId`, `Endpoint.CommandClasses`). For large CCs with many command groups, use the **partial class pattern**: the main file (`{Name}CommandClass.cs`) contains the command enum, constructor, `IsCommandSupported`, `InterviewAsync`, `ProcessUnsolicitedCommand`, and callbacks; each command group goes in a separate partial file (`{Name}CommandClass.{Group}.cs`) with its report record struct, inner command structs, and public accessor methods. Test classes follow the same split (`{Name}CommandClassTests.cs` + `{Name}CommandClassTests.{Group}.cs`).
 
 ## Protocol References
 

@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave.CommandClasses", "src
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ZWave.Protocol", "src\ZWave.Protocol\ZWave.Protocol.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZWave.CommandClasses.Tests", "src\ZWave.CommandClasses.Tests\ZWave.CommandClasses.Tests.csproj", "{DE99399C-60E2-45EF-995F-96E9A30D6E6F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,6 +69,10 @@ Global
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE99399C-60E2-45EF-995F-96E9A30D6E6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE99399C-60E2-45EF-995F-96E9A30D6E6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE99399C-60E2-45EF-995F-96E9A30D6E6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE99399C-60E2-45EF-995F-96E9A30D6E6F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -79,6 +85,7 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
+		{DE99399C-60E2-45EF-995F-96E9A30D6E6F} = {DDBF7DBF-FA50-4311-A52A-8AC978CD417A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {3FF630D0-FE46-40C3-B360-5908CC951F13}

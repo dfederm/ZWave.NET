@@ -2,28 +2,6 @@
 
 internal static class CommandDataParsingHelpers
 {
-    public static IReadOnlyList<CommandClassInfo> ParseCommandClasses(ReadOnlySpan<byte> allCommandClasses)
-    {
-        var commandClassInfos = new List<CommandClassInfo>(allCommandClasses.Length);
-        bool isSupported = true;
-        bool isControlled = false;
-        for (int i = 0; i < allCommandClasses.Length; i++)
-        {
-            var commandClassId = (CommandClassId)allCommandClasses[i];
-            if (commandClassId == CommandClassId.SupportControlMark)
-            {
-                isSupported = false;
-                isControlled = true;
-                continue;
-            }
-
-            commandClassInfos.Add(new CommandClassInfo(commandClassId, isSupported, isControlled));
-        }
-
-        return commandClassInfos;
-    }
-
-    /// <summary>
     /// Parses a node ID bitmask into a set of node IDs.
     /// Each bit in the bitmask represents a node: bit N in byte J corresponds to
     /// node ID <paramref name="baseNodeId"/> + J * 8 + N.

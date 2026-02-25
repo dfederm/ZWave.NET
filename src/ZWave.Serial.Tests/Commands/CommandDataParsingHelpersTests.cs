@@ -8,7 +8,7 @@ public class CommandDataParsingHelpersTests
     [TestMethod]
     public void ParseCommandClasses_EmptyInput_ReturnsEmpty()
     {
-        IReadOnlyList<CommandClassInfo> result = CommandDataParsingHelpers.ParseCommandClasses([]);
+        IReadOnlyList<CommandClassInfo> result = CommandClassInfo.ParseList([]);
 
         Assert.IsEmpty(result);
     }
@@ -23,7 +23,7 @@ public class CommandDataParsingHelpersTests
             (byte)CommandClassId.BinarySwitch
         ];
 
-        IReadOnlyList<CommandClassInfo> result = CommandDataParsingHelpers.ParseCommandClasses(data);
+        IReadOnlyList<CommandClassInfo> result = CommandClassInfo.ParseList(data);
 
         Assert.HasCount(2, result);
         Assert.AreEqual(new CommandClassInfo(CommandClassId.Basic, IsSupported: true, IsControlled: false), result[0]);
@@ -41,7 +41,7 @@ public class CommandDataParsingHelpersTests
             (byte)CommandClassId.BinarySwitch,
         ];
 
-        IReadOnlyList<CommandClassInfo> result = CommandDataParsingHelpers.ParseCommandClasses(data);
+        IReadOnlyList<CommandClassInfo> result = CommandClassInfo.ParseList(data);
 
         Assert.HasCount(2, result);
         Assert.AreEqual(new CommandClassInfo(CommandClassId.Basic, IsSupported: true, IsControlled: false), result[0]);
@@ -58,7 +58,7 @@ public class CommandDataParsingHelpersTests
             (byte)CommandClassId.MultilevelSensor,
         ];
 
-        IReadOnlyList<CommandClassInfo> result = CommandDataParsingHelpers.ParseCommandClasses(data);
+        IReadOnlyList<CommandClassInfo> result = CommandClassInfo.ParseList(data);
 
         Assert.HasCount(1, result);
         Assert.AreEqual(new CommandClassInfo(CommandClassId.MultilevelSensor, IsSupported: false, IsControlled: true), result[0]);
@@ -73,7 +73,7 @@ public class CommandDataParsingHelpersTests
             (byte)CommandClassId.SupportControlMark,
         ];
 
-        IReadOnlyList<CommandClassInfo> result = CommandDataParsingHelpers.ParseCommandClasses(data);
+        IReadOnlyList<CommandClassInfo> result = CommandClassInfo.ParseList(data);
 
         Assert.HasCount(1, result);
         Assert.IsFalse(result.Any(cc => cc.CommandClass == CommandClassId.SupportControlMark));

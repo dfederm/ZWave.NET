@@ -143,7 +143,7 @@ public readonly struct AddPrimaryControllerCallback : ICommand<AddPrimaryControl
         {
             byte length = Frame.CommandParameters.Span[3];
             ReadOnlySpan<byte> allCommandClasses = Frame.CommandParameters.Span.Slice(7, length);
-            return CommandDataParsingHelpers.ParseCommandClasses(allCommandClasses);
+            return CommandClassInfo.ParseList(allCommandClasses);
         }
     }
 

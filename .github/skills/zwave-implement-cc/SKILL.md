@@ -5,7 +5,7 @@ description: Guide for implementing Z-Wave Command Classes (CCs) in ZWave.NET
 
 # Implementing a Z-Wave Command Class
 
-This skill guides you through implementing a new Z-Wave Command Class (CC) in the ZWave.NET codebase. Everything goes in a **single file** in `src/ZWave.CommandClasses/`.
+This skill guides you through implementing a new Z-Wave Command Class (CC) in the ZWave.NET codebase, in `src/ZWave.CommandClasses/`.
 
 ## Checklist
 
@@ -15,9 +15,10 @@ Use this as a quick reference. Each item is explained in detail below.
 2. Create `src/ZWave.CommandClasses/{Name}CommandClass.cs`
 3. Define domain enums and report record structs (public types for the CC's values)
 4. Define the command enum (`byte`-backed, one entry per spec command)
-5. Implement the CC class: `[CommandClass]` attribute, constructor, `IsCommandSupported`, `InterviewAsync`, public API methods, `ProcessUnsolicitedCommand`
+5. Implement the CC class: `[CommandClass]` attribute, constructor, `IsCommandSupported`, `InterviewAsync`, `ProcessUnsolicitedCommand`
 6. Implement private inner command structs (Get, Set, Report, etc.) with static `Parse` methods on report commands
-7. Build with `dotnet build --configuration Release` to verify
+7. For large CCs, split into partial classes (see "Partial Class Pattern" below)
+8. Build with `dotnet build --configuration Release` to verify
 
 ## Prerequisites
 
@@ -29,7 +30,9 @@ If the `CommandClassId` enum does not yet have an entry for this CC, add it to `
 
 ## File Structure
 
-Create a single file: `src/ZWave.CommandClasses/{Name}CommandClass.cs`
+For simple CCs with few commands, a single file is sufficient: `src/ZWave.CommandClasses/{Name}CommandClass.cs`
+
+For larger CCs with multiple command groups, use the **partial class pattern** described below.
 
 The file uses the `ZWave.CommandClasses` namespace (file-scoped) and must include `using Microsoft.Extensions.Logging;`. The contents are ordered as follows:
 
@@ -75,6 +78,43 @@ The base class `CommandClass.ProcessCommand` distinguishes between **solicited**
 - **Unsolicited reports** are spontaneous updates from the device (e.g., a light switch was physically toggled). These are dispatched to `ProcessUnsolicitedCommand`, which calls `Parse` and updates cached state.
 
 This means `Parse` is called exactly **once** per report — either in `GetAsync` (solicited) or `ProcessUnsolicitedCommand` (unsolicited), never both.
+
+### Report Events
+
+For any report type that can be received unsolicited, the CC class MUST expose an `internal Action<TReport>?` event property that fires on **both** solicited and unsolicited reports. This allows library consumers (e.g., `Node`) to monitor all incoming data without polling.
+
+**Naming**: `On{ReportType}Received` (e.g., `OnEndpointReportReceived`, `OnCapabilityReportReceived`).
+
+**Raising events**:
+- In `GetAsync` methods: raise the event after `Parse`, before returning.
+- In `ProcessUnsolicitedCommand`: raise the event after `Parse`.
+- This means every report, regardless of path, fires the event exactly once.
+
+```csharp
+// In the CC class (or the appropriate partial class for the command group):
+public Action<{Name}Report>? On{Name}ReportReceived { get; set; }
+
+// In GetAsync:
+public async Task<{Name}Report> GetAsync(CancellationToken cancellationToken)
+{
+    ...
+    {Name}Report report = {Name}ReportCommand.Parse(reportFrame, Logger);
+    LastReport = report;
+    On{Name}ReportReceived?.Invoke(report);
+    return report;
+}
+
+// In ProcessUnsolicitedCommand:
+case {Name}Command.Report:
+{
+    {Name}Report report = {Name}ReportCommand.Parse(frame, Logger);
+    LastReport = report;
+    On{Name}ReportReceived?.Invoke(report);
+    break;
+}
+```
+
+**Which reports get events**: All report types that a device could send unsolicited. Reports that are only ever solicited (e.g., responses to capability queries that never change) do not need events, but MAY have them if useful for monitoring.
 
 ### State vs. Direct API
 
@@ -291,11 +331,12 @@ public async Task<{Name}Report> GetAsync(CancellationToken cancellationToken)
     CommandClassFrame reportFrame = await AwaitNextReportAsync<{Name}ReportCommand>(cancellationToken).ConfigureAwait(false);
     {Name}Report report = {Name}ReportCommand.Parse(reportFrame, Logger);
     LastReport = report;
+    On{Name}ReportReceived?.Invoke(report);
     return report;
 }
 ```
 
-The pattern is: create command → `SendCommandAsync` → `AwaitNextReportAsync<TReport>` → `Parse` the returned frame → update `LastReport` → return.
+The pattern is: create command → `SendCommandAsync` → `AwaitNextReportAsync<TReport>` → `Parse` the returned frame → update `LastReport` → raise event → return.
 
 #### Get with Direct Return (no cached state)
 
@@ -348,7 +389,7 @@ Pass `EffectiveVersion` when the command payload varies by version (see "Version
 
 ### 5. Implement `ProcessUnsolicitedCommand`
 
-This method handles **unsolicited** incoming report frames only (device-initiated, not responses to Get commands). It updates cached state properties. The base class calls this only when no awaiter matched the frame.
+This method handles **unsolicited** incoming report frames only (device-initiated, not responses to Get commands). It updates cached state properties and raises report events. The base class calls this only when no awaiter matched the frame.
 
 ```csharp
 protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
@@ -362,7 +403,9 @@ protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
         }
         case {Name}Command.Report:
         {
-            LastReport = {Name}ReportCommand.Parse(frame, Logger);
+            {Name}Report report = {Name}ReportCommand.Parse(frame, Logger);
+            LastReport = report;
+            On{Name}ReportReceived?.Invoke(report);
             break;
         }
     }
@@ -371,7 +414,7 @@ protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
 
 Key points:
 - Group outbound-only commands (Set, Get) in a single case that breaks. No comment needed.
-- For each report, call the static `Parse` method and assign the result to the cached state property.
+- For each report, call the static `Parse` method, assign to cached state, and raise the event.
 - **Do NOT validate payloads here** — validation belongs in `Parse`. If `Parse` throws, the base class catches and swallows the exception (Parse already logged a warning).
 - Reports that map only to direct API methods (no cached state) do **not** need a case here — they are only received as solicited reports in `GetAsync`.
 
@@ -550,6 +593,38 @@ for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
 - **`sealed`** CC classes.
 - **`internal`** constructor on the CC class.
 - **Warnings are errors** — the build will fail on any warning.
+
+## Partial Class Pattern for Large CCs
+
+When a CC has many command groups (e.g., Multi Channel CC with Endpoint, Capability, EndpointFind, CommandEncapsulation, AggregatedMembers), split the implementation into partial classes to keep files manageable.
+
+### File naming convention
+
+- **Main file**: `{Name}CommandClass.cs` — contains the command enum, class declaration with constructor, `IsCommandSupported`, `InterviewAsync`, and `ProcessUnsolicitedCommand`
+- **Group files**: `{Name}CommandClass.{Group}.cs` — each contains a command group (Get/Report or Get/Set/Report triplet), the associated public report record struct, the inner command structs, the public accessor methods, and the `Action<TReport>?` event property for that report
+
+### Example: Multi Channel CC
+
+```
+MultiChannelCommandClass.cs                        — enum, constructor, interview, unsolicited handler
+MultiChannelCommandClass.Endpoint.cs               — Endpoint Get/Report, record, event
+MultiChannelCommandClass.Capability.cs             — Capability Get/Report, record, event
+MultiChannelCommandClass.EndpointFind.cs           — Endpoint Find/Find Report, accessor
+MultiChannelCommandClass.CommandEncapsulation.cs   — Encapsulation create/parse, event
+MultiChannelCommandClass.AggregatedMembers.cs      — Aggregated Members Get/Report, accessor
+```
+
+### When to split
+
+- **Always start with a single file.** Only split when the file grows large enough that related command groups become hard to navigate (roughly 300+ lines).
+- Each partial file should be **self-contained** for its command group — a reader should be able to understand that group's wire format, parsing, and API without reading other files.
+- The main file should contain **only CC-wide concerns**: the command enum, constructor, `IsCommandSupported`, `InterviewAsync`, `ProcessUnsolicitedCommand`, and any callbacks or shared state.
+
+### Test files
+
+Test classes follow the same partial class split:
+- **Main file**: `{Name}CommandClassTests.cs` — `[TestClass] public partial class {Name}CommandClassTests { }`
+- **Group files**: `{Name}CommandClassTests.{Group}.cs` — tests for each command group
 
 ## Build Validation
 
