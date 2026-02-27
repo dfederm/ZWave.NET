@@ -16,7 +16,7 @@ Use this as a quick reference. Each item is explained in detail below.
 3. Define domain enums and report record structs (public types for the CC's values)
 4. Define the command enum (`byte`-backed, one entry per spec command)
 5. Implement the CC class: `[CommandClass]` attribute, constructor, `IsCommandSupported`, `InterviewAsync`, `ProcessUnsolicitedCommand`
-6. Implement private inner command structs (Get, Set, Report, etc.) with static `Parse` methods on report commands
+6. Implement internal inner command structs (Get, Set, Report, etc.) with static `Parse` methods on report commands
 7. For large CCs, split into partial classes (see "Partial Class Pattern" below)
 8. Build with `dotnet build --configuration Release` to verify
 
@@ -39,7 +39,7 @@ The file uses the `ZWave.CommandClasses` namespace (file-scoped) and must includ
 1. Domain enums and report record structs (public) — types representing the CC's values
 2. A **command enum** (`byte`-backed) listing every command in the CC
 3. The **CC class** itself — `sealed`, inherits `CommandClass<TCommand>`
-4. **Private inner command structs** — one per command (Get, Set, Report, etc.), nested inside the CC class
+4. **Internal inner command structs** — one per command (Get, Set, Report, etc.), nested inside the CC class
 
 ## Design Principles
 
@@ -303,7 +303,7 @@ public sealed class {Name}CommandClass : CommandClass<{Name}Command>
         // ... see pattern below ...
     }
 
-    // Private inner command structs
+    // Internal inner command structs
     // ... see patterns below ...
 }
 ```
@@ -391,16 +391,13 @@ Pass `EffectiveVersion` when the command payload varies by version (see "Version
 
 This method handles **unsolicited** incoming report frames only (device-initiated, not responses to Get commands). It updates cached state properties and raises report events. The base class calls this only when no awaiter matched the frame.
 
+Only include cases for commands that can actually arrive unsolicited — typically Report commands. Do **not** add no-op cases for outbound-only commands like Set and Get.
+
 ```csharp
 protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
 {
     switch (({Name}Command)frame.CommandId)
     {
-        case {Name}Command.Set:
-        case {Name}Command.Get:
-        {
-            break;
-        }
         case {Name}Command.Report:
         {
             {Name}Report report = {Name}ReportCommand.Parse(frame, Logger);
@@ -413,19 +410,19 @@ protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
 ```
 
 Key points:
-- Group outbound-only commands (Set, Get) in a single case that breaks. No comment needed.
+- Only handle commands that can arrive unsolicited (typically Report). Do not add cases for Set/Get.
 - For each report, call the static `Parse` method, assign to cached state, and raise the event.
 - **Do NOT validate payloads here** — validation belongs in `Parse`. If `Parse` throws, the base class catches and swallows the exception (Parse already logged a warning).
 - Reports that map only to direct API methods (no cached state) do **not** need a case here — they are only received as solicited reports in `GetAsync`.
 
 ### 6. Implement Private Inner Command Structs
 
-Each command is a `private readonly struct` implementing `ICommand` (from `ZWave.CommandClasses`), nested inside the CC class. There are three patterns:
+Each command is an `internal readonly struct` implementing `ICommand` (from `ZWave.CommandClasses`), nested inside the CC class. The `internal` visibility enables direct unit testing of command creation and report parsing. There are three patterns:
 
 #### Get Command (no parameters)
 
 ```csharp
-private readonly struct {Name}GetCommand : ICommand
+internal readonly struct {Name}GetCommand : ICommand
 {
     public {Name}GetCommand(CommandClassFrame frame)
     {
@@ -449,7 +446,7 @@ private readonly struct {Name}GetCommand : ICommand
 #### Set Command (with parameters)
 
 ```csharp
-private readonly struct {Name}SetCommand : ICommand
+internal readonly struct {Name}SetCommand : ICommand
 {
     public {Name}SetCommand(CommandClassFrame frame)
     {
@@ -489,7 +486,7 @@ Span<byte> commandParameters = stackalloc byte[1 + (includeDuration ? 1 : 0)];
 #### Report Command (with static Parse method)
 
 ```csharp
-private readonly struct {Name}ReportCommand : ICommand
+internal readonly struct {Name}ReportCommand : ICommand
 {
     public {Name}ReportCommand(CommandClassFrame frame)
     {

@@ -14,14 +14,14 @@
             <tbody>
                 <tr>
                     <th scope="row">Current Value</th>
-                    <td>@(report.CurrentValue.HasValue ? report.CurrentValue.Value : "Unknown")</td>
+                    <td>@(report.CurrentValue.State?.ToString() ?? "Unknown")</td>
                 </tr>
 
                 @if (report.TargetValue.HasValue)
                 {
                     <tr>
                         <th scope="row">Target Value</th>
-                        <td>@report.TargetValue.Value</td>
+                        <td>@(report.TargetValue.Value.State?.ToString() ?? "Unknown")</td>
                     </tr>
                 }
 

@@ -10,12 +10,12 @@ public enum BinarySwitchCommand : byte
     Set = 0x01,
 
     /// <summary>
-    /// Request the current On/Off state from a node
+    /// Request the current On/Off state from a node.
     /// </summary>
     Get = 0x02,
 
     /// <summary>
-    /// Advertise the current On/Off state at the sending node
+    /// Advertise the current On/Off state at the sending node.
     /// </summary>
     Report = 0x03,
 }
@@ -25,17 +25,17 @@ public enum BinarySwitchCommand : byte
 /// </summary>
 public readonly record struct BinarySwitchReport(
     /// <summary>
-    /// The current On/Off state at the sending node
+    /// The current On/Off state at the sending node.
     /// </summary>
-    bool? CurrentValue,
+    GenericValue CurrentValue,
 
     /// <summary>
     /// The target value of an ongoing transition or the most recent transition.
     /// </summary>
-    bool? TargetValue,
+    GenericValue? TargetValue,
 
     /// <summary>
-    /// Advertise the duration of a transition from the Current Value to the Target Value.
+    /// The duration of a transition from the Current Value to the Target Value.
     /// </summary>
     DurationReport? Duration);
 
@@ -52,6 +52,11 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
     /// </summary>
     public BinarySwitchReport? LastReport { get; private set; }
 
+    /// <summary>
+    /// Event raised when a Binary Switch Report is received, both solicited and unsolicited.
+    /// </summary>
+    public event Action<BinarySwitchReport>? OnBinarySwitchReportReceived;
+
     /// <inheritdoc />
     public override bool? IsCommandSupported(BinarySwitchCommand command)
         => command switch
@@ -67,7 +72,7 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
     }
 
     /// <summary>
-    /// Request the current On/Off state from a node
+    /// Request the current On/Off state from a node.
     /// </summary>
     public async Task<BinarySwitchReport> GetAsync(CancellationToken cancellationToken)
     {
@@ -76,6 +81,7 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
         CommandClassFrame reportFrame = await AwaitNextReportAsync<BinarySwitchReportCommand>(cancellationToken).ConfigureAwait(false);
         BinarySwitchReport report = BinarySwitchReportCommand.Parse(reportFrame, Logger);
         LastReport = report;
+        OnBinarySwitchReportReceived?.Invoke(report);
         return report;
     }
 
@@ -95,20 +101,17 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
     {
         switch ((BinarySwitchCommand)frame.CommandId)
         {
-            case BinarySwitchCommand.Set:
-            case BinarySwitchCommand.Get:
-            {
-                break;
-            }
             case BinarySwitchCommand.Report:
             {
-                LastReport = BinarySwitchReportCommand.Parse(frame, Logger);
+                BinarySwitchReport report = BinarySwitchReportCommand.Parse(frame, Logger);
+                LastReport = report;
+                OnBinarySwitchReportReceived?.Invoke(report);
                 break;
             }
         }
     }
 
-    private readonly struct BinarySwitchSetCommand : ICommand
+    internal readonly struct BinarySwitchSetCommand : ICommand
     {
         public BinarySwitchSetCommand(CommandClassFrame frame)
         {
@@ -136,7 +139,7 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
         }
     }
 
-    private readonly struct BinarySwitchGetCommand : ICommand
+    internal readonly struct BinarySwitchGetCommand : ICommand
     {
         public BinarySwitchGetCommand(CommandClassFrame frame)
         {
@@ -156,7 +159,7 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
         }
     }
 
-    private readonly struct BinarySwitchReportCommand : ICommand
+    internal readonly struct BinarySwitchReportCommand : ICommand
     {
         public BinarySwitchReportCommand(CommandClassFrame frame)
         {
@@ -177,22 +180,14 @@ public sealed class BinarySwitchCommandClass : CommandClass<BinarySwitchCommand>
                 throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Binary Switch Report frame is too short");
             }
 
-            bool? currentValue = ParseBool(frame.CommandParameters.Span[0]);
-            bool? targetValue = frame.CommandParameters.Length > 1
-                ? ParseBool(frame.CommandParameters.Span[1])
+            GenericValue currentValue = frame.CommandParameters.Span[0];
+            GenericValue? targetValue = frame.CommandParameters.Length > 1
+                ? frame.CommandParameters.Span[1]
                 : null;
             DurationReport? duration = frame.CommandParameters.Length > 2
                 ? frame.CommandParameters.Span[2]
                 : null;
             return new BinarySwitchReport(currentValue, targetValue, duration);
         }
-
-        private static bool? ParseBool(byte b)
-            => b switch
-            {
-                0x00 => false,
-                0xff => true,
-                _ => null,
-            };
     }
 }
