@@ -28,7 +28,7 @@ public readonly record struct ColorSwitchReport(
 
 public sealed partial class ColorSwitchCommandClass
 {
-    private Dictionary<ColorSwitchColorComponent, ColorSwitchReport?>? _colorComponents;
+    private Dictionary<ColorSwitchColorComponent, ColorSwitchReport?> _colorComponents = new();
 
     /// <summary>
     /// Event raised when a Color Switch Report is received, both solicited and unsolicited.
@@ -38,7 +38,7 @@ public sealed partial class ColorSwitchCommandClass
     /// <summary>
     /// Gets the state of each supported color component.
     /// </summary>
-    public IReadOnlyDictionary<ColorSwitchColorComponent, ColorSwitchReport?>? ColorComponents => _colorComponents;
+    public IReadOnlyDictionary<ColorSwitchColorComponent, ColorSwitchReport?> ColorComponents => _colorComponents;
 
     /// <summary>
     /// Request the status of a specified color component.
@@ -55,7 +55,7 @@ public sealed partial class ColorSwitchCommandClass
             cancellationToken).ConfigureAwait(false);
         ColorSwitchReport report = ColorSwitchReportCommand.Parse(reportFrame, Logger);
 
-        _colorComponents?[report.ColorComponent] = report;
+        _colorComponents[report.ColorComponent] = report;
 
         OnColorSwitchReportReceived?.Invoke(report);
         return report;

@@ -17,7 +17,7 @@
             </tbody>
         }
 
-        @if (CommandClass.ColorComponents != null)
+        @if (CommandClass.ColorComponents.Count > 0)
         {
             @foreach (KeyValuePair<ColorSwitchColorComponent, ColorSwitchReport?> kvp in CommandClass.ColorComponents)
             {
@@ -248,7 +248,7 @@
     {
         // TODO: Update on change
         _setValues = new List<ColorComponentSetValue>(CommandClass?.ColorComponents?.Count ?? 0);
-        if (CommandClass?.ColorComponents != null)
+        if (CommandClass != null)
         {
             foreach (KeyValuePair<ColorSwitchColorComponent, ColorSwitchReport?> kvp in CommandClass.ColorComponents)
             {

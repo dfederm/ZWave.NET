@@ -33,8 +33,7 @@ public sealed partial class ColorSwitchCommandClass
         {
             // Persist any existing known state.
             ColorSwitchReport? colorComponentState = null;
-            if (_colorComponents != null
-                && _colorComponents.TryGetValue(colorComponent, out ColorSwitchReport? existingState))
+            if (_colorComponents.TryGetValue(colorComponent, out ColorSwitchReport? existingState))
             {
                 colorComponentState = existingState;
             }

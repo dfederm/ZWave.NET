@@ -160,10 +160,7 @@ public sealed partial class ColorSwitchCommandClass : CommandClass<ColorSwitchCo
             case ColorSwitchCommand.Report:
             {
                 ColorSwitchReport report = ColorSwitchReportCommand.Parse(frame, Logger);
-                if (_colorComponents != null)
-                {
-                    _colorComponents[report.ColorComponent] = report;
-                }
+                _colorComponents[report.ColorComponent] = report;
 
                 OnColorSwitchReportReceived?.Invoke(report);
                 break;
