@@ -103,17 +103,6 @@ namespace ZWave.CommandClasses;
 
 internal static class CommandClassFactory
 {
-    private static readonly Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, IEndpoint, ILogger, CommandClass>> Constructors = new Dictionary<CommandClassId, Func<CommandClassInfo, IDriver, IEndpoint, ILogger, CommandClass>>
-    {
-");
-
-        foreach (KeyValuePair<string, string> pair in idToType)
-        {
-            sb.AppendLine($"        {{ {pair.Key}, (info, driver, endpoint, logger) => new {pair.Value}(info, driver, endpoint, logger) }},");
-        }
-
-        sb.Append(@"    };
-
     private static readonly Dictionary<Type, CommandClassId> TypeToIdMap = new Dictionary<Type, CommandClassId>
     {
 ");
@@ -126,9 +115,17 @@ internal static class CommandClassFactory
         sb.Append(@"    };
 
     public static CommandClass Create(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
-        => Constructors.TryGetValue(info.CommandClass, out Func<CommandClassInfo, IDriver, IEndpoint, ILogger, CommandClass>? constructor)
-            ? constructor(info, driver, endpoint, logger)
-            : new NotImplementedCommandClass(info, driver, endpoint, logger);
+        => info.CommandClass switch
+        {
+");
+
+        foreach (KeyValuePair<string, string> pair in idToType)
+        {
+            sb.AppendLine($"            {pair.Key} => new {pair.Value}(info, driver, endpoint, logger),");
+        }
+
+        sb.Append(@"            _ => new NotImplementedCommandClass(info, driver, endpoint, logger),
+        };
 
     public static CommandClassId GetCommandClassId<TCommandClass>()
         where TCommandClass : CommandClass
