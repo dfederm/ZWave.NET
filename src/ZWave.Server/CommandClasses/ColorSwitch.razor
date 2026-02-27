@@ -19,11 +19,11 @@
 
         @if (CommandClass.ColorComponents != null)
         {
-            @foreach (KeyValuePair<ColorSwitchColorComponent, ColorSwitchColorComponentState?> kvp in CommandClass.ColorComponents)
+            @foreach (KeyValuePair<ColorSwitchColorComponent, ColorSwitchReport?> kvp in CommandClass.ColorComponents)
             {
                 @if (kvp.Value.HasValue)
                 {
-                    ColorSwitchColorComponentState state = kvp.Value.Value;
+                    ColorSwitchReport state = kvp.Value.Value;
 
                     <tbody>
                         <tr>
@@ -250,7 +250,7 @@
         _setValues = new List<ColorComponentSetValue>(CommandClass?.ColorComponents?.Count ?? 0);
         if (CommandClass?.ColorComponents != null)
         {
-            foreach (KeyValuePair<ColorSwitchColorComponent, ColorSwitchColorComponentState?> kvp in CommandClass.ColorComponents)
+            foreach (KeyValuePair<ColorSwitchColorComponent, ColorSwitchReport?> kvp in CommandClass.ColorComponents)
             {
                 _setValues.Add(new ColorComponentSetValue { ColorComponent = kvp.Key, Value = kvp.Value?.CurrentValue ?? 0 });
             }
