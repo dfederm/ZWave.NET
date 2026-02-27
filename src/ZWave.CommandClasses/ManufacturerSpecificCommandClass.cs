@@ -8,10 +8,19 @@ namespace ZWave.CommandClasses;
 /// </summary>
 public enum ManufacturerSpecificDeviceIdType : byte
 {
+    /// <summary>
+    /// Return OEM factory default Device ID Type.
+    /// </summary>
     FactoryDefault = 0x00,
 
+    /// <summary>
+    /// Serial Number.
+    /// </summary>
     SerialNumber = 0x01,
 
+    /// <summary>
+    /// Pseudo Random.
+    /// </summary>
     PseudoRandom = 0x02,
 }
 
@@ -57,15 +66,40 @@ public readonly record struct ManufacturerInformation(
     /// </summary>
     ushort ProductId);
 
+/// <summary>
+/// Represents a Device Specific Report received from a device.
+/// </summary>
+public readonly record struct DeviceSpecificReport(
+    /// <summary>
+    /// The type of device ID reported by the device.
+    /// </summary>
+    ManufacturerSpecificDeviceIdType DeviceIdType,
+
+    /// <summary>
+    /// The device ID value, formatted as a string.
+    /// UTF-8 data is returned as-is; binary data is returned as a hex string prefixed with "0x".
+    /// </summary>
+    string DeviceId);
+
 [CommandClass(CommandClassId.ManufacturerSpecific)]
 public sealed class ManufacturerSpecificCommandClass : CommandClass<ManufacturerSpecificCommand>
 {
     private readonly Dictionary<ManufacturerSpecificDeviceIdType, string> _deviceIds = new();
 
-    public ManufacturerSpecificCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+    internal ManufacturerSpecificCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
         : base(info, driver, endpoint, logger)
     {
     }
+
+    /// <summary>
+    /// Raised when a Manufacturer Specific Report is received, whether solicited or unsolicited.
+    /// </summary>
+    public event Action<ManufacturerInformation>? OnManufacturerInformationReceived;
+
+    /// <summary>
+    /// Raised when a Device Specific Report is received, whether solicited or unsolicited.
+    /// </summary>
+    public event Action<DeviceSpecificReport>? OnDeviceSpecificReportReceived;
 
     /// <summary>
     /// Gets the manufacturer identification information.
@@ -86,6 +120,9 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
             _ => false,
         };
 
+    /// <summary>
+    /// Requests the manufacturer specific information from the device.
+    /// </summary>
     public async Task<ManufacturerInformation> GetAsync(CancellationToken cancellationToken)
     {
         ManufacturerSpecificGetCommand command = ManufacturerSpecificGetCommand.Create();
@@ -93,24 +130,26 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         CommandClassFrame reportFrame = await AwaitNextReportAsync<ManufacturerSpecificReportCommand>(cancellationToken).ConfigureAwait(false);
         ManufacturerInformation info = ManufacturerSpecificReportCommand.Parse(reportFrame, Logger);
         ManufacturerInformation = info;
+        OnManufacturerInformationReceived?.Invoke(info);
         return info;
     }
 
-    public async Task<string> GetDeviceIdAsync(ManufacturerSpecificDeviceIdType deviceIdType, CancellationToken cancellationToken)
+    /// <summary>
+    /// Requests device specific information for the given device ID type.
+    /// </summary>
+    /// <remarks>
+    /// Per the spec, if the requested device ID type is not supported by the device,
+    /// the device MAY return the factory default device ID type instead.
+    /// </remarks>
+    public async Task<DeviceSpecificReport> GetDeviceIdAsync(ManufacturerSpecificDeviceIdType deviceIdType, CancellationToken cancellationToken)
     {
         ManufacturerSpecificDeviceSpecificGetCommand command = ManufacturerSpecificDeviceSpecificGetCommand.Create(deviceIdType);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-
-        // From the spec:
-        //      In case the Device ID Type specified in a Device Specific Get command is not supported by the 
-        //      responding node, the responding node MAY return the factory default Device ID Type (as if receiving 
-        //      the value 0 in the Device Specific Get command).
-        // So we can't check the device id type from the report with the one provided, nor can we use the provided device id type as a key to lookup in _deviceIds.
         CommandClassFrame reportFrame = await AwaitNextReportAsync<ManufacturerSpecificDeviceSpecificReportCommand>(cancellationToken).ConfigureAwait(false);
-        ManufacturerSpecificDeviceIdType reportedDeviceIdType = ManufacturerSpecificDeviceSpecificReportCommand.ParseDeviceIdType(reportFrame, Logger);
-        string deviceId = ManufacturerSpecificDeviceSpecificReportCommand.Parse(reportFrame, Logger);
-        _deviceIds[reportedDeviceIdType] = deviceId;
-        return deviceId;
+        DeviceSpecificReport report = ManufacturerSpecificDeviceSpecificReportCommand.Parse(reportFrame, Logger);
+        _deviceIds[report.DeviceIdType] = report.DeviceId;
+        OnDeviceSpecificReportReceived?.Invoke(report);
+        return report;
     }
 
     internal override CommandClassCategory Category => CommandClassCategory.Management;
@@ -132,26 +171,24 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
     {
         switch ((ManufacturerSpecificCommand)frame.CommandId)
         {
-            case ManufacturerSpecificCommand.Get:
-            case ManufacturerSpecificCommand.DeviceSpecificGet:
-            {
-                break;
-            }
             case ManufacturerSpecificCommand.Report:
             {
-                ManufacturerInformation = ManufacturerSpecificReportCommand.Parse(frame, Logger);
+                ManufacturerInformation info = ManufacturerSpecificReportCommand.Parse(frame, Logger);
+                ManufacturerInformation = info;
+                OnManufacturerInformationReceived?.Invoke(info);
                 break;
             }
             case ManufacturerSpecificCommand.DeviceSpecificReport:
             {
-                ManufacturerSpecificDeviceIdType deviceIdType = ManufacturerSpecificDeviceSpecificReportCommand.ParseDeviceIdType(frame, Logger);
-                _deviceIds[deviceIdType] = ManufacturerSpecificDeviceSpecificReportCommand.Parse(frame, Logger);
+                DeviceSpecificReport report = ManufacturerSpecificDeviceSpecificReportCommand.Parse(frame, Logger);
+                _deviceIds[report.DeviceIdType] = report.DeviceId;
+                OnDeviceSpecificReportReceived?.Invoke(report);
                 break;
             }
         }
     }
 
-    private readonly struct ManufacturerSpecificGetCommand : ICommand
+    internal readonly struct ManufacturerSpecificGetCommand : ICommand
     {
         public ManufacturerSpecificGetCommand(CommandClassFrame frame)
         {
@@ -171,7 +208,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         }
     }
 
-    private readonly struct ManufacturerSpecificReportCommand : ICommand
+    internal readonly struct ManufacturerSpecificReportCommand : ICommand
     {
         public ManufacturerSpecificReportCommand(CommandClassFrame frame)
         {
@@ -199,7 +236,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         }
     }
 
-    private readonly struct ManufacturerSpecificDeviceSpecificGetCommand : ICommand
+    internal readonly struct ManufacturerSpecificDeviceSpecificGetCommand : ICommand
     {
         public ManufacturerSpecificDeviceSpecificGetCommand(CommandClassFrame frame)
         {
@@ -220,7 +257,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
         }
     }
 
-    private readonly struct ManufacturerSpecificDeviceSpecificReportCommand : ICommand
+    internal readonly struct ManufacturerSpecificDeviceSpecificReportCommand : ICommand
     {
         public ManufacturerSpecificDeviceSpecificReportCommand(CommandClassFrame frame)
         {
@@ -233,39 +270,43 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
 
         public CommandClassFrame Frame { get; }
 
-        public static ManufacturerSpecificDeviceIdType ParseDeviceIdType(CommandClassFrame frame, ILogger logger)
-        {
-            if (frame.CommandParameters.Length < 1)
-            {
-                logger.LogWarning("Manufacturer Specific Device Specific Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Manufacturer Specific Device Specific Report frame is too short");
-            }
-
-            return (ManufacturerSpecificDeviceIdType)(frame.CommandParameters.Span[0] & 0b0000_0111);
-        }
-
-        public static string Parse(CommandClassFrame frame, ILogger logger)
+        public static DeviceSpecificReport Parse(CommandClassFrame frame, ILogger logger)
         {
             if (frame.CommandParameters.Length < 2)
             {
-                logger.LogWarning("Manufacturer Specific Device Specific Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Manufacturer Specific Device Specific Report frame is too short");
+                logger.LogWarning("Device Specific Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Device Specific Report frame is too short");
             }
 
-            int deviceIdDataLength = frame.CommandParameters.Span[1] & 0b0001_1111;
-            ReadOnlySpan<byte> deviceIdData = frame.CommandParameters.Span.Slice(2, deviceIdDataLength);
+            ReadOnlySpan<byte> span = frame.CommandParameters.Span;
 
-            int deviceIdDataFormat = (frame.CommandParameters.Span[1] & 0b1110_0000) >> 5;
-            if (deviceIdDataFormat == 0)
+            ManufacturerSpecificDeviceIdType deviceIdType = (ManufacturerSpecificDeviceIdType)(span[0] & 0b0000_0111);
+
+            int deviceIdDataFormat = (span[1] & 0b1110_0000) >> 5;
+            int deviceIdDataLength = span[1] & 0b0001_1111;
+
+            if (deviceIdDataLength == 0)
             {
-                // UTF-8
-                return Encoding.UTF8.GetString(deviceIdData);
+                logger.LogWarning("Device Specific Report has zero Device ID Data Length");
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Device Specific Report has zero Device ID Data Length");
             }
-            else
+
+            if (frame.CommandParameters.Length < 2 + deviceIdDataLength)
             {
-                // Binary
-                return $"0x{Convert.ToHexString(deviceIdData)}";
+                logger.LogWarning(
+                    "Device Specific Report frame is too short for declared data length ({Length} bytes, expected at least {Expected})",
+                    frame.CommandParameters.Length,
+                    2 + deviceIdDataLength);
+                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Device Specific Report frame is too short for declared data length");
             }
+
+            ReadOnlySpan<byte> deviceIdData = span.Slice(2, deviceIdDataLength);
+
+            string deviceId = deviceIdDataFormat == 0
+                ? Encoding.UTF8.GetString(deviceIdData)
+                : $"0x{Convert.ToHexString(deviceIdData)}";
+
+            return new DeviceSpecificReport(deviceIdType, deviceId);
         }
     }
 }
