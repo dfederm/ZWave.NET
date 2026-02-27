@@ -6,7 +6,7 @@
 /// <remarks>
 /// As defined by the Z-Wave Application Specification, Table 21, Table 82.
 /// </remarks>
-public struct GenericValue
+public readonly struct GenericValue
 {
     public GenericValue(byte value)
     {
