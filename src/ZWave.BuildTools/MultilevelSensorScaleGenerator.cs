@@ -36,10 +36,10 @@ public sealed class MultilevelSensorScale
         foreach (ScaleTypeConfig scaleTypeConfig in config.ScaleTypes)
         {
             sb.Append($@"
-    public static IReadOnlyDictionary<byte, MultilevelSensorScale> {scaleTypeConfig.Name} {{ get; }}
+    internal static MultilevelSensorScale?[] {scaleTypeConfig.Name} {{ get; }}
         = ");
 
-            AppendScalesDictionary(sb, scaleTypeConfig.Scales, indentLevel: 2);
+            AppendScalesArray(sb, scaleTypeConfig.Scales, indentLevel: 2);
 
             sb.AppendLine(";");
         }
@@ -50,33 +50,61 @@ public sealed class MultilevelSensorScale
         return sb.ToString();
     }
 
-    internal static void AppendScalesDictionary(
+    internal static void AppendScalesArray(
         StringBuilder sb,
         IReadOnlyList<ScaleConfig> scales,
         int indentLevel)
     {
         static void Indent(StringBuilder sb, int indentLevel) => sb.Append(' ', indentLevel * 4);
 
-        // Caller is expecetd to indent the first line since there might be a prefix.
-        sb.AppendLine("new Dictionary<byte, MultilevelSensorScale>");
+        // Determine array size from max scale ID + 1
+        int maxId = 0;
+        foreach (ScaleConfig scale in scales)
+        {
+            int id = Convert.ToInt32(scale.Id, 16);
+            if (id > maxId)
+            {
+                maxId = id;
+            }
+        }
+
+        int arraySize = maxId + 1;
+
+        // Build a sparse array indexed by scale ID
+        var slotted = new ScaleConfig?[arraySize];
+        foreach (ScaleConfig scale in scales)
+        {
+            int id = Convert.ToInt32(scale.Id, 16);
+            slotted[id] = scale;
+        }
+
+        sb.AppendLine("new MultilevelSensorScale?[]");
 
         Indent(sb, indentLevel);
         sb.AppendLine("{");
 
-        foreach (ScaleConfig scale in scales)
+        for (int i = 0; i < arraySize; i++)
         {
             Indent(sb, indentLevel + 1);
-            sb.Append($@"{{ {scale.Id}, new MultilevelSensorScale({scale.Id}, ""{scale.Label}"", ");
-            if (scale.Unit == null)
+            ScaleConfig? scale = slotted[i];
+            if (scale != null)
             {
-                sb.Append("null");
+                sb.Append($@"new MultilevelSensorScale({scale.Id}, ""{scale.Label}"", ");
+                if (scale.Unit == null)
+                {
+                    sb.Append("null");
+                }
+                else
+                {
+                    sb.Append($@"""{scale.Unit}""");
+                }
+
+                sb.AppendLine("),");
             }
             else
             {
-                sb.Append($@"""{scale.Unit}""");
+                sb.AppendLine("null,");
             }
-
-            sb.AppendLine($@") }},");
         }
 
         Indent(sb, indentLevel);

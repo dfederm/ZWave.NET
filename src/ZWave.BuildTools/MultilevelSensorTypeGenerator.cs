@@ -23,6 +23,7 @@ public enum MultilevelSensorType : byte
 ");
 
         IReadOnlyList<SensorTypeConfig> sensorTypes = config.SensorTypes;
+
         foreach (SensorTypeConfig sensorType in sensorTypes)
         {
             sb.Append($@"
@@ -34,68 +35,74 @@ public enum MultilevelSensorType : byte
 
 public static class MultilevelSensorTypeExtensions
 {
-    private static readonly Dictionary<MultilevelSensorType, string> DisplayNames = new()
-    {");
+");
 
+        // Emit private static readonly fields for inline scale arrays
         foreach (SensorTypeConfig sensorType in sensorTypes)
         {
-            sb.Append($@"
-        {{ MultilevelSensorType.{sensorType.Name},  ""{sensorType.DisplayName}"" }},");
+            if (sensorType.Scales != null)
+            {
+                sb.Append($@"    private static readonly MultilevelSensorScale?[] s_{CamelCase(sensorType.Name)}Scales = ");
+                MultilevelSensorScaleGenerator.AppendScalesArray(sb, sensorType.Scales, indentLevel: 1);
+                sb.AppendLine(";");
+                sb.AppendLine();
+            }
         }
 
-        sb.Append(@"
-    };
-
-    public static string ToDisplayString(this MultilevelSensorType sensorType)
-        => DisplayNames.TryGetValue(sensorType, out string? displayName)
-            ? displayName
-            : ""Unknown"";
-
-    private static readonly Dictionary<MultilevelSensorType, IReadOnlyDictionary<byte, MultilevelSensorScale>> ScaleTypes = new()
-    {");
+        // ToDisplayString — switch expression
+        sb.Append(@"    public static string ToDisplayString(this MultilevelSensorType sensorType)
+        => sensorType switch
+        {
+");
 
         foreach (SensorTypeConfig sensorType in sensorTypes)
         {
-            // { MultilevelSensorType.Foo, MultilevelSensorScale.Bar }
+            sb.AppendLine($@"            MultilevelSensorType.{sensorType.Name} => ""{sensorType.DisplayName}"",");
+        }
+
+        sb.Append(@"            _ => ""Unknown"",
+        };
+
+");
+
+        // GetScale — switch for outer lookup, array index for inner
+        sb.Append(@"    public static MultilevelSensorScale GetScale(this MultilevelSensorType sensorType, byte scaleId)
+    {
+        MultilevelSensorScale?[]? scales = sensorType switch
+        {
+");
+
+        foreach (SensorTypeConfig sensorType in sensorTypes)
+        {
             if (sensorType.ScaleType != null)
             {
-                sb.Append($@"
-        {{ MultilevelSensorType.{sensorType.Name}, MultilevelSensorScale.{sensorType.ScaleType} }},");
+                sb.AppendLine($"            MultilevelSensorType.{sensorType.Name} => MultilevelSensorScale.{sensorType.ScaleType},");
             }
-
-            /*
-                {
-                    MultiLevelSensorType.Foo,
-                    new Dictionary<byte, MultilevelSensorScale>
-                    {
-                        ...
-                    }
-                }
-            */
             else if (sensorType.Scales != null)
             {
-                sb.Append($@"
-        {{
-            MultilevelSensorType.{sensorType.Name},
-            ");
-                MultilevelSensorScaleGenerator.AppendScalesDictionary(sb, sensorType.Scales, indentLevel: 3);
-                sb.Append($@"
-        }},");
-
+                sb.AppendLine($"            MultilevelSensorType.{sensorType.Name} => s_{CamelCase(sensorType.Name)}Scales,");
             }
         }
 
-        sb.Append(@"
-    };
+        sb.Append(@"            _ => null,
+        };
 
-    public static MultilevelSensorScale GetScale(this MultilevelSensorType sensorType, byte scaleId)
-        => ScaleTypes.TryGetValue(sensorType, out IReadOnlyDictionary<byte, MultilevelSensorScale>? scaleTypes)
-            ? scaleTypes.TryGetValue(scaleId, out MultilevelSensorScale? scale)
-                ? scale
-                : new MultilevelSensorScale(scaleId, ""Unknown"", null)
-            : new MultilevelSensorScale(scaleId, ""Unknown"", null);
+        if (scales != null && scaleId < scales.Length)
+        {
+            MultilevelSensorScale? scale = scales[scaleId];
+            if (scale != null)
+            {
+                return scale;
+            }
+        }
+
+        return new MultilevelSensorScale(scaleId, ""Unknown"", null);
+    }
 }
 ");
         return sb.ToString();
     }
+
+    private static string CamelCase(string name)
+        => char.ToLowerInvariant(name[0]) + name.Substring(1);
 }
