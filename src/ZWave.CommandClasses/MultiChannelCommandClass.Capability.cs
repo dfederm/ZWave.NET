@@ -36,7 +36,7 @@ public sealed partial class MultiChannelCommandClass
     /// <summary>
     /// Event raised when a Capability Report is received (solicited or unsolicited).
     /// </summary>
-    public Action<MultiChannelCapabilityReport>? OnCapabilityReportReceived { get; set; }
+    public event Action<MultiChannelCapabilityReport>? OnCapabilityReportReceived;
 
     /// <summary>
     /// Queries the capabilities of a specific End Point.

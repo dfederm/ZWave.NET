@@ -31,7 +31,7 @@ public sealed partial class MultiChannelCommandClass
     /// <summary>
     /// Event raised when a Multi Channel Command Encapsulation is received.
     /// </summary>
-    public Action<MultiChannelCommandEncapsulation>? OnCommandEncapsulationReceived { get; set; }
+    public event Action<MultiChannelCommandEncapsulation>? OnCommandEncapsulationReceived;
 
     /// <summary>
     /// Creates a Multi Channel Command Encapsulation frame targeting a single endpoint.

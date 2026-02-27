@@ -81,7 +81,7 @@ This means `Parse` is called exactly **once** per report — either in `GetAsync
 
 ### Report Events
 
-For any report type that can be received unsolicited, the CC class MUST expose an `internal Action<TReport>?` event property that fires on **both** solicited and unsolicited reports. This allows library consumers (e.g., `Node`) to monitor all incoming data without polling.
+For any report type that can be received unsolicited, the CC class MUST expose an `event Action<TReport>?` event that fires on **both** solicited and unsolicited reports. This allows library consumers (e.g., `Node`) to monitor all incoming data without polling.
 
 **Naming**: `On{ReportType}Received` (e.g., `OnEndpointReportReceived`, `OnCapabilityReportReceived`).
 
@@ -92,7 +92,7 @@ For any report type that can be received unsolicited, the CC class MUST expose a
 
 ```csharp
 // In the CC class (or the appropriate partial class for the command group):
-public Action<{Name}Report>? On{Name}ReportReceived { get; set; }
+public event Action<{Name}Report>? On{Name}ReportReceived;
 
 // In GetAsync:
 public async Task<{Name}Report> GetAsync(CancellationToken cancellationToken)
@@ -601,7 +601,7 @@ When a CC has many command groups (e.g., Multi Channel CC with Endpoint, Capabil
 ### File naming convention
 
 - **Main file**: `{Name}CommandClass.cs` — contains the command enum, class declaration with constructor, `IsCommandSupported`, `InterviewAsync`, and `ProcessUnsolicitedCommand`
-- **Group files**: `{Name}CommandClass.{Group}.cs` — each contains a command group (Get/Report or Get/Set/Report triplet), the associated public report record struct, the inner command structs, the public accessor methods, and the `Action<TReport>?` event property for that report
+- **Group files**: `{Name}CommandClass.{Group}.cs` — each contains a command group (Get/Report or Get/Set/Report triplet), the associated public report record struct, the inner command structs, the public accessor methods, and the `event Action<TReport>?` event for that report
 
 ### Example: Multi Channel CC
 

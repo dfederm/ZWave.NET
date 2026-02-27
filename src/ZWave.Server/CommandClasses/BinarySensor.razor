@@ -17,21 +17,18 @@
             </tbody>
         }
 
-        @if (CommandClass.SensorValues != null)
-        {
-            <tbody>
+        <tbody>
+            <tr>
+                <th scope="rowgroup" colspan="2">Sensor Values</th>
+            </tr>
+            @foreach ((BinarySensorType sensorType, bool? value) in CommandClass.SensorValues)
+            {
                 <tr>
-                    <th scope="rowgroup" colspan="2">Sensor Values</th>
+                    <th scope="row">@sensorType</th>
+                    <td>@value</td>
                 </tr>
-                @foreach ((BinarySensorType sensorType, bool? value) in CommandClass.SensorValues)
-                {
-                    <tr>
-                        <th scope="row">@sensorType</th>
-                        <td>@value</td>
-                    </tr>
-                }
-            </tbody>
-        }
+            }
+        </tbody>
 
         @if (CommandClass.IsCommandSupported(BinarySensorCommand.Get).GetValueOrDefault())
         {

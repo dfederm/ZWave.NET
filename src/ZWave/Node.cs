@@ -294,7 +294,7 @@ public sealed class Node : INode
                 if (TryGetCommandClass(CommandClassId.MultiChannel, out CommandClass? multiChannelCC)
                     && multiChannelCC is MultiChannelCommandClass mcCC)
                 {
-                    mcCC.OnCapabilityReportReceived = HandleEndpointDiscovered;
+                    mcCC.OnCapabilityReportReceived += HandleEndpointDiscovered;
                 }
 
                 // Interview CCs in phases per spec recommendation (CL:0000.00.22.01.1):

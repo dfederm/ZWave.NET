@@ -56,7 +56,7 @@ public sealed partial class BatteryCommandClass
     /// <summary>
     /// Raised when a Battery Report is received, whether solicited or unsolicited.
     /// </summary>
-    public Action<BatteryReport>? OnBatteryReportReceived { get; set; }
+    public event Action<BatteryReport>? OnBatteryReportReceived;
 
     /// <summary>
     /// Gets the last report received from the device.
