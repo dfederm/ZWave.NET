@@ -31,7 +31,7 @@ public sealed partial class MultiChannelCommandClass
     /// <summary>
     /// Event raised when an End Point Report is received (solicited or unsolicited).
     /// </summary>
-    public Action<MultiChannelEndpointReport>? OnEndpointReportReceived { get; set; }
+    public event Action<MultiChannelEndpointReport>? OnEndpointReportReceived;
 
     /// <summary>
     /// Gets the last End Point Report received.

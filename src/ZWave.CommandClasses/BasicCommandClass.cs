@@ -59,7 +59,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
     /// <summary>
     /// Event raised when a Basic Report is received, both solicited and unsolicited.
     /// </summary>
-    public Action<BasicReport>? OnBasicReportReceived { get; set; }
+    public event Action<BasicReport>? OnBasicReportReceived;
 
     /// <inheritdoc />
     public override bool? IsCommandSupported(BasicCommand command)
