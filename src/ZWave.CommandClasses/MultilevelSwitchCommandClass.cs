@@ -7,38 +7,73 @@ namespace ZWave.CommandClasses;
 /// </summary>
 public enum MultilevelSwitchChangeDirection : byte
 {
+    /// <summary>
+    /// The level change is increasing.
+    /// </summary>
     Up = 0x00,
 
+    /// <summary>
+    /// The level change is decreasing.
+    /// </summary>
     Down = 0x01,
 
     // 0x02 is Reserved
 
-    // Secondary switch is obsolete, so no need to support this.
-    // None = 0x03,
+    /// <summary>
+    /// No primary switch level change (V3+). Maintains the current level for the Primary Switch Type.
+    /// </summary>
+    NoUpDownMotion = 0x03,
 }
 
 /// <summary>
-/// Identifies the type of a multilevel switch.
+/// Identifies the type of a multilevel switch per Table 2.425 of the Z-Wave Application Specification.
 /// </summary>
 public enum MultilevelSwitchType : byte
 {
+    /// <summary>
+    /// Undefined / Not supported. Only valid as a Secondary Switch Type. Obsoleted for Primary Switch Type.
+    /// </summary>
     NotSupported = 0x00,
 
-    UpDown = 0x01,
+    /// <summary>
+    /// Off (0x00) / On (0xFF).
+    /// </summary>
+    OffOn = 0x01,
 
+    /// <summary>
+    /// Down (0x00) / Up (0xFF).
+    /// </summary>
     DownUp = 0x02,
 
+    /// <summary>
+    /// Close (0x00) / Open (0xFF).
+    /// </summary>
     CloseOpen = 0x03,
 
+    /// <summary>
+    /// Counter-Clockwise (0x00) / Clockwise (0xFF).
+    /// </summary>
     CounterClockwiseClockwise = 0x04,
 
+    /// <summary>
+    /// Left (0x00) / Right (0xFF).
+    /// </summary>
     LeftRight = 0x05,
 
+    /// <summary>
+    /// Reverse (0x00) / Forward (0xFF).
+    /// </summary>
     ReverseForward = 0x06,
 
+    /// <summary>
+    /// Pull (0x00) / Push (0xFF).
+    /// </summary>
     PullPush = 0x07,
 }
 
+/// <summary>
+/// Defines the commands for the Multilevel Switch Command Class.
+/// </summary>
 public enum MultilevelSwitchCommand : byte
 {
     /// <summary>
@@ -52,7 +87,7 @@ public enum MultilevelSwitchCommand : byte
     Get = 0x02,
 
     /// <summary>
-    /// Advertise the status of a multilevel device
+    /// Advertise the status of a multilevel device.
     /// </summary>
     Report = 0x03,
 
@@ -67,53 +102,33 @@ public enum MultilevelSwitchCommand : byte
     StopLevelChange = 0x05,
 
     /// <summary>
-    /// Request the supported Switch Types of a supporting device
+    /// Request the supported Switch Types of a supporting device (V3+).
     /// </summary>
     SupportedGet = 0x06,
 
     /// <summary>
-    /// Advertise the supported Switch Types implemented by a supporting device
+    /// Advertise the supported Switch Types implemented by a supporting device (V3+).
     /// </summary>
     SupportedReport = 0x07,
 }
 
 /// <summary>
-/// Represents a Multilevel Switch Report received from a device.
+/// Controls devices with multilevel capability (e.g. dimmers, motor controllers).
 /// </summary>
-public readonly record struct MultilevelSwitchReport(
-    /// <summary>
-    /// The current value at the sending node
-    /// </summary>
-    GenericValue CurrentValue,
-
-    /// <summary>
-    /// The target value of an ongoing transition or the most recent transition.
-    /// </summary>
-    GenericValue? TargetValue,
-
-    /// <summary>
-    /// The time needed to reach the Target Value at the actual transition rate.
-    /// </summary>
-    DurationReport? Duration);
-
-// Note: We are not implementing the secondary switch at all since it's deprecated.
+/// <remarks>
+/// The Secondary Switch Type functionality is deprecated per the specification and is not implemented.
+/// </remarks>
 [CommandClass(CommandClassId.MultilevelSwitch)]
-public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitchCommand>
+public sealed partial class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitchCommand>
 {
-    public MultilevelSwitchCommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
+    internal MultilevelSwitchCommandClass(
+        CommandClassInfo info,
+        IDriver driver,
+        IEndpoint endpoint,
+        ILogger logger)
         : base(info, driver, endpoint, logger)
     {
     }
-
-    /// <summary>
-    /// Gets the last report received from the device.
-    /// </summary>
-    public MultilevelSwitchReport? LastReport { get; private set; }
-
-    /// <summary>
-    /// Gets the switch type.
-    /// </summary>
-    public MultilevelSwitchType? SwitchType { get; private set; }
 
     /// <inheritdoc />
     public override bool? IsCommandSupported(MultilevelSwitchCommand command)
@@ -137,85 +152,15 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
         }
     }
 
-    /// <summary>
-    /// Set a multilevel value in a supporting device.
-    /// </summary>
-    public async Task SetAsync(
-        GenericValue value,
-        DurationSet? duration,
-        CancellationToken cancellationToken)
-    {
-        var command = MultilevelSwitchSetCommand.Create(EffectiveVersion, value, duration);
-        await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Request the status of a multilevel device.
-    /// </summary>
-    public async Task<MultilevelSwitchReport> GetAsync(CancellationToken cancellationToken)
-    {
-        MultilevelSwitchGetCommand command = MultilevelSwitchGetCommand.Create();
-        await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        CommandClassFrame reportFrame = await AwaitNextReportAsync<MultilevelSwitchReportCommand>(cancellationToken).ConfigureAwait(false);
-        MultilevelSwitchReport report = MultilevelSwitchReportCommand.Parse(reportFrame, Logger);
-        LastReport = report;
-        return report;
-    }
-
-    /// <summary>
-    /// Initiate a transition to a new level.
-    /// </summary>
-    public async Task StartLevelChangeAsync(
-        MultilevelSwitchChangeDirection direction,
-        GenericValue? startLevel,
-        DurationSet? duration,
-        CancellationToken cancellationToken)
-    {
-        var command = MultilevelSwitchStartLevelChangeCommand.Create(
-            EffectiveVersion,
-            direction,
-            startLevel,
-            duration);
-        await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Stop an ongoing transition.
-    /// </summary>
-    public async Task StopLevelChangeAsync(CancellationToken cancellationToken)
-    {
-        var command = MultilevelSwitchStopLevelChangeCommand.Create();
-        await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Request the supported Switch Types of a supporting device
-    /// </summary>
-    public async Task<MultilevelSwitchType> GetSupportedAsync(CancellationToken cancellationToken)
-    {
-        var command = MultilevelSwitchSupportedGetCommand.Create();
-        await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        CommandClassFrame reportFrame = await AwaitNextReportAsync<MultilevelSwitchSupportedReportCommand>(cancellationToken).ConfigureAwait(false);
-        MultilevelSwitchType switchType = MultilevelSwitchSupportedReportCommand.Parse(reportFrame, Logger);
-        SwitchType = switchType;
-        return switchType;
-    }
-
     protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
         switch ((MultilevelSwitchCommand)frame.CommandId)
         {
-            case MultilevelSwitchCommand.Set:
-            case MultilevelSwitchCommand.Get:
-            case MultilevelSwitchCommand.StartLevelChange:
-            case MultilevelSwitchCommand.StopLevelChange:
-            case MultilevelSwitchCommand.SupportedGet:
-            {
-                break;
-            }
             case MultilevelSwitchCommand.Report:
             {
-                LastReport = MultilevelSwitchReportCommand.Parse(frame, Logger);
+                MultilevelSwitchReport report = MultilevelSwitchReportCommand.Parse(frame, Logger);
+                LastReport = report;
+                OnMultilevelSwitchReportReceived?.Invoke(report);
                 break;
             }
             case MultilevelSwitchCommand.SupportedReport:
@@ -223,192 +168,6 @@ public sealed class MultilevelSwitchCommandClass : CommandClass<MultilevelSwitch
                 SwitchType = MultilevelSwitchSupportedReportCommand.Parse(frame, Logger);
                 break;
             }
-        }
-    }
-
-    private readonly struct MultilevelSwitchSetCommand : ICommand
-    {
-        public MultilevelSwitchSetCommand(CommandClassFrame frame)
-        {
-            Frame = frame;
-        }
-
-        public static CommandClassId CommandClassId => CommandClassId.MultilevelSwitch;
-
-        public static byte CommandId => (byte)MultilevelSwitchCommand.Set;
-
-        public CommandClassFrame Frame { get; }
-
-        public static MultilevelSwitchSetCommand Create(byte version, GenericValue value, DurationSet? duration)
-        {
-            bool includeDuration = version >= 2 && duration.HasValue;
-            Span<byte> commandParameters = stackalloc byte[1 + (includeDuration ? 1 : 0)];
-            commandParameters[0] = value.Value;
-            if (includeDuration)
-            {
-                commandParameters[1] = duration!.Value.Value;
-            }
-
-            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
-            return new MultilevelSwitchSetCommand(frame);
-        }
-    }
-
-    private readonly struct MultilevelSwitchGetCommand : ICommand
-    {
-        public MultilevelSwitchGetCommand(CommandClassFrame frame)
-        {
-            Frame = frame;
-        }
-
-        public static CommandClassId CommandClassId => CommandClassId.MultilevelSwitch;
-
-        public static byte CommandId => (byte)MultilevelSwitchCommand.Get;
-
-        public CommandClassFrame Frame { get; }
-
-        public static MultilevelSwitchGetCommand Create()
-        {
-            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId);
-            return new MultilevelSwitchGetCommand(frame);
-        }
-    }
-
-    private readonly struct MultilevelSwitchReportCommand : ICommand
-    {
-        public MultilevelSwitchReportCommand(CommandClassFrame frame)
-        {
-            Frame = frame;
-        }
-
-        public static CommandClassId CommandClassId => CommandClassId.MultilevelSwitch;
-
-        public static byte CommandId => (byte)MultilevelSwitchCommand.Report;
-
-        public CommandClassFrame Frame { get; }
-
-        public static MultilevelSwitchReport Parse(CommandClassFrame frame, ILogger logger)
-        {
-            if (frame.CommandParameters.Length < 1)
-            {
-                logger.LogWarning("Multilevel Switch Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Switch Report frame is too short");
-            }
-
-            GenericValue currentValue = frame.CommandParameters.Span[0];
-            GenericValue? targetValue = frame.CommandParameters.Length > 1
-                ? frame.CommandParameters.Span[1]
-                : null;
-            DurationReport? duration = frame.CommandParameters.Length > 2
-                ? frame.CommandParameters.Span[2]
-                : null;
-            return new MultilevelSwitchReport(currentValue, targetValue, duration);
-        }
-    }
-
-    private readonly struct MultilevelSwitchStartLevelChangeCommand : ICommand
-    {
-        public MultilevelSwitchStartLevelChangeCommand(CommandClassFrame frame)
-        {
-            Frame = frame;
-        }
-
-        public static CommandClassId CommandClassId => CommandClassId.MultilevelSwitch;
-
-        public static byte CommandId => (byte)MultilevelSwitchCommand.StartLevelChange;
-
-        public CommandClassFrame Frame { get; }
-
-        public static MultilevelSwitchStartLevelChangeCommand Create(
-            byte version,
-            MultilevelSwitchChangeDirection direction,
-            GenericValue? startLevel,
-            DurationSet? duration)
-        {
-            bool includeDuration = version >= 2 && duration.HasValue;
-            Span<byte> commandParameters = stackalloc byte[2 + (includeDuration ? 1 : 0)];
-
-            commandParameters[0] = (byte)((byte)direction << 6);
-            if (!startLevel.HasValue)
-            {
-                // ignoreStartLevel bit
-                commandParameters[0] |= 0b0010_0000;
-            }
-
-            commandParameters[1] = startLevel.GetValueOrDefault().Value;
-
-            if (includeDuration)
-            {
-                commandParameters[2] = duration!.Value.Value;
-            }
-
-            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
-            return new MultilevelSwitchStartLevelChangeCommand(frame);
-        }
-    }
-
-    private readonly struct MultilevelSwitchStopLevelChangeCommand : ICommand
-    {
-        public MultilevelSwitchStopLevelChangeCommand(CommandClassFrame frame)
-        {
-            Frame = frame;
-        }
-
-        public static CommandClassId CommandClassId => CommandClassId.MultilevelSwitch;
-
-        public static byte CommandId => (byte)MultilevelSwitchCommand.StopLevelChange;
-
-        public CommandClassFrame Frame { get; }
-
-        public static MultilevelSwitchStartLevelChangeCommand Create()
-        {
-            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId);
-            return new MultilevelSwitchStartLevelChangeCommand(frame);
-        }
-    }
-
-    private readonly struct MultilevelSwitchSupportedGetCommand : ICommand
-    {
-        public MultilevelSwitchSupportedGetCommand(CommandClassFrame frame)
-        {
-            Frame = frame;
-        }
-
-        public static CommandClassId CommandClassId => CommandClassId.MultilevelSwitch;
-
-        public static byte CommandId => (byte)MultilevelSwitchCommand.SupportedGet;
-
-        public CommandClassFrame Frame { get; }
-
-        public static MultilevelSwitchSupportedGetCommand Create()
-        {
-            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId);
-            return new MultilevelSwitchSupportedGetCommand(frame);
-        }
-    }
-
-    private readonly struct MultilevelSwitchSupportedReportCommand : ICommand
-    {
-        public MultilevelSwitchSupportedReportCommand(CommandClassFrame frame)
-        {
-            Frame = frame;
-        }
-
-        public static CommandClassId CommandClassId => CommandClassId.MultilevelSwitch;
-
-        public static byte CommandId => (byte)MultilevelSwitchCommand.SupportedReport;
-
-        public CommandClassFrame Frame { get; }
-
-        public static MultilevelSwitchType Parse(CommandClassFrame frame, ILogger logger)
-        {
-            if (frame.CommandParameters.Length < 1)
-            {
-                logger.LogWarning("Multilevel Switch Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Switch Supported Report frame is too short");
-            }
-
-            return (MultilevelSwitchType)(frame.CommandParameters.Span[0] & 0b0001_1111);
         }
     }
 }
