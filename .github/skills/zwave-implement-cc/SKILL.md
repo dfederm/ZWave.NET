@@ -128,6 +128,25 @@ Not everything a CC can do should be exposed as cached state on the CC class. Us
 
 When in doubt, **ask the user** whether a value should be cached state or a direct API.
 
+### Nullable vs. Eager Initialization for State Properties
+
+CCs that track per-key readings (e.g., per-sensor-type readings, per-color-component state) use two kinds of cached state:
+
+- **Readings dictionaries** (per-key report values that change over time): **Eagerly initialize** to `new()` at the field declaration. The public property is **non-nullable**. Empty means "no readings received yet"; populated means readings exist. This ensures callers and UI code can always enumerate without null checks, and unsolicited reports are never silently dropped.
+- **Capability properties** (supported types, supported scales — queried once during interview): Start as **`null`**. The public property is **nullable**. `null` means "not yet interviewed / version doesn't support this query". This lets callers and UI distinguish "unknown" from "known empty."
+
+```csharp
+// ✅ Readings dictionary — eagerly initialized, non-nullable
+private Dictionary<SensorType, SensorReport?> _sensorValues = new();
+public IReadOnlyDictionary<SensorType, SensorReport?> SensorValues => _sensorValues;
+
+// ✅ Capability property — starts null, nullable
+private Dictionary<SensorType, IReadOnlySet<Scale>?>? _supportedScales;
+public IReadOnlyDictionary<SensorType, IReadOnlySet<Scale>?>? SupportedScales => _supportedScales;
+```
+
+For CCs with a version-dependent discovery path (e.g., MultilevelSensor V1-4 has no `SupportedSensorGet`), the readings dictionary is always available regardless of version, while capability properties remain `null` on older versions. When `GetSupportedAsync` runs, it rebuilds the readings dictionary to include keys for every supported type (preserving any existing values).
+
 ### Payload Validation
 
 Validation is performed in the report command's static `Parse` method. The `Parse` method:

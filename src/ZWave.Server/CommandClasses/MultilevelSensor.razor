@@ -33,13 +33,13 @@
             </tbody>
         }
 
-        @if (CommandClass.SensorValues != null)
+        @if (CommandClass.SensorValues.Count > 0)
         {
             <tbody>
                 <tr>
                     <th scope="rowgroup" colspan="2">Sensor Values</th>
                 </tr>
-                @foreach ((MultilevelSensorType sensorType, MultilevelSensorState? state) in CommandClass.SensorValues)
+                @foreach ((MultilevelSensorType sensorType, MultilevelSensorReport? state) in CommandClass.SensorValues)
                 {
                     <tr>
                         <th scope="row">@sensorType</th>
