@@ -9,36 +9,28 @@
 @if (CommandClass != null)
 {
     <table class="table table-striped">
-        @if (CommandClass.LastNotification.HasValue)
+        @if (CommandClass.LastReport.HasValue)
         {
-            ZWave.CommandClasses.Notification lastNotification = CommandClass.LastNotification.Value;
+            NotificationReport lastNotification = CommandClass.LastReport.Value;
 
             <tbody>
                 <tr>
                     <th scope="rowgroup" colspan="2">Last Notification</th>
                 </tr>
 
-                @if (lastNotification.V1AlarmType.HasValue)
+                @if (lastNotification.V1AlarmType != 0)
                 {
                     <tr>
                         <th scope="row">V1 Alarm Type</th>
-                        <td>@lastNotification.V1AlarmType.Value</td>
+                        <td>@lastNotification.V1AlarmType</td>
                     </tr>
                 }
 
-                @if (lastNotification.V1AlarmLevel.HasValue)
+                @if (lastNotification.V1AlarmLevel != 0)
                 {
                     <tr>
                         <th scope="row">V1 Alarm Level</th>
-                        <td>@lastNotification.V1AlarmLevel.Value</td>
-                    </tr>
-                }
-
-                @if (lastNotification.ZensorNetSourceNodeId.HasValue)
-                {
-                    <tr>
-                        <th scope="row">Zensor Net Source Node Id</th>
-                        <td>@lastNotification.ZensorNetSourceNodeId.Value</td>
+                        <td>@lastNotification.V1AlarmLevel</td>
                     </tr>
                 }
 
