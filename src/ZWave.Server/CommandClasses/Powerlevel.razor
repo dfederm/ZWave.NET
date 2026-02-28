@@ -139,7 +139,7 @@
                 <tr>
                     <td></td>
                     <td>
-                        <button @onclick="TestNodeAsync">Test Node</button>
+                        <button @onclick="TestNodeSetAsync">Test Node</button>
                     </td>
                 </tr>
             </tbody>
@@ -185,13 +185,13 @@
             async () => await CommandClass!.GetAsync(CancellationToken.None),
             nameof(CommandClass.GetAsync));
 
-    private async Task TestNodeAsync()
+    private async Task TestNodeSetAsync()
         => await RunSafelyAsync(
-            async () => await CommandClass!.TestNodeAsync(_testNodeNodeId, _testNodePowerlevel, _testNodeFrameCount, CancellationToken.None),
-            nameof(CommandClass.TestNodeAsync));
+            async () => await CommandClass!.TestNodeSetAsync(_testNodeNodeId, _testNodePowerlevel, _testNodeFrameCount, CancellationToken.None),
+            nameof(CommandClass.TestNodeSetAsync));
 
     private async Task GetLastTestResultsAsync()
         => await RunSafelyAsync(
             async () => await CommandClass!.GetLastTestResultsAsync(CancellationToken.None),
-            nameof(CommandClass.TestNodeAsync));
+            nameof(CommandClass.GetLastTestResultsAsync));
 }
