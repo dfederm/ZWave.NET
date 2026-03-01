@@ -19,11 +19,11 @@
                 </tr>
                 <tr>
                     <th scope="row">Wakeup Interval In Seconds</th>
-                    <td>@wakeUpInterval.WakeupIntervalInSeconds</td>
+                    <td>@wakeUpInterval.WakeUpIntervalInSeconds</td>
                 </tr>
                 <tr>
                     <th scope="row">Wakeup Destination Node Id</th>
-                    <td>@wakeUpInterval.WakeupDestinationNodeId</td>
+                    <td>@wakeUpInterval.WakeUpDestinationNodeId</td>
                 </tr>
             </tbody>
         }
@@ -38,19 +38,19 @@
                 </tr>
                 <tr>
                     <th scope="row">Minimum Wakeup Interval In Seconds</th>
-                    <td>@wakeUpIntervalCapabilities.MinimumWakeupIntervalInSeconds</td>
+                    <td>@wakeUpIntervalCapabilities.MinimumWakeUpIntervalInSeconds</td>
                 </tr>
                 <tr>
                     <th scope="row">Maximum Wakeup Interval In Seconds</th>
-                    <td>@wakeUpIntervalCapabilities.MaximumWakeupIntervalInSeconds</td>
+                    <td>@wakeUpIntervalCapabilities.MaximumWakeUpIntervalInSeconds</td>
                 </tr>
                 <tr>
                     <th scope="row">Default Wakeup Interval In Seconds</th>
-                    <td>@wakeUpIntervalCapabilities.DefaultWakeupIntervalInSeconds</td>
+                    <td>@wakeUpIntervalCapabilities.DefaultWakeUpIntervalInSeconds</td>
                 </tr>
                 <tr>
                     <th scope="row">Wakeup Interval Step In Seconds</th>
-                    <td>@wakeUpIntervalCapabilities.WakeupIntervalStepInSeconds</td>
+                    <td>@wakeUpIntervalCapabilities.WakeUpIntervalStepInSeconds</td>
                 </tr>
                 <tr>
                     <th scope="row">Supports Wake Up On Demand</th>
@@ -82,9 +82,9 @@
             if (CommandClass.IntervalCapabilities != null)
             {
                 WakeUpIntervalCapabilities wakeUpIntervalCapabilities = CommandClass.IntervalCapabilities.Value;
-                minimumWakeupIntervalInSeconds = wakeUpIntervalCapabilities.MinimumWakeupIntervalInSeconds;
-                maximumWakeupIntervalInSeconds = wakeUpIntervalCapabilities.MaximumWakeupIntervalInSeconds;
-                wakeupIntervalStepInSeconds = wakeUpIntervalCapabilities.WakeupIntervalStepInSeconds;
+                minimumWakeupIntervalInSeconds = wakeUpIntervalCapabilities.MinimumWakeUpIntervalInSeconds;
+                maximumWakeupIntervalInSeconds = wakeUpIntervalCapabilities.MaximumWakeUpIntervalInSeconds;
+                wakeupIntervalStepInSeconds = wakeUpIntervalCapabilities.WakeUpIntervalStepInSeconds;
             }
             else
             {
@@ -143,7 +143,7 @@
 @code {
     // SetInterval
     private uint _setIntervalWakeupIntervalInSeconds;
-    private ushort _setIntervalWakeupDestinationNodeId;
+    private byte _setIntervalWakeupDestinationNodeId;
 
     [Parameter]
     public WakeUpCommandClass? CommandClass { get; set; }
