@@ -19,7 +19,7 @@
 
         @if (CommandClass.HardwareInfo.HasValue)
         {
-            VersionHardwareInfo hardwareInfo = CommandClass.HardwareInfo.Value;
+            VersionReport hardwareInfo = CommandClass.HardwareInfo.Value;
 
             <tbody>
                 <tr>
@@ -72,11 +72,11 @@
                     </tr>
                 }
 
-                @if (softwareInfo.ApplicationFramworkBuildNumber != null)
+                @if (softwareInfo.ApplicationFrameworkBuildNumber != null)
                 {
                     <tr>
-                        <th scope="row">Application Framwork Build Number</th>
-                        <td>@softwareInfo.ApplicationFramworkBuildNumber</td>
+                        <th scope="row">Application Framework Build Number</th>
+                        <td>@softwareInfo.ApplicationFrameworkBuildNumber</td>
                     </tr>
                 }
 
@@ -217,8 +217,8 @@
 
     private async Task GetCommandClassAsync()
         => await RunSafelyAsync(
-            async () => await CommandClass!.GetCommandClassAsync(_commandClassId, CancellationToken.None),
-            nameof(CommandClass.GetCommandClassAsync));
+            async () => await CommandClass!.GetCommandClassVersionAsync(_commandClassId, CancellationToken.None),
+            nameof(CommandClass.GetCommandClassVersionAsync));
 
     private async Task GetCapabilitiesAsync()
         => await RunSafelyAsync(
