@@ -146,4 +146,91 @@ public partial class MultiChannelCommandClassTests
 
         Assert.AreEqual((byte)2, encap.SourceEndpoint);
     }
+
+    [TestMethod]
+    public void CommandEncapsulation_RoundTrip_PreservesInnerFrame()
+    {
+        // Create a command with parameters
+        byte[] innerParams = [0xFF, 0x01, 0x00];
+        CommandClassFrame innerFrame = CommandClassFrame.Create(CommandClassId.BinarySwitch, 0x03, innerParams);
+
+        // Encapsulate from Root Device (EP0) to EP3
+        CommandClassFrame encapFrame = MultiChannelCommandClass.CreateEncapsulation(0, 3, innerFrame);
+
+        // Parse back and verify the inner frame is preserved
+        MultiChannelCommandEncapsulation encap = MultiChannelCommandClass.ParseEncapsulation(encapFrame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)0, encap.SourceEndpoint);
+        Assert.AreEqual((byte)3, encap.Destination);
+        Assert.IsFalse(encap.IsBitAddress);
+        Assert.AreEqual(CommandClassId.BinarySwitch, encap.EncapsulatedFrame.CommandClassId);
+        Assert.AreEqual((byte)0x03, encap.EncapsulatedFrame.CommandId);
+        Assert.AreEqual(innerParams.Length, encap.EncapsulatedFrame.CommandParameters.Length);
+        Assert.IsTrue(innerParams.AsSpan().SequenceEqual(encap.EncapsulatedFrame.CommandParameters.Span));
+    }
+
+    [TestMethod]
+    public void CommandEncapsulation_RoundTrip_ResponseSwapsEndpoints()
+    {
+        // Simulate the spec-defined request/response flow (CC:0060.03.0D.11.009):
+        // Request: Source=0 (controller), Destination=2 (remote endpoint)
+        CommandClassFrame getCommand = CommandClassFrame.Create(CommandClassId.BinarySwitch, 0x02);
+        CommandClassFrame requestFrame = MultiChannelCommandClass.CreateEncapsulation(0, 2, getCommand);
+
+        // Parse the request to verify endpoint assignment
+        MultiChannelCommandEncapsulation requestEncap = MultiChannelCommandClass.ParseEncapsulation(requestFrame, NullLogger.Instance);
+        Assert.AreEqual((byte)0, requestEncap.SourceEndpoint);
+        Assert.AreEqual((byte)2, requestEncap.Destination);
+
+        // Simulate the response: Source=2 (remote endpoint), Destination=0 (controller)
+        // Per CC:0060.03.0D.11.009, response swaps source and destination.
+        CommandClassFrame reportCommand = CommandClassFrame.Create(CommandClassId.BinarySwitch, 0x03, [0xFF]);
+        CommandClassFrame responseFrame = MultiChannelCommandClass.CreateEncapsulation(2, 0, reportCommand);
+
+        // Parse the response — SourceEndpoint tells us which endpoint sent it
+        MultiChannelCommandEncapsulation responseEncap = MultiChannelCommandClass.ParseEncapsulation(responseFrame, NullLogger.Instance);
+        Assert.AreEqual((byte)2, responseEncap.SourceEndpoint);
+        Assert.AreEqual((byte)0, responseEncap.Destination);
+        Assert.AreEqual(CommandClassId.BinarySwitch, responseEncap.EncapsulatedFrame.CommandClassId);
+        Assert.AreEqual((byte)0x03, responseEncap.EncapsulatedFrame.CommandId);
+    }
+
+    [TestMethod]
+    public void CommandEncapsulation_Create_MaxEndpoint127()
+    {
+        // Per spec CC:0060.03.0D.11.006: Source End Point MUST be in range 0..127
+        CommandClassFrame innerFrame = CommandClassFrame.Create(CommandClassId.BinarySwitch, 0x02);
+        CommandClassFrame encapFrame = MultiChannelCommandClass.CreateEncapsulation(0, 127, innerFrame);
+
+        MultiChannelCommandEncapsulation encap = MultiChannelCommandClass.ParseEncapsulation(encapFrame, NullLogger.Instance);
+        Assert.AreEqual((byte)127, encap.Destination);
+    }
+
+    [TestMethod]
+    public void CommandEncapsulation_Create_EndpointToRootDevice()
+    {
+        // Endpoint-to-Root: Source=1, Destination=0 (per spec CC:0060.03.0D.11.008,
+        // Source EP MUST be different from 0 if Destination EP is 0)
+        CommandClassFrame innerFrame = CommandClassFrame.Create(CommandClassId.BinarySwitch, 0x03, [0xFF]);
+        CommandClassFrame encapFrame = MultiChannelCommandClass.CreateEncapsulation(1, 0, innerFrame);
+
+        MultiChannelCommandEncapsulation encap = MultiChannelCommandClass.ParseEncapsulation(encapFrame, NullLogger.Instance);
+        Assert.AreEqual((byte)1, encap.SourceEndpoint);
+        Assert.AreEqual((byte)0, encap.Destination);
+    }
+
+    [TestMethod]
+    public void CommandEncapsulation_RoundTrip_WithMultipleParameters()
+    {
+        // Use a larger payload to verify all bytes are preserved through encapsulation
+        byte[] parameters = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08];
+        CommandClassFrame innerFrame = CommandClassFrame.Create(CommandClassId.MultilevelSensor, 0x05, parameters);
+
+        CommandClassFrame encapFrame = MultiChannelCommandClass.CreateEncapsulation(0, 5, innerFrame);
+        MultiChannelCommandEncapsulation encap = MultiChannelCommandClass.ParseEncapsulation(encapFrame, NullLogger.Instance);
+
+        Assert.AreEqual(CommandClassId.MultilevelSensor, encap.EncapsulatedFrame.CommandClassId);
+        Assert.AreEqual((byte)0x05, encap.EncapsulatedFrame.CommandId);
+        Assert.IsTrue(parameters.AsSpan().SequenceEqual(encap.EncapsulatedFrame.CommandParameters.Span));
+    }
 }

@@ -198,7 +198,21 @@ public sealed class Driver : IDriver, IAsyncDisposable
                         if (Controller.Nodes.TryGetValue(applicationCommandHandler.NodeId, out Node? node))
                         {
                             var commandClassFrame = new CommandClassFrame(applicationCommandHandler.Payload);
-                            node.ProcessCommand(commandClassFrame, 0);
+
+                            // De-encapsulate per spec §4.1.3.5 (reverse order):
+                            // Security/CRC-16/Transport Service → Multi Channel → Supervision → Multi Command
+                            // Currently only Multi Channel is implemented; future layers plug in here.
+                            byte endpointIndex = 0;
+                            if (commandClassFrame.CommandClassId == CommandClassId.MultiChannel
+                                && commandClassFrame.CommandId == (byte)MultiChannelCommand.CommandEncapsulation)
+                            {
+                                MultiChannelCommandEncapsulation encapsulation = MultiChannelCommandClass.ParseEncapsulation(commandClassFrame, _logger);
+                                _logger.LogMultiChannelDeEncapsulating(applicationCommandHandler.NodeId, encapsulation.SourceEndpoint);
+                                endpointIndex = encapsulation.SourceEndpoint;
+                                commandClassFrame = encapsulation.EncapsulatedFrame;
+                            }
+
+                            node.ProcessCommand(commandClassFrame, endpointIndex);
                         }
                         else
                         {
@@ -461,15 +475,29 @@ public sealed class Driver : IDriver, IAsyncDisposable
         CancellationToken cancellationToken)
         where TCommand : struct, ICommand
     {
-        // TODO: Multi Channel encapsulation for non-zero endpoints (#138)
-        if (endpointIndex != 0)
-        {
-            throw new NotImplementedException("Multi Channel encapsulation for non-zero endpoints is not yet implemented.");
-        }
-
         const TransmissionOptions transmissionOptions = TransmissionOptions.ACK | TransmissionOptions.AutoRoute | TransmissionOptions.Explore;
         byte sessionId = GetNextSessionId();
-        SendDataRequest sendDataRequest = SendDataRequest.Create(nodeId, NodeIdType, request.Frame.Data.Span, transmissionOptions, sessionId);
+
+        // Apply encapsulation layers per spec §4.1.3.5 order:
+        // payload → Multi Command → Supervision → Multi Channel → Security/CRC-16/Transport Service
+        // Currently only Multi Channel is implemented; future layers plug in here.
+        SendDataRequest sendDataRequest;
+        if (endpointIndex != 0)
+        {
+            // Wrap in Multi Channel encapsulation per spec §4.2.2.9.
+            // Source endpoint is 0 (Root Device / controller) per CC:0060.03.0D.11.00A.
+            _logger.LogMultiChannelEncapsulating(nodeId, endpointIndex);
+            CommandClassFrame encapsulatedFrame = MultiChannelCommandClass.CreateEncapsulation(
+                sourceEndpoint: 0,
+                destinationEndpoint: endpointIndex,
+                request.Frame);
+            sendDataRequest = SendDataRequest.Create(nodeId, NodeIdType, encapsulatedFrame.Data.Span, transmissionOptions, sessionId);
+        }
+        else
+        {
+            sendDataRequest = SendDataRequest.Create(nodeId, NodeIdType, request.Frame.Data.Span, transmissionOptions, sessionId);
+        }
+
         ResponseStatusResponse response = await SendCommandAsync<SendDataRequest, ResponseStatusResponse>(sendDataRequest, cancellationToken)
             .ConfigureAwait(false);
         if (!response.WasRequestAccepted)
