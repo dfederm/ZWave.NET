@@ -159,4 +159,16 @@ internal static partial class Logging
         Level = LogLevel.Information,
         Message = "NodeID base type set to {nodeIdType}")]
     public static partial void LogSetNodeIdBaseType(this ILogger logger, NodeIdType nodeIdType);
+
+    [LoggerMessage(
+        EventId = 221,
+        Level = LogLevel.Debug,
+        Message = "Encapsulating command for node {nodeId} endpoint {endpointIndex} in Multi Channel frame")]
+    public static partial void LogMultiChannelEncapsulating(this ILogger logger, ushort nodeId, byte endpointIndex);
+
+    [LoggerMessage(
+        EventId = 222,
+        Level = LogLevel.Debug,
+        Message = "De-encapsulating Multi Channel frame from node {nodeId} source endpoint {sourceEndpoint}")]
+    public static partial void LogMultiChannelDeEncapsulating(this ILogger logger, ushort nodeId, byte sourceEndpoint);
 }

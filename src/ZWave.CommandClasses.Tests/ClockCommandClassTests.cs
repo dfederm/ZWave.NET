@@ -223,4 +223,15 @@ public class ClockCommandClassTests
         Assert.Throws<ZWaveException>(
             () => ClockCommandClass.ClockReportCommand.Parse(frame, NullLogger.Instance));
     }
+
+    [TestMethod]
+    public void Report_Parse_InvalidHour_ThrowsZWaveException()
+    {
+        // Weekday=0, Hour=31 (5 bits all set, exceeds 0-23 range), Minute=0
+        byte[] data = [0x81, 0x06, 0x1F, 0x00];
+        CommandClassFrame frame = new(data);
+
+        Assert.Throws<ZWaveException>(
+            () => ClockCommandClass.ClockReportCommand.Parse(frame, NullLogger.Instance));
+    }
 }
