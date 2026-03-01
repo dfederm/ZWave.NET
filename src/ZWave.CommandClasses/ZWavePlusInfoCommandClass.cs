@@ -20,23 +20,80 @@ public enum ZWavePlusInfoCommand : byte
 /// </summary>
 public enum ZWavePlusRoleType : byte
 {
+    /// <summary>
+    /// Central Static Controller (CSC).
+    /// </summary>
     CentralStaticController = 0x00,
+
+    /// <summary>
+    /// Sub Static Controller (SSC).
+    /// </summary>
     SubStaticController = 0x01,
+
+    /// <summary>
+    /// Portable Controller (PC).
+    /// </summary>
     PortableController = 0x02,
+
+    /// <summary>
+    /// Reporting Portable Controller (RPC).
+    /// </summary>
     ReportingPortableController = 0x03,
-    PortableSlave = 0x04,
-    AlwaysOnSlave = 0x05,
-    ReportingSleepingSlave = 0x06,
-    ListeningSleepingSlave = 0x07,
-    NetworkAwareSlave = 0x08,
+
+    /// <summary>
+    /// Portable End Node (PEN).
+    /// </summary>
+    PortableEndNode = 0x04,
+
+    /// <summary>
+    /// Always On End Node (AOEN).
+    /// </summary>
+    AlwaysOnEndNode = 0x05,
+
+    /// <summary>
+    /// Reporting Sleeping End Node (RSEN).
+    /// </summary>
+    ReportingSleepingEndNode = 0x06,
+
+    /// <summary>
+    /// Listening Sleeping End Node (LSEN).
+    /// </summary>
+    ListeningSleepingEndNode = 0x07,
+
+    /// <summary>
+    /// Network Aware End Node (NAEN).
+    /// </summary>
+    NetworkAwareEndNode = 0x08,
+
+    /// <summary>
+    /// Wake On Event End Node (WOEEN).
+    /// </summary>
+    WakeOnEventEndNode = 0x09,
 }
 
 /// <summary>
-/// Represents Z-Wave Plus information for a device.
+/// Identifies the Z-Wave Plus node type.
 /// </summary>
-public readonly record struct ZWavePlusInfo(
+public enum ZWavePlusNodeType : byte
+{
     /// <summary>
-    /// Enables a future revision of the Z-Wave Plus framework where it is necessary to distinguish it from the previous frameworks
+    /// Z-Wave Plus node.
+    /// </summary>
+    Node = 0x00,
+
+    /// <summary>
+    /// Z-Wave Plus for IP gateway.
+    /// </summary>
+    IpGateway = 0x02,
+}
+
+/// <summary>
+/// Represents a Z-Wave Plus Info Report received from a device.
+/// </summary>
+public readonly record struct ZWavePlusInfoReport(
+    /// <summary>
+    /// Enables a future revision of the Z-Wave Plus framework where it is necessary to distinguish
+    /// it from the previous frameworks.
     /// </summary>
     byte ZWavePlusVersion,
 
@@ -51,30 +108,14 @@ public readonly record struct ZWavePlusInfo(
     ZWavePlusNodeType NodeType,
 
     /// <summary>
-    /// Indicates the icon to use in Graphical User Interfaces for network management
+    /// Indicates the icon to use in Graphical User Interfaces for network management.
     /// </summary>
     ushort InstallerIconType,
 
     /// <summary>
-    /// Indicates the icon to use in Graphical User Interfaces for end users
+    /// Indicates the icon to use in Graphical User Interfaces for end users.
     /// </summary>
     ushort UserIconType);
-
-/// <summary>
-/// Identifies the Z-Wave Plus node type.
-/// </summary>
-public enum ZWavePlusNodeType : byte
-{
-    /// <summary>
-    /// Z-Wave Plus node
-    /// </summary>
-    Node = 0x00,
-
-    /// <summary>
-    /// Z-Wave Plus for IP gateway
-    /// </summary>
-    IpGateway = 0x02,
-}
 
 [CommandClass(CommandClassId.ZWavePlusInfo)]
 public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoCommand>
@@ -85,9 +126,14 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
     }
 
     /// <summary>
-    /// Gets the Z-Wave Plus information.
+    /// Gets the last Z-Wave Plus Info Report received from the device.
     /// </summary>
-    public ZWavePlusInfo? ZWavePlusInfo { get; private set; }
+    public ZWavePlusInfoReport? LastReport { get; private set; }
+
+    /// <summary>
+    /// Occurs when a Z-Wave Plus Info Report is received.
+    /// </summary>
+    public event Action<ZWavePlusInfoReport>? OnZWavePlusInfoReportReceived;
 
     /// <inheritdoc />
     public override bool? IsCommandSupported(ZWavePlusInfoCommand command)
@@ -100,14 +146,15 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
     /// <summary>
     /// Get additional information of the Z-Wave Plus device in question.
     /// </summary>
-    public async Task<ZWavePlusInfo> GetAsync(CancellationToken cancellationToken)
+    public async Task<ZWavePlusInfoReport> GetAsync(CancellationToken cancellationToken)
     {
         ZWavePlusInfoGetCommand command = ZWavePlusInfoGetCommand.Create();
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
         CommandClassFrame reportFrame = await AwaitNextReportAsync<ZWavePlusInfoReportCommand>(cancellationToken).ConfigureAwait(false);
-        ZWavePlusInfo info = ZWavePlusInfoReportCommand.Parse(reportFrame, Logger);
-        ZWavePlusInfo = info;
-        return info;
+        ZWavePlusInfoReport report = ZWavePlusInfoReportCommand.Parse(reportFrame, Logger);
+        LastReport = report;
+        OnZWavePlusInfoReportReceived?.Invoke(report);
+        return report;
     }
 
     internal override CommandClassCategory Category => CommandClassCategory.Management;
@@ -121,19 +168,17 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
     {
         switch ((ZWavePlusInfoCommand)frame.CommandId)
         {
-            case ZWavePlusInfoCommand.Get:
-            {
-                break;
-            }
             case ZWavePlusInfoCommand.Report:
             {
-                ZWavePlusInfo = ZWavePlusInfoReportCommand.Parse(frame, Logger);
+                ZWavePlusInfoReport report = ZWavePlusInfoReportCommand.Parse(frame, Logger);
+                LastReport = report;
+                OnZWavePlusInfoReportReceived?.Invoke(report);
                 break;
             }
         }
     }
 
-    private readonly struct ZWavePlusInfoGetCommand : ICommand
+    internal readonly struct ZWavePlusInfoGetCommand : ICommand
     {
         public ZWavePlusInfoGetCommand(CommandClassFrame frame)
         {
@@ -153,7 +198,7 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
         }
     }
 
-    private readonly struct ZWavePlusInfoReportCommand : ICommand
+    internal readonly struct ZWavePlusInfoReportCommand : ICommand
     {
         public ZWavePlusInfoReportCommand(CommandClassFrame frame)
         {
@@ -166,7 +211,7 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
 
         public CommandClassFrame Frame { get; }
 
-        public static ZWavePlusInfo Parse(CommandClassFrame frame, ILogger logger)
+        public static ZWavePlusInfoReport Parse(CommandClassFrame frame, ILogger logger)
         {
             if (frame.CommandParameters.Length < 7)
             {
@@ -174,12 +219,14 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
                 throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Z-Wave Plus Info Report frame is too short");
             }
 
-            byte zwavePlusVersion = frame.CommandParameters.Span[0];
-            ZWavePlusRoleType roleType = (ZWavePlusRoleType)frame.CommandParameters.Span[1];
-            ZWavePlusNodeType nodeType = (ZWavePlusNodeType)frame.CommandParameters.Span[2];
-            ushort installerIconType = frame.CommandParameters.Span[3..5].ToUInt16BE();
-            ushort userIconType = frame.CommandParameters.Span[5..7].ToUInt16BE();
-            return new ZWavePlusInfo(zwavePlusVersion, roleType, nodeType, installerIconType, userIconType);
+            ReadOnlySpan<byte> span = frame.CommandParameters.Span;
+
+            byte zwavePlusVersion = span[0];
+            ZWavePlusRoleType roleType = (ZWavePlusRoleType)span[1];
+            ZWavePlusNodeType nodeType = (ZWavePlusNodeType)span[2];
+            ushort installerIconType = span[3..5].ToUInt16BE();
+            ushort userIconType = span[5..7].ToUInt16BE();
+            return new ZWavePlusInfoReport(zwavePlusVersion, roleType, nodeType, installerIconType, userIconType);
         }
     }
 }

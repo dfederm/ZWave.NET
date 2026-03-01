@@ -7,9 +7,9 @@
 @if (CommandClass != null)
 {
     <table class="table table-striped">
-        @if (CommandClass.ZWavePlusInfo.HasValue)
+        @if (CommandClass.LastReport.HasValue)
         {
-            var info = CommandClass.ZWavePlusInfo.Value;
+            var info = CommandClass.LastReport.Value;
 
             <tbody>
                 <tr>
