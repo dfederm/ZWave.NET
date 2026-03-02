@@ -36,63 +36,31 @@ public enum MultiChannelAssociationCommand : byte
 }
 
 /// <summary>
-/// Represents an End Point destination in a Multi Channel association.
+/// Represents an endpoint destination in a Multi Channel association.
 /// </summary>
-/// <remarks>
-/// <para>
-/// An End Point destination identifies a specific endpoint on a node. Use the constructor
-/// for a single endpoint destination, or the <see cref="EndPointDestination(byte, ReadOnlySpan{byte})"/>
-/// overload for a destination
-/// destination targeting multiple endpoints simultaneously.
-/// </para>
-/// <para>
-/// When <see cref="IsBitAddress"/> is true, <see cref="Destination"/> is a bit mask where
-/// bit 0 = endpoint 1, bit 1 = endpoint 2, etc. (endpoints 1–7).
-/// When false, <see cref="Destination"/> is the single endpoint index (0–127).
-/// </para>
-/// </remarks>
-public readonly record struct EndPointDestination
+public readonly record struct EndpointDestination
 {
     /// <summary>
-    /// Creates an End Point destination targeting a single endpoint on a node.
+    /// Creates an endpoint destination targeting a single endpoint on a node.
     /// </summary>
-    /// <param name="nodeId">The NodeID of the destination.</param>
-    /// <param name="endPoint">The endpoint index (0–127).</param>
-    public EndPointDestination(byte nodeId, byte endPoint)
+    public EndpointDestination(byte nodeId, byte endpoint)
     {
         NodeId = nodeId;
-        IsBitAddress = false;
-        Destination = endPoint;
-    }
-
-    internal EndPointDestination(byte nodeId, bool isBitAddress, byte destination)
-    {
-        NodeId = nodeId;
-        IsBitAddress = isBitAddress;
-        Destination = destination;
+        Endpoints = [endpoint];
     }
 
     /// <summary>
-    /// Creates an End Point destination targeting multiple endpoints on a node.
+    /// Creates an endpoint destination targeting multiple endpoints on a node.
     /// </summary>
-    /// <param name="nodeId">The NodeID of the destination.</param>
-    /// <param name="endPoints">The endpoint indices to target (each must be 1–7).</param>
-    public EndPointDestination(byte nodeId, ReadOnlySpan<byte> endPoints)
+    public EndpointDestination(byte nodeId, ReadOnlySpan<byte> endpoints)
     {
-        byte bitMask = 0;
-        foreach (byte ep in endPoints)
+        if (endpoints.Length == 0)
         {
-            if (ep < 1 || ep > 7)
-            {
-                throw new ArgumentOutOfRangeException(nameof(endPoints), ep, "Bit-addressed endpoints must be between 1 and 7.");
-            }
-
-            bitMask |= (byte)(1 << (ep - 1));
+            throw new ArgumentException("At least one endpoint must be specified.", nameof(endpoints));
         }
 
         NodeId = nodeId;
-        IsBitAddress = true;
-        Destination = bitMask;
+        Endpoints = endpoints.ToArray();
     }
 
     /// <summary>
@@ -101,14 +69,9 @@ public readonly record struct EndPointDestination
     public byte NodeId { get; }
 
     /// <summary>
-    /// Whether the destination is specified as a bit mask targeting multiple endpoints.
+    /// The endpoint indices on this node.
     /// </summary>
-    public bool IsBitAddress { get; }
-
-    /// <summary>
-    /// The destination endpoint index (0–127) or bit mask (when <see cref="IsBitAddress"/> is true).
-    /// </summary>
-    public byte Destination { get; }
+    public IReadOnlyList<byte> Endpoints { get; }
 }
 
 [CommandClass(CommandClassId.MultiChannelAssociation)]
@@ -149,21 +112,8 @@ public sealed partial class MultiChannelAssociationCommandClass : CommandClass<M
 
     protected override void ProcessUnsolicitedCommand(CommandClassFrame frame)
     {
-        switch ((MultiChannelAssociationCommand)frame.CommandId)
-        {
-            case MultiChannelAssociationCommand.Report:
-            {
-                MultiChannelAssociationReport report = MultiChannelAssociationReportCommand.Parse(frame, Logger);
-                UpdateGroupReport(report);
-                OnReportReceived?.Invoke(report);
-                break;
-            }
-            case MultiChannelAssociationCommand.SupportedGroupingsReport:
-            {
-                byte groupings = MultiChannelAssociationSupportedGroupingsReportCommand.Parse(frame, Logger);
-                SupportedGroupings = groupings;
-                break;
-            }
-        }
+        // Association Reports and Supported Groupings Reports are only sent in response
+        // to Get commands (per spec CC:008E.02.02.11.001 and CC:008E.02.05.11.001),
+        // so there are no unsolicited commands to handle.
     }
 }
