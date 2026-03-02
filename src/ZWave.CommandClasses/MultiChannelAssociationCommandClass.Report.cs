@@ -18,11 +18,6 @@ public readonly record struct MultiChannelAssociationReport(
     byte MaxNodesSupported,
 
     /// <summary>
-    /// The number of report frames that will follow this report.
-    /// </summary>
-    byte ReportsToFollow,
-
-    /// <summary>
     /// The NodeID-only destinations in this association group.
     /// </summary>
     IReadOnlyList<byte> NodeIdDestinations,
@@ -30,7 +25,7 @@ public readonly record struct MultiChannelAssociationReport(
     /// <summary>
     /// The End Point destinations in this association group.
     /// </summary>
-    IReadOnlyList<EndPointDestination> EndPointDestinations);
+    IReadOnlyList<EndpointDestination> EndpointDestinations);
 
 public sealed partial class MultiChannelAssociationCommandClass
 {
@@ -44,7 +39,7 @@ public sealed partial class MultiChannelAssociationCommandClass
     /// </summary>
     public IReadOnlyDictionary<byte, MultiChannelAssociationReport> GroupReports => _groupReports;
 
-    private readonly Dictionary<byte, MultiChannelAssociationReport> _groupReports = new Dictionary<byte, MultiChannelAssociationReport>();
+    private readonly Dictionary<byte, MultiChannelAssociationReport> _groupReports = [];
 
     private void UpdateGroupReport(MultiChannelAssociationReport report)
     {
@@ -58,10 +53,27 @@ public sealed partial class MultiChannelAssociationCommandClass
     {
         MultiChannelAssociationGetCommand command = MultiChannelAssociationGetCommand.Create(groupingIdentifier);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
-        CommandClassFrame reportFrame = await AwaitNextReportAsync<MultiChannelAssociationReportCommand>(
-            frame => frame.CommandParameters.Length >= 1 && frame.CommandParameters.Span[0] == groupingIdentifier,
-            cancellationToken).ConfigureAwait(false);
-        MultiChannelAssociationReport report = MultiChannelAssociationReportCommand.Parse(reportFrame, Logger);
+
+        List<byte> allNodeIdDestinations = [];
+        List<EndpointDestination> allEndpointDestinations = [];
+        byte maxNodesSupported = 0;
+
+        byte reportsToFollow;
+        do
+        {
+            CommandClassFrame reportFrame = await AwaitNextReportAsync<MultiChannelAssociationReportCommand>(
+                frame => frame.CommandParameters.Length >= 1 && frame.CommandParameters.Span[0] == groupingIdentifier,
+                cancellationToken).ConfigureAwait(false);
+            (maxNodesSupported, reportsToFollow) = MultiChannelAssociationReportCommand.ParseInto(
+                reportFrame, allNodeIdDestinations, allEndpointDestinations, Logger);
+        }
+        while (reportsToFollow > 0);
+
+        MultiChannelAssociationReport report = new(
+            groupingIdentifier,
+            maxNodesSupported,
+            allNodeIdDestinations,
+            allEndpointDestinations);
         UpdateGroupReport(report);
         OnReportReceived?.Invoke(report);
         return report;
@@ -101,7 +113,11 @@ public sealed partial class MultiChannelAssociationCommandClass
 
         public CommandClassFrame Frame { get; }
 
-        public static MultiChannelAssociationReport Parse(CommandClassFrame frame, ILogger logger)
+        public static (byte MaxNodesSupported, byte ReportsToFollow) ParseInto(
+            CommandClassFrame frame,
+            List<byte> nodeIdDestinations,
+            List<EndpointDestination> endpointDestinations,
+            ILogger logger)
         {
             if (frame.CommandParameters.Length < 3)
             {
@@ -117,63 +133,74 @@ public sealed partial class MultiChannelAssociationCommandClass
             byte groupingIdentifier = span[0];
             byte maxNodesSupported = span[1];
             byte reportsToFollow = span[2];
-
             ReadOnlySpan<byte> destinationData = span[3..];
 
-            // Find the marker byte (0x00) to split NodeID destinations from End Point destinations.
             int markerIndex = destinationData.IndexOf(Marker);
-
-            List<byte> nodeIdDestinations;
-            List<EndPointDestination> endPointDestinations;
 
             if (markerIndex < 0)
             {
-                // No marker — all destinations are NodeID-only.
-                nodeIdDestinations = new List<byte>(destinationData.Length);
                 for (int i = 0; i < destinationData.Length; i++)
                 {
                     nodeIdDestinations.Add(destinationData[i]);
                 }
-
-                endPointDestinations = new List<EndPointDestination>();
             }
             else
             {
-                // Parse NodeID destinations before the marker.
-                nodeIdDestinations = new List<byte>(markerIndex);
                 for (int i = 0; i < markerIndex; i++)
                 {
                     nodeIdDestinations.Add(destinationData[i]);
                 }
 
-                // Parse End Point destinations after the marker.
-                // Each End Point destination is 2 bytes: NodeID + (BitAddress | EndPoint).
-                ReadOnlySpan<byte> endPointData = destinationData[(markerIndex + 1)..];
-                int endPointCount = endPointData.Length / 2;
-                endPointDestinations = new List<EndPointDestination>(endPointCount);
-                for (int i = 0; i + 1 < endPointData.Length; i += 2)
+                // Parse endpoint destinations, group by NodeId, expand bit masks.
+                ReadOnlySpan<byte> endpointData = destinationData[(markerIndex + 1)..];
+                Dictionary<byte, List<byte>>? grouped = null;
+                for (int i = 0; i + 1 < endpointData.Length; i += 2)
                 {
-                    byte nodeId = endPointData[i];
-                    byte properties = endPointData[i + 1];
-                    bool bitAddress = (properties & 0x80) != 0;
-                    byte endPoint = (byte)(properties & 0x7F);
-                    endPointDestinations.Add(new EndPointDestination(nodeId, bitAddress, endPoint));
+                    byte nodeId = endpointData[i];
+                    byte properties = endpointData[i + 1];
+                    bool bitAddress = (properties & 0b1000_0000) != 0;
+                    byte endpointValue = (byte)(properties & 0b0111_1111);
+
+                    grouped ??= [];
+                    if (!grouped.TryGetValue(nodeId, out List<byte>? endpoints))
+                    {
+                        endpoints = [];
+                        grouped[nodeId] = endpoints;
+                    }
+
+                    if (bitAddress)
+                    {
+                        for (int bit = 0; bit < 7; bit++)
+                        {
+                            if ((endpointValue & (1 << bit)) != 0)
+                            {
+                                endpoints.Add((byte)(bit + 1));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        endpoints.Add(endpointValue);
+                    }
                 }
 
-                if (endPointData.Length % 2 != 0)
+                if (grouped != null)
+                {
+                    foreach (KeyValuePair<byte, List<byte>> entry in grouped)
+                    {
+                        endpointDestinations.Add(new EndpointDestination(entry.Key, (ReadOnlySpan<byte>)entry.Value.ToArray()));
+                    }
+                }
+
+                if (endpointData.Length % 2 != 0)
                 {
                     logger.LogWarning(
-                        "Multi Channel Association Report has a trailing byte after the marker (odd End Point data length: {Length})",
-                        endPointData.Length);
+                        "Multi Channel Association Report has a trailing byte after the marker (odd endpoint data length: {Length})",
+                        endpointData.Length);
                 }
             }
 
-            return new MultiChannelAssociationReport(
-                groupingIdentifier,
-                maxNodesSupported,
-                reportsToFollow,
-                nodeIdDestinations,
-                endPointDestinations);
+            return (maxNodesSupported, reportsToFollow);
         }
     }
 }

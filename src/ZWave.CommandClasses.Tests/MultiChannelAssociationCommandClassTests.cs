@@ -4,67 +4,62 @@ namespace ZWave.CommandClasses.Tests;
 public partial class MultiChannelAssociationCommandClassTests
 {
     [TestMethod]
-    public void EndPointDestination_SingleEndpoint_HasCorrectProperties()
+    public void EndpointDestination_SingleEndpoint_HasCorrectProperties()
     {
-        EndPointDestination dest = new EndPointDestination(5, 3);
+        EndpointDestination dest = new EndpointDestination(5, 3);
 
         Assert.AreEqual((byte)5, dest.NodeId);
-        Assert.IsFalse(dest.IsBitAddress);
-        Assert.AreEqual((byte)3, dest.Destination);
+        Assert.HasCount(1, dest.Endpoints);
+        Assert.AreEqual((byte)3, dest.Endpoints[0]);
     }
 
     [TestMethod]
-    public void EndPointDestination_SingleEndpoint_Zero_RootDevice()
+    public void EndpointDestination_SingleEndpoint_Zero_RootDevice()
     {
-        EndPointDestination dest = new EndPointDestination(1, 0);
+        EndpointDestination dest = new EndpointDestination(1, 0);
 
         Assert.AreEqual((byte)1, dest.NodeId);
-        Assert.IsFalse(dest.IsBitAddress);
-        Assert.AreEqual((byte)0, dest.Destination);
+        Assert.HasCount(1, dest.Endpoints);
+        Assert.AreEqual((byte)0, dest.Endpoints[0]);
     }
 
     [TestMethod]
-    public void EndPointDestination_MultipleEndpoints_HasCorrectProperties()
+    public void EndpointDestination_MultipleEndpoints_HasCorrectProperties()
     {
-        EndPointDestination dest = new EndPointDestination(4, new byte[] { 1, 2, 3 });
+        EndpointDestination dest = new EndpointDestination(4, new byte[] { 1, 2, 3 });
 
         Assert.AreEqual((byte)4, dest.NodeId);
-        Assert.IsTrue(dest.IsBitAddress);
-        // Endpoints 1, 2, 3 → bits 0, 1, 2 → 0b00000111 = 0x07
-        Assert.AreEqual((byte)0x07, dest.Destination);
+        Assert.HasCount(3, dest.Endpoints);
+        Assert.AreEqual((byte)1, dest.Endpoints[0]);
+        Assert.AreEqual((byte)2, dest.Endpoints[1]);
+        Assert.AreEqual((byte)3, dest.Endpoints[2]);
     }
 
     [TestMethod]
-    public void EndPointDestination_MultipleEndpoints_SingleEndpoint()
+    public void EndpointDestination_MultipleEndpoints_SingleItem()
     {
-        EndPointDestination dest = new EndPointDestination(4, new byte[] { 5 });
+        EndpointDestination dest = new EndpointDestination(4, new byte[] { 5 });
 
-        Assert.IsTrue(dest.IsBitAddress);
-        // Endpoint 5 → bit 4 → 0b00010000 = 0x10
-        Assert.AreEqual((byte)0x10, dest.Destination);
+        Assert.HasCount(1, dest.Endpoints);
+        Assert.AreEqual((byte)5, dest.Endpoints[0]);
     }
 
     [TestMethod]
-    public void EndPointDestination_MultipleEndpoints_AllEndpoints()
+    public void EndpointDestination_MultipleEndpoints_AllEndpoints()
     {
-        EndPointDestination dest = new EndPointDestination(4, new byte[] { 1, 2, 3, 4, 5, 6, 7 });
+        EndpointDestination dest = new EndpointDestination(4, new byte[] { 1, 2, 3, 4, 5, 6, 7 });
 
-        Assert.IsTrue(dest.IsBitAddress);
-        // Endpoints 1-7 → bits 0-6 → 0b01111111 = 0x7F
-        Assert.AreEqual((byte)0x7F, dest.Destination);
+        Assert.HasCount(7, dest.Endpoints);
+        for (int i = 0; i < 7; i++)
+        {
+            Assert.AreEqual((byte)(i + 1), dest.Endpoints[i]);
+        }
     }
 
     [TestMethod]
-    public void EndPointDestination_MultipleEndpoints_EndpointZero_Throws()
+    public void EndpointDestination_MultipleEndpoints_Empty_Throws()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => new EndPointDestination(4, new byte[] { 0 }));
-    }
-
-    [TestMethod]
-    public void EndPointDestination_MultipleEndpoints_EndpointTooHigh_Throws()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => new EndPointDestination(4, new byte[] { 8 }));
+        Assert.Throws<ArgumentException>(
+            () => new EndpointDestination(4, (ReadOnlySpan<byte>)Array.Empty<byte>()));
     }
 }

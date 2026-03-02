@@ -7,18 +7,18 @@ public sealed partial class MultiChannelAssociationCommandClass
     /// </summary>
     /// <param name="groupingIdentifier">The association group identifier (1–255).</param>
     /// <param name="nodeIdDestinations">NodeID-only destinations to add.</param>
-    /// <param name="endPointDestinations">End Point destinations to add.</param>
+    /// <param name="endpointDestinations">End Point destinations to add.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     public async Task SetAsync(
         byte groupingIdentifier,
         IReadOnlyList<byte> nodeIdDestinations,
-        IReadOnlyList<EndPointDestination> endPointDestinations,
+        IReadOnlyList<EndpointDestination> endpointDestinations,
         CancellationToken cancellationToken)
     {
         MultiChannelAssociationSetCommand command = MultiChannelAssociationSetCommand.Create(
             groupingIdentifier,
             nodeIdDestinations,
-            endPointDestinations);
+            endpointDestinations);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
     }
 
@@ -28,7 +28,7 @@ public sealed partial class MultiChannelAssociationCommandClass
     /// <remarks>
     /// <para>
     /// Per the spec, the combination of <paramref name="groupingIdentifier"/>,
-    /// <paramref name="nodeIdDestinations"/>, and <paramref name="endPointDestinations"/>
+    /// <paramref name="nodeIdDestinations"/>, and <paramref name="endpointDestinations"/>
     /// determines the behavior:
     /// </para>
     /// <list type="bullet">
@@ -40,32 +40,54 @@ public sealed partial class MultiChannelAssociationCommandClass
     /// </remarks>
     /// <param name="groupingIdentifier">The association group identifier, or 0 to target all groups.</param>
     /// <param name="nodeIdDestinations">NodeID-only destinations to remove.</param>
-    /// <param name="endPointDestinations">End Point destinations to remove.</param>
+    /// <param name="endpointDestinations">End Point destinations to remove.</param>
     /// <param name="cancellationToken">A cancellation token.</param>
     public async Task RemoveAsync(
         byte groupingIdentifier,
         IReadOnlyList<byte> nodeIdDestinations,
-        IReadOnlyList<EndPointDestination> endPointDestinations,
+        IReadOnlyList<EndpointDestination> endpointDestinations,
         CancellationToken cancellationToken)
     {
         MultiChannelAssociationRemoveCommand command = MultiChannelAssociationRemoveCommand.Create(
             groupingIdentifier,
             nodeIdDestinations,
-            endPointDestinations);
+            endpointDestinations);
         await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static int CountWireEntries(EndpointDestination dest)
+    {
+        int bitAddressable = 0;
+        int other = 0;
+        for (int i = 0; i < dest.Endpoints.Count; i++)
+        {
+            byte ep = dest.Endpoints[i];
+            if (ep >= 1 && ep <= 7)
+            {
+                bitAddressable++;
+            }
+            else
+            {
+                other++;
+            }
+        }
+        return (bitAddressable >= 2 ? 1 : bitAddressable) + other;
     }
 
     private static int ComputeDestinationPayloadLength(
         IReadOnlyList<byte> nodeIdDestinations,
-        IReadOnlyList<EndPointDestination> endPointDestinations)
+        IReadOnlyList<EndpointDestination> endpointDestinations)
     {
         int length = nodeIdDestinations.Count;
-        if (endPointDestinations.Count > 0)
+        int wireEntryCount = 0;
+        for (int i = 0; i < endpointDestinations.Count; i++)
         {
-            // Marker byte + 2 bytes per End Point destination (NodeID + BitAddress|EndPoint).
-            length += 1 + (endPointDestinations.Count * 2);
+            wireEntryCount += CountWireEntries(endpointDestinations[i]);
         }
-
+        if (wireEntryCount > 0)
+        {
+            length += 1 + (wireEntryCount * 2);
+        }
         return length;
     }
 
@@ -73,25 +95,59 @@ public sealed partial class MultiChannelAssociationCommandClass
         Span<byte> buffer,
         int offset,
         IReadOnlyList<byte> nodeIdDestinations,
-        IReadOnlyList<EndPointDestination> endPointDestinations)
+        IReadOnlyList<EndpointDestination> endpointDestinations)
     {
-        // Write NodeID destinations.
         for (int i = 0; i < nodeIdDestinations.Count; i++)
         {
             buffer[offset++] = nodeIdDestinations[i];
         }
 
-        if (endPointDestinations.Count > 0)
+        bool hasEndpoints = false;
+        for (int i = 0; i < endpointDestinations.Count; i++)
         {
-            // Write marker.
+            if (endpointDestinations[i].Endpoints.Count > 0)
+            {
+                hasEndpoints = true;
+                break;
+            }
+        }
+
+        if (hasEndpoints)
+        {
             buffer[offset++] = Marker;
 
-            // Write End Point destinations.
-            for (int i = 0; i < endPointDestinations.Count; i++)
+            for (int i = 0; i < endpointDestinations.Count; i++)
             {
-                EndPointDestination dest = endPointDestinations[i];
-                buffer[offset++] = dest.NodeId;
-                buffer[offset++] = (byte)((dest.IsBitAddress ? 0x80 : 0x00) | (dest.Destination & 0x7F));
+                EndpointDestination dest = endpointDestinations[i];
+
+                byte bitMask = 0;
+                int bitAddressableCount = 0;
+                for (int j = 0; j < dest.Endpoints.Count; j++)
+                {
+                    byte ep = dest.Endpoints[j];
+                    if (ep >= 1 && ep <= 7)
+                    {
+                        bitMask |= (byte)(1 << (ep - 1));
+                        bitAddressableCount++;
+                    }
+                }
+
+                bool useBitAddress = bitAddressableCount >= 2;
+
+                if (useBitAddress)
+                {
+                    buffer[offset++] = dest.NodeId;
+                    buffer[offset++] = (byte)(0b1000_0000 | bitMask);
+                }
+
+                for (int j = 0; j < dest.Endpoints.Count; j++)
+                {
+                    byte ep = dest.Endpoints[j];
+                    if (useBitAddress && ep >= 1 && ep <= 7)
+                        continue;
+                    buffer[offset++] = dest.NodeId;
+                    buffer[offset++] = (byte)(ep & 0b0111_1111);
+                }
             }
         }
     }
@@ -112,12 +168,12 @@ public sealed partial class MultiChannelAssociationCommandClass
         public static MultiChannelAssociationSetCommand Create(
             byte groupingIdentifier,
             IReadOnlyList<byte> nodeIdDestinations,
-            IReadOnlyList<EndPointDestination> endPointDestinations)
+            IReadOnlyList<EndpointDestination> endpointDestinations)
         {
-            int payloadLength = 1 + ComputeDestinationPayloadLength(nodeIdDestinations, endPointDestinations);
+            int payloadLength = 1 + ComputeDestinationPayloadLength(nodeIdDestinations, endpointDestinations);
             Span<byte> commandParameters = stackalloc byte[payloadLength];
             commandParameters[0] = groupingIdentifier;
-            WriteDestinationPayload(commandParameters, 1, nodeIdDestinations, endPointDestinations);
+            WriteDestinationPayload(commandParameters, 1, nodeIdDestinations, endpointDestinations);
 
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new MultiChannelAssociationSetCommand(frame);
@@ -140,12 +196,12 @@ public sealed partial class MultiChannelAssociationCommandClass
         public static MultiChannelAssociationRemoveCommand Create(
             byte groupingIdentifier,
             IReadOnlyList<byte> nodeIdDestinations,
-            IReadOnlyList<EndPointDestination> endPointDestinations)
+            IReadOnlyList<EndpointDestination> endpointDestinations)
         {
-            int payloadLength = 1 + ComputeDestinationPayloadLength(nodeIdDestinations, endPointDestinations);
+            int payloadLength = 1 + ComputeDestinationPayloadLength(nodeIdDestinations, endpointDestinations);
             Span<byte> commandParameters = stackalloc byte[payloadLength];
             commandParameters[0] = groupingIdentifier;
-            WriteDestinationPayload(commandParameters, 1, nodeIdDestinations, endPointDestinations);
+            WriteDestinationPayload(commandParameters, 1, nodeIdDestinations, endpointDestinations);
 
             CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
             return new MultiChannelAssociationRemoveCommand(frame);
