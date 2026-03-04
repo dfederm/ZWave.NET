@@ -171,4 +171,10 @@ internal static partial class Logging
         Level = LogLevel.Debug,
         Message = "De-encapsulating Multi Channel frame from node {nodeId} source endpoint {sourceEndpoint}")]
     public static partial void LogMultiChannelDeEncapsulating(this ILogger logger, ushort nodeId, byte sourceEndpoint);
+
+    [LoggerMessage(
+        EventId = 223,
+        Level = LogLevel.Warning,
+        Message = "Failed to send controller response to node {nodeId}")]
+    public static partial void LogControllerResponseFailed(this ILogger logger, ushort nodeId, Exception ex);
 }

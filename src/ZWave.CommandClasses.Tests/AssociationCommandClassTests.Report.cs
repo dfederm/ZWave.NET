@@ -137,4 +137,40 @@ public partial class AssociationCommandClassTests
             Assert.AreEqual((byte)(i + 1), nodeIdDestinations[i]);
         }
     }
+
+    [TestMethod]
+    public void Report_Create_ParseRoundTrip()
+    {
+        byte[] nodeIds = [2, 5, 10];
+        AssociationCommandClass.AssociationReportCommand report =
+            AssociationCommandClass.AssociationReportCommand.Create(1, 5, 0, nodeIds);
+
+        List<byte> parsedNodeIds = [];
+        (byte maxNodesSupported, byte reportsToFollow) =
+            AssociationCommandClass.AssociationReportCommand.ParseInto(
+                report.Frame, parsedNodeIds, NullLogger.Instance);
+
+        Assert.AreEqual((byte)5, maxNodesSupported);
+        Assert.AreEqual((byte)0, reportsToFollow);
+        Assert.HasCount(3, parsedNodeIds);
+        Assert.AreEqual((byte)2, parsedNodeIds[0]);
+        Assert.AreEqual((byte)5, parsedNodeIds[1]);
+        Assert.AreEqual((byte)10, parsedNodeIds[2]);
+    }
+
+    [TestMethod]
+    public void Report_Create_EmptyDestinations_ParseRoundTrip()
+    {
+        AssociationCommandClass.AssociationReportCommand report =
+            AssociationCommandClass.AssociationReportCommand.Create(1, 1, 0, ReadOnlySpan<byte>.Empty);
+
+        List<byte> parsedNodeIds = [];
+        (byte maxNodesSupported, byte reportsToFollow) =
+            AssociationCommandClass.AssociationReportCommand.ParseInto(
+                report.Frame, parsedNodeIds, NullLogger.Instance);
+
+        Assert.AreEqual((byte)1, maxNodesSupported);
+        Assert.AreEqual((byte)0, reportsToFollow);
+        Assert.IsEmpty(parsedNodeIds);
+    }
 }

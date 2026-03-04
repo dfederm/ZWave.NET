@@ -69,4 +69,28 @@ public partial class AssociationCommandClassTests
             () => AssociationCommandClass.AssociationSpecificGroupReportCommand.Parse(
                 frame, NullLogger.Instance));
     }
+
+    [TestMethod]
+    public void SpecificGroupReport_Create_ParseRoundTrip()
+    {
+        AssociationCommandClass.AssociationSpecificGroupReportCommand report =
+            AssociationCommandClass.AssociationSpecificGroupReportCommand.Create(5);
+
+        byte group = AssociationCommandClass.AssociationSpecificGroupReportCommand.Parse(
+            report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)5, group);
+    }
+
+    [TestMethod]
+    public void SpecificGroupReport_Create_NotSupported()
+    {
+        AssociationCommandClass.AssociationSpecificGroupReportCommand report =
+            AssociationCommandClass.AssociationSpecificGroupReportCommand.Create(0);
+
+        byte group = AssociationCommandClass.AssociationSpecificGroupReportCommand.Parse(
+            report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)0, group);
+    }
 }

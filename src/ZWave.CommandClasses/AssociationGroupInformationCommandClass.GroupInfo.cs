@@ -213,6 +213,44 @@ public sealed partial class AssociationGroupInformationCommandClass
 
         public CommandClassFrame Frame { get; }
 
+        public static GroupInfoReportCommand Create(
+            bool listMode,
+            bool dynamicInfo,
+            IReadOnlyList<AssociationGroupInfo> groups)
+        {
+            const int GroupEntrySize = 7;
+            Span<byte> commandParameters = stackalloc byte[1 + (groups.Count * GroupEntrySize)];
+
+            // Byte 0: [List Mode (1 bit)] [Dynamic Info (1 bit)] [Group Count (6 bits)]
+            byte flags = (byte)(groups.Count & 0b0011_1111);
+            if (listMode)
+            {
+                flags |= 0b1000_0000;
+            }
+
+            if (dynamicInfo)
+            {
+                flags |= 0b0100_0000;
+            }
+
+            commandParameters[0] = flags;
+
+            for (int i = 0; i < groups.Count; i++)
+            {
+                int offset = 1 + (i * GroupEntrySize);
+                commandParameters[offset] = groups[i].GroupingIdentifier;
+                commandParameters[offset + 1] = 0; // Mode = 0 per spec CC:0059.01.04.11.008
+                commandParameters[offset + 2] = groups[i].Profile.Category;
+                commandParameters[offset + 3] = groups[i].Profile.Identifier;
+                commandParameters[offset + 4] = 0; // Reserved per spec CC:0059.01.04.11.00A
+                commandParameters[offset + 5] = 0; // Event Code MSB = 0 per spec CC:0059.01.04.11.00B
+                commandParameters[offset + 6] = 0; // Event Code LSB = 0
+            }
+
+            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
+            return new GroupInfoReportCommand(frame);
+        }
+
         /// <summary>
         /// Parse an Association Group Info Report frame.
         /// </summary>

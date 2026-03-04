@@ -69,4 +69,16 @@ public partial class AssociationCommandClassTests
             () => AssociationCommandClass.AssociationSupportedGroupingsReportCommand.Parse(
                 frame, NullLogger.Instance));
     }
+
+    [TestMethod]
+    public void SupportedGroupingsReport_Create_ParseRoundTrip()
+    {
+        AssociationCommandClass.AssociationSupportedGroupingsReportCommand report =
+            AssociationCommandClass.AssociationSupportedGroupingsReportCommand.Create(3);
+
+        byte groupings = AssociationCommandClass.AssociationSupportedGroupingsReportCommand.Parse(
+            report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)3, groupings);
+    }
 }
