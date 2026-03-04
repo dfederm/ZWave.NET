@@ -238,4 +238,54 @@ public partial class AssociationGroupInformationCommandClassTests
         Assert.AreEqual((byte)0x00, groups[0].Profile.Category);
         Assert.AreEqual((byte)0x01, groups[0].Profile.Identifier);
     }
+
+    [TestMethod]
+    public void GroupInfoReport_Create_ParseRoundTrip_SingleGroup()
+    {
+        AssociationGroupInfo[] groups =
+        [
+            new AssociationGroupInfo(1, new AssociationGroupProfile(0x00, 0x01)),
+        ];
+
+        AssociationGroupInformationCommandClass.GroupInfoReportCommand report =
+            AssociationGroupInformationCommandClass.GroupInfoReportCommand.Create(
+                listMode: false, dynamicInfo: false, groups);
+
+        (bool dynamicInfo, List<AssociationGroupInfo> parsedGroups) =
+            AssociationGroupInformationCommandClass.GroupInfoReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.IsFalse(dynamicInfo);
+        Assert.HasCount(1, parsedGroups);
+        Assert.AreEqual((byte)1, parsedGroups[0].GroupingIdentifier);
+        Assert.AreEqual((byte)0x00, parsedGroups[0].Profile.Category);
+        Assert.AreEqual((byte)0x01, parsedGroups[0].Profile.Identifier);
+    }
+
+    [TestMethod]
+    public void GroupInfoReport_Create_ParseRoundTrip_ListMode()
+    {
+        AssociationGroupInfo[] groups =
+        [
+            new AssociationGroupInfo(1, new AssociationGroupProfile(0x00, 0x01)),
+            new AssociationGroupInfo(2, new AssociationGroupProfile(0x20, 0x01)),
+        ];
+
+        AssociationGroupInformationCommandClass.GroupInfoReportCommand report =
+            AssociationGroupInformationCommandClass.GroupInfoReportCommand.Create(
+                listMode: true, dynamicInfo: true, groups);
+
+        (bool dynamicInfo, List<AssociationGroupInfo> parsedGroups) =
+            AssociationGroupInformationCommandClass.GroupInfoReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.IsTrue(dynamicInfo);
+        Assert.HasCount(2, parsedGroups);
+        Assert.AreEqual((byte)1, parsedGroups[0].GroupingIdentifier);
+        Assert.AreEqual((byte)0x00, parsedGroups[0].Profile.Category);
+        Assert.AreEqual((byte)0x01, parsedGroups[0].Profile.Identifier);
+        Assert.AreEqual((byte)2, parsedGroups[1].GroupingIdentifier);
+        Assert.AreEqual((byte)0x20, parsedGroups[1].Profile.Category);
+        Assert.AreEqual((byte)0x01, parsedGroups[1].Profile.Identifier);
+    }
 }

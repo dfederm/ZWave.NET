@@ -213,6 +213,13 @@ public sealed class Driver : IDriver, IAsyncDisposable
                             }
 
                             node.ProcessCommand(commandClassFrame, endpointIndex);
+
+                            // Route to controller for supporting-side handling (responding to queries
+                            // from other nodes about the controller's own association groups, etc.).
+                            if (applicationCommandHandler.NodeId != Controller.NodeId)
+                            {
+                                Controller.HandleCommand(commandClassFrame, applicationCommandHandler.NodeId);
+                            }
                         }
                         else
                         {

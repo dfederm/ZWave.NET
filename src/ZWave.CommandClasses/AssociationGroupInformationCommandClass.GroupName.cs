@@ -64,6 +64,18 @@ public sealed partial class AssociationGroupInformationCommandClass
 
         public CommandClassFrame Frame { get; }
 
+        public static GroupNameReportCommand Create(byte groupingIdentifier, string name)
+        {
+            byte[] nameBytes = System.Text.Encoding.UTF8.GetBytes(name);
+            Span<byte> commandParameters = stackalloc byte[2 + nameBytes.Length];
+            commandParameters[0] = groupingIdentifier;
+            commandParameters[1] = (byte)nameBytes.Length;
+            nameBytes.CopyTo(commandParameters[2..]);
+
+            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
+            return new GroupNameReportCommand(frame);
+        }
+
         /// <summary>
         /// Parse an Association Group Name Report frame.
         /// </summary>

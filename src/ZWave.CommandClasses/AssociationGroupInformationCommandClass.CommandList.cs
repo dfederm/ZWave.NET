@@ -89,6 +89,42 @@ public sealed partial class AssociationGroupInformationCommandClass
 
         public CommandClassFrame Frame { get; }
 
+        public static CommandListReportCommand Create(
+            byte groupingIdentifier,
+            IReadOnlyList<AssociationGroupCommand> commands)
+        {
+            // Calculate list length: each command is 2 bytes (normal CC) or 3 bytes (extended CC)
+            int listLength = 0;
+            for (int i = 0; i < commands.Count; i++)
+            {
+                listLength += commands[i].CommandClassId >= 0xF100 ? 3 : 2;
+            }
+
+            Span<byte> commandParameters = stackalloc byte[2 + listLength];
+            commandParameters[0] = groupingIdentifier;
+            commandParameters[1] = (byte)listLength;
+
+            int offset = 2;
+            for (int i = 0; i < commands.Count; i++)
+            {
+                AssociationGroupCommand cmd = commands[i];
+                if (cmd.CommandClassId >= 0xF100)
+                {
+                    commandParameters[offset++] = (byte)(cmd.CommandClassId >> 8);
+                    commandParameters[offset++] = (byte)(cmd.CommandClassId & 0xFF);
+                }
+                else
+                {
+                    commandParameters[offset++] = (byte)cmd.CommandClassId;
+                }
+
+                commandParameters[offset++] = cmd.CommandId;
+            }
+
+            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
+            return new CommandListReportCommand(frame);
+        }
+
         /// <summary>
         /// Parse an Association Group Command List Report frame.
         /// </summary>

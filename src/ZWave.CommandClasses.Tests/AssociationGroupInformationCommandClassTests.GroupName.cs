@@ -109,4 +109,46 @@ public partial class AssociationGroupInformationCommandClassTests
             () => AssociationGroupInformationCommandClass.GroupNameReportCommand.Parse(
                 frame, NullLogger.Instance));
     }
+
+    [TestMethod]
+    public void GroupNameReport_Create_ParseRoundTrip()
+    {
+        AssociationGroupInformationCommandClass.GroupNameReportCommand report =
+            AssociationGroupInformationCommandClass.GroupNameReportCommand.Create(1, "Lifeline");
+
+        (byte groupingIdentifier, string name) =
+            AssociationGroupInformationCommandClass.GroupNameReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)1, groupingIdentifier);
+        Assert.AreEqual("Lifeline", name);
+    }
+
+    [TestMethod]
+    public void GroupNameReport_Create_EmptyName_ParseRoundTrip()
+    {
+        AssociationGroupInformationCommandClass.GroupNameReportCommand report =
+            AssociationGroupInformationCommandClass.GroupNameReportCommand.Create(2, string.Empty);
+
+        (byte groupingIdentifier, string name) =
+            AssociationGroupInformationCommandClass.GroupNameReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)2, groupingIdentifier);
+        Assert.AreEqual(string.Empty, name);
+    }
+
+    [TestMethod]
+    public void GroupNameReport_Create_Utf8Name_ParseRoundTrip()
+    {
+        AssociationGroupInformationCommandClass.GroupNameReportCommand report =
+            AssociationGroupInformationCommandClass.GroupNameReportCommand.Create(1, "café");
+
+        (byte groupingIdentifier, string name) =
+            AssociationGroupInformationCommandClass.GroupNameReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)1, groupingIdentifier);
+        Assert.AreEqual("café", name);
+    }
 }

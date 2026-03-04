@@ -163,4 +163,73 @@ public partial class AssociationGroupInformationCommandClassTests
         Assert.AreEqual((ushort)CommandClassId.Notification, commands[2].CommandClassId);
         Assert.AreEqual((byte)0x05, commands[2].CommandId);
     }
+
+    [TestMethod]
+    public void CommandListReport_Create_ParseRoundTrip_SingleCommand()
+    {
+        AssociationGroupCommand[] commands =
+        [
+            new AssociationGroupCommand((ushort)CommandClassId.DeviceResetLocally, 0x01),
+        ];
+
+        AssociationGroupInformationCommandClass.CommandListReportCommand report =
+            AssociationGroupInformationCommandClass.CommandListReportCommand.Create(1, commands);
+
+        (byte groupingIdentifier, IReadOnlyList<AssociationGroupCommand> parsedCommands) =
+            AssociationGroupInformationCommandClass.CommandListReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)1, groupingIdentifier);
+        Assert.HasCount(1, parsedCommands);
+        Assert.AreEqual((ushort)CommandClassId.DeviceResetLocally, parsedCommands[0].CommandClassId);
+        Assert.AreEqual((byte)0x01, parsedCommands[0].CommandId);
+    }
+
+    [TestMethod]
+    public void CommandListReport_Create_ParseRoundTrip_MultipleCommands()
+    {
+        AssociationGroupCommand[] commands =
+        [
+            new AssociationGroupCommand((ushort)CommandClassId.Notification, 0x05),
+            new AssociationGroupCommand((ushort)CommandClassId.Battery, 0x03),
+            new AssociationGroupCommand((ushort)CommandClassId.DeviceResetLocally, 0x01),
+        ];
+
+        AssociationGroupInformationCommandClass.CommandListReportCommand report =
+            AssociationGroupInformationCommandClass.CommandListReportCommand.Create(1, commands);
+
+        (byte groupingIdentifier, IReadOnlyList<AssociationGroupCommand> parsedCommands) =
+            AssociationGroupInformationCommandClass.CommandListReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)1, groupingIdentifier);
+        Assert.HasCount(3, parsedCommands);
+        Assert.AreEqual((ushort)CommandClassId.Notification, parsedCommands[0].CommandClassId);
+        Assert.AreEqual((ushort)CommandClassId.Battery, parsedCommands[1].CommandClassId);
+        Assert.AreEqual((ushort)CommandClassId.DeviceResetLocally, parsedCommands[2].CommandClassId);
+    }
+
+    [TestMethod]
+    public void CommandListReport_Create_ParseRoundTrip_ExtendedCC()
+    {
+        AssociationGroupCommand[] commands =
+        [
+            new AssociationGroupCommand(0xF205, 0x03),
+            new AssociationGroupCommand((ushort)CommandClassId.Basic, 0x01),
+        ];
+
+        AssociationGroupInformationCommandClass.CommandListReportCommand report =
+            AssociationGroupInformationCommandClass.CommandListReportCommand.Create(2, commands);
+
+        (byte groupingIdentifier, IReadOnlyList<AssociationGroupCommand> parsedCommands) =
+            AssociationGroupInformationCommandClass.CommandListReportCommand.Parse(
+                report.Frame, NullLogger.Instance);
+
+        Assert.AreEqual((byte)2, groupingIdentifier);
+        Assert.HasCount(2, parsedCommands);
+        Assert.AreEqual((ushort)0xF205, parsedCommands[0].CommandClassId);
+        Assert.AreEqual((byte)0x03, parsedCommands[0].CommandId);
+        Assert.AreEqual((ushort)CommandClassId.Basic, parsedCommands[1].CommandClassId);
+        Assert.AreEqual((byte)0x01, parsedCommands[1].CommandId);
+    }
 }

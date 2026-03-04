@@ -114,6 +114,22 @@ public sealed partial class AssociationCommandClass
 
         public CommandClassFrame Frame { get; }
 
+        public static AssociationReportCommand Create(
+            byte groupingIdentifier,
+            byte maxNodesSupported,
+            byte reportsToFollow,
+            ReadOnlySpan<byte> nodeIdDestinations)
+        {
+            Span<byte> commandParameters = stackalloc byte[3 + nodeIdDestinations.Length];
+            commandParameters[0] = groupingIdentifier;
+            commandParameters[1] = maxNodesSupported;
+            commandParameters[2] = reportsToFollow;
+            nodeIdDestinations.CopyTo(commandParameters[3..]);
+
+            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
+            return new AssociationReportCommand(frame);
+        }
+
         /// <summary>
         /// Parse a single Association Report frame, appending NodeID destinations to the provided list.
         /// </summary>

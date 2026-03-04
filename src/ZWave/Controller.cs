@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 
 using Microsoft.Extensions.Logging;
+using ZWave.CommandClasses;
 using ZWave.Serial.Commands;
 
 namespace ZWave;
@@ -14,6 +15,8 @@ public sealed class Controller
 
     private readonly Driver _driver;
 
+    private readonly ControllerCommandHandler _commandHandler;
+
     private readonly Dictionary<ushort, Node> _nodes = new Dictionary<ushort, Node>();
 
     public Controller(
@@ -22,6 +25,7 @@ public sealed class Controller
     {
         _logger = logger;
         _driver = driver;
+        _commandHandler = new ControllerCommandHandler(this, driver, logger);
     }
 
     /// <summary>
@@ -103,6 +107,26 @@ public sealed class Controller
     /// Gets the nodes in the Z-Wave network.
     /// </summary>
     public IReadOnlyDictionary<ushort, Node> Nodes => _nodes;
+
+    /// <summary>
+    /// The maximum number of destinations in the controller's lifeline association group.
+    /// </summary>
+    internal const int MaxAssociationDestinations = 1;
+
+    /// <summary>
+    /// Gets or sets the controller's lifeline association destinations.
+    /// Other nodes may add/remove themselves via Association Set/Remove commands.
+    /// </summary>
+    internal List<byte> Associations { get; set; } = [];
+
+    /// <summary>
+    /// Handles an incoming command from another node directed at this controller.
+    /// Delegates to the internal <see cref="ControllerCommandHandler"/> for CC-specific handling.
+    /// </summary>
+    internal void HandleCommand(CommandClassFrame frame, ushort sourceNodeId)
+    {
+        _commandHandler.HandleCommand(frame, sourceNodeId);
+    }
 
     /// <summary>
     /// Queries the controller to identify its properties and discover the network nodes.

@@ -58,6 +58,13 @@ public sealed partial class AssociationCommandClass
 
         public CommandClassFrame Frame { get; }
 
+        public static AssociationSpecificGroupReportCommand Create(byte group)
+        {
+            ReadOnlySpan<byte> commandParameters = [group];
+            CommandClassFrame frame = CommandClassFrame.Create(CommandClassId, CommandId, commandParameters);
+            return new AssociationSpecificGroupReportCommand(frame);
+        }
+
         public static byte Parse(CommandClassFrame frame, ILogger logger)
         {
             if (frame.CommandParameters.Length < 1)
