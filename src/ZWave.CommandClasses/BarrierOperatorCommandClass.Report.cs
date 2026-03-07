@@ -39,10 +39,15 @@ public readonly record struct BarrierOperatorReport(byte StateValue)
     };
 
     /// <summary>
-    /// Gets the exact position percentage (1-99) when the barrier is stopped at a known position,
+    /// Gets the exact position percentage (0-100) when the barrier is at a known position,
     /// or <see langword="null"/> otherwise.
     /// </summary>
-    public byte? Position => StateValue is >= 0x01 and <= 0x63 ? StateValue : null;
+    public byte? Position => StateValue switch
+    {
+        <= 0x63 => StateValue,
+        0xFF => 100,
+        _ => null,
+    };
 }
 
 public sealed partial class BarrierOperatorCommandClass

@@ -44,7 +44,7 @@ public partial class BarrierOperatorCommandClassTests
 
         Assert.AreEqual((byte)0x00, report.StateValue);
         Assert.AreEqual(BarrierOperatorState.Closed, report.State);
-        Assert.IsNull(report.Position);
+        Assert.AreEqual((byte)0, report.Position);
     }
 
     [TestMethod]
@@ -57,7 +57,7 @@ public partial class BarrierOperatorCommandClassTests
 
         Assert.AreEqual((byte)0xFF, report.StateValue);
         Assert.AreEqual(BarrierOperatorState.Open, report.State);
-        Assert.IsNull(report.Position);
+        Assert.AreEqual((byte)100, report.Position);
     }
 
     [TestMethod]
