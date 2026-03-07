@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -85,7 +85,7 @@ public sealed partial class BatteryCommandClass
             if (frame.CommandParameters.Length < 2)
             {
                 logger.LogWarning("Battery Health Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Battery Health Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Battery Health Report frame is too short");
             }
 
             // 0xff means unknown.
@@ -109,7 +109,7 @@ public sealed partial class BatteryCommandClass
                 if (valueSize != 1 && valueSize != 2 && valueSize != 4)
                 {
                     logger.LogWarning("Battery Health Report has invalid Size value ({Size}). Expected 0, 1, 2, or 4", valueSize);
-                    throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Battery Health Report has invalid Size value");
+                    ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Battery Health Report has invalid Size value");
                 }
 
                 if (frame.CommandParameters.Length < 2 + valueSize)
@@ -118,7 +118,7 @@ public sealed partial class BatteryCommandClass
                         "Battery Health Report frame value size ({ValueSize}) exceeds remaining bytes ({Remaining})",
                         valueSize,
                         frame.CommandParameters.Length - 2);
-                    throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Battery Health Report frame is too short for declared value size");
+                    ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Battery Health Report frame is too short for declared value size");
                 }
 
                 ReadOnlySpan<byte> valueBytes = frame.CommandParameters.Span.Slice(2, valueSize);

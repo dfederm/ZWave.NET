@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -171,7 +171,7 @@ public sealed class BasicCommandClass : CommandClass<BasicCommand>
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Basic Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Basic Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Basic Report frame is too short");
             }
 
             GenericValue currentValue = frame.CommandParameters.Span[0];

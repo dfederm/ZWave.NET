@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -146,7 +146,7 @@ public sealed partial class BarrierOperatorCommandClass
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Barrier Operator Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Barrier Operator Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Barrier Operator Report frame is too short");
             }
 
             byte stateValue = frame.CommandParameters.Span[0];

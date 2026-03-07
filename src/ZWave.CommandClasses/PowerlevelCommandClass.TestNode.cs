@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -82,7 +82,7 @@ public sealed partial class PowerlevelCommandClass
 
         if (testNode.FrequentListeningMode != FrequentListeningMode.None)
         {
-            throw new ZWaveException(
+            ZWaveException.Throw(
                 ZWaveErrorCode.CommandInvalidArgument,
                 $"The test node {testNodeId} is FLiRS and cannot be used for a Powerlevel test");
         }
@@ -177,7 +177,7 @@ public sealed partial class PowerlevelCommandClass
             if (frame.CommandParameters.Length < 4)
             {
                 logger.LogWarning("Powerlevel Test Node Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Powerlevel Test Node Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Powerlevel Test Node Report frame is too short");
             }
 
             ushort nodeId = frame.CommandParameters.Span[0];

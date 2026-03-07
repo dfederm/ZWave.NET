@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -100,7 +100,7 @@ public sealed partial class TimeCommandClass
             if (frame.CommandParameters.Length < 4)
             {
                 logger.LogWarning("Date Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Date Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Date Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -115,7 +115,8 @@ public sealed partial class TimeCommandClass
             catch (ArgumentOutOfRangeException)
             {
                 logger.LogWarning("Date Report has invalid date values (year={Year}, month={Month}, day={Day})", year, month, day);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Date Report has invalid date values");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Date Report has invalid date values");
+                return default;
             }
         }
     }

@@ -57,10 +57,14 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
         ChannelReader<DataFrameTransmission> dataFrameSendChannelReader,
         ChannelWriter<DataFrame> dataFrameReceiveChannelWriter)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(dataFrameSendChannelReader);
+        ArgumentNullException.ThrowIfNull(dataFrameReceiveChannelWriter);
+
+        _logger = logger;
         _serialPort = CreateSerialPort(portName);
-        _dataFrameSendChannelReader = dataFrameSendChannelReader ?? throw new ArgumentNullException(nameof(dataFrameSendChannelReader));
-        _dataFrameReceiveChannelWriter = dataFrameReceiveChannelWriter ?? throw new ArgumentNullException(nameof(dataFrameReceiveChannelWriter));
+        _dataFrameSendChannelReader = dataFrameSendChannelReader;
+        _dataFrameReceiveChannelWriter = dataFrameReceiveChannelWriter;
 
         _serialPort.Open();
         _logger.LogSerialApiPortOpened(_serialPort.PortName);
@@ -77,10 +81,7 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
 
     private static SerialPort CreateSerialPort(string portName)
     {
-        if (string.IsNullOrEmpty(portName))
-        {
-            throw new ArgumentNullException(nameof(portName));
-        }
+        ArgumentException.ThrowIfNullOrEmpty(portName);
 
         // INS12350 4.2.1 defines the serial port settings
         var serialPort = new SerialPort(
@@ -355,7 +356,7 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                     _commLock.Release();
                 }
 
-                transmission.TransmissionComplete.SetException(new ZWaveException(ZWaveErrorCode.CommandSendFailed, "Command failed to send"));
+                transmission.TransmissionComplete.SetException(ZWaveException.Create(ZWaveErrorCode.CommandSendFailed, "Command failed to send"));
             }
         }
     }

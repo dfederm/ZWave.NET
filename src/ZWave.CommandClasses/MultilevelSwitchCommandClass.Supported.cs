@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -60,7 +60,7 @@ public sealed partial class MultilevelSwitchCommandClass
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Multilevel Switch Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Switch Supported Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Multilevel Switch Supported Report frame is too short");
             }
 
             return (MultilevelSwitchType)(frame.CommandParameters.Span[0] & 0b0001_1111);

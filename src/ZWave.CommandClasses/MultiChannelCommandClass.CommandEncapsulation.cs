@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -131,7 +131,7 @@ public sealed partial class MultiChannelCommandClass
             if (frame.CommandParameters.Length < 4)
             {
                 logger.LogWarning("Multi Channel Command Encapsulation frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multi Channel Command Encapsulation frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Multi Channel Command Encapsulation frame is too short");
             }
 
             ReadOnlySpan<byte> parameters = frame.CommandParameters.Span;

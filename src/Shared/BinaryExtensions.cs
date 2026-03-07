@@ -31,15 +31,30 @@ internal static class BinaryExtensions
     /// Read a signed big-endian integer from a span of 1, 2, or 4 bytes.
     /// </summary>
     public static int ReadSignedVariableSizeBE(this ReadOnlySpan<byte> bytes)
-        => bytes.Length switch
+    {
+        switch (bytes.Length)
         {
-            1 => unchecked((sbyte)bytes[0]),
-            2 => BinaryPrimitives.ReadInt16BigEndian(bytes),
-            4 => BinaryPrimitives.ReadInt32BigEndian(bytes),
-            _ => throw new ZWaveException(
-                ZWaveErrorCode.InvalidPayload,
-                $"Invalid value size {bytes.Length}. Expected 1, 2, or 4."),
-        };
+            case 1:
+            {
+                return unchecked((sbyte)bytes[0]);
+            }
+            case 2:
+            {
+                return BinaryPrimitives.ReadInt16BigEndian(bytes);
+            }
+            case 4:
+            {
+                return BinaryPrimitives.ReadInt32BigEndian(bytes);
+            }
+            default:
+            {
+                ZWaveException.Throw(
+                    ZWaveErrorCode.InvalidPayload,
+                    $"Invalid value size {bytes.Length}. Expected 1, 2, or 4.");
+                return default;
+            }
+        }
+    }
 
     /// <summary>
     /// Get the minimum number of bytes (1, 2, or 4) needed to represent a signed integer.

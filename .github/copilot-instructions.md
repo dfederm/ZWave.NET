@@ -58,7 +58,7 @@ Both require `fetch-depth: 0` for Nerdbank.GitVersioning. There is no separate l
 The foundational layer contains Z-Wave domain types shared across all projects, all in `namespace ZWave;`:
 - **`CommandClassId`** — Enum of all Z-Wave command class IDs.
 - **`CommandClassInfo`** — Record struct with CC ID, supported/controlled flags.
-- **`ZWaveException`** / **`ZWaveErrorCode`** — Z-Wave-specific error types.
+- **`ZWaveException`** / **`ZWaveErrorCode`** — Z-Wave-specific error types. `ZWaveException` has private constructors; use the `[DoesNotReturn]` static `ZWaveException.Throw(errorCode, message)` helpers instead of `throw new ZWaveException(...)`. Use `ArgumentNullException.ThrowIfNull()` and `ArgumentException.ThrowIfNullOrEmpty()` for argument validation.
 - **`FrequentListeningMode`** / **`NodeType`** — Node classification enums.
 
 ### Serial API Layer (`src/ZWave.Serial/`)
@@ -116,7 +116,7 @@ Response structs that contain variable-length collections use count + indexer me
 - **No `var`** — explicit types preferred (`csharp_style_var_*` = `false`).
 - Allman-style braces (`csharp_new_line_before_open_brace = all`).
 - NuGet package versions are centrally managed in `Directory.Packages.props`. When adding a package, add the version there and reference it without a version in the `.csproj`.
-- `InternalsVisibleTo` is set: `ZWave.Serial` → `ZWave.Serial.Tests`, `ZWave.CommandClasses` → `ZWave` and `ZWave.CommandClasses.Tests`.
+- `InternalsVisibleTo` is set: `ZWave.Protocol` → `ZWave.Serial`, `ZWave.Serial` → `ZWave.Serial.Tests`, `ZWave.CommandClasses` → `ZWave` and `ZWave.CommandClasses.Tests`.
 
 ## Testing Patterns
 

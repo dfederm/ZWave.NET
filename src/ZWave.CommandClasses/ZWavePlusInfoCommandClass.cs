@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -216,7 +216,7 @@ public sealed class ZWavePlusInfoCommandClass : CommandClass<ZWavePlusInfoComman
             if (frame.CommandParameters.Length < 7)
             {
                 logger.LogWarning("Z-Wave Plus Info Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Z-Wave Plus Info Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Z-Wave Plus Info Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -59,24 +59,24 @@ public sealed partial class MultilevelSensorCommandClass
         {
             if (SupportedSensorTypes == null)
             {
-                throw new ZWaveException(ZWaveErrorCode.CommandNotReady, "The supported sensor types are not yet known.");
+                ZWaveException.Throw(ZWaveErrorCode.CommandNotReady, "The supported sensor types are not yet known.");
             }
 
             if (!SupportedSensorTypes.Contains(sensorType.Value))
             {
-                throw new ZWaveException(ZWaveErrorCode.CommandInvalidArgument, $"Sensor type '{sensorType.Value}' is not supported for this node.");
+                ZWaveException.Throw(ZWaveErrorCode.CommandInvalidArgument, $"Sensor type '{sensorType.Value}' is not supported for this node.");
             }
 
             if (SupportedScales == null)
             {
-                throw new ZWaveException(ZWaveErrorCode.CommandNotReady, "The supported scales are not yet known.");
+                ZWaveException.Throw(ZWaveErrorCode.CommandNotReady, "The supported scales are not yet known.");
             }
 
             if (scale != null)
             {
                 if (!SupportedScales[sensorType.Value]!.Contains(scale))
                 {
-                    throw new ZWaveException(ZWaveErrorCode.CommandInvalidArgument, $"Scale '{scale.Label}' is not supported for this sensor.");
+                    ZWaveException.Throw(ZWaveErrorCode.CommandInvalidArgument, $"Scale '{scale.Label}' is not supported for this sensor.");
                 }
 
                 scaleId = scale.Id;
@@ -160,7 +160,7 @@ public sealed partial class MultilevelSensorCommandClass
             if (frame.CommandParameters.Length < 3)
             {
                 logger.LogWarning("Multilevel Sensor Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -178,7 +178,7 @@ public sealed partial class MultilevelSensorCommandClass
                     "Multilevel Sensor Report frame value size ({ValueSize}) exceeds remaining bytes ({Remaining})",
                     valueSize,
                     frame.CommandParameters.Length - 2);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Report frame is too short for declared value size");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Report frame is too short for declared value size");
             }
 
             ReadOnlySpan<byte> valueBytes = span.Slice(2, valueSize);

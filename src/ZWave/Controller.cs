@@ -196,7 +196,7 @@ public sealed class Controller
                 // The command was supported and this subcommand should always be supported, so this should never happen in practice.
                 if (!getSupportedSetupCommandsResponse.WasSubcommandSupported)
                 {
-                    throw new ZWaveException(ZWaveErrorCode.ControllerInitializationFailed, "SerialApiSetup.GetSupportedCommands was not supported");
+                    ZWaveException.Throw(ZWaveErrorCode.ControllerInitializationFailed, "SerialApiSetup.GetSupportedCommands was not supported");
                 }
 
                 SupportedSerialApiSetupSubcommands = getSupportedSetupCommandsResponse.SupportedSubcommands;
@@ -233,7 +233,7 @@ public sealed class Controller
                 // We checked that this was supported, so this should never happen in practice.
                 if (!setTxStatusReportResponse.WasSubcommandSupported)
                 {
-                    throw new ZWaveException(ZWaveErrorCode.ControllerInitializationFailed, "SerialApiSetup.SetTxStatusReport was not supported");
+                    ZWaveException.Throw(ZWaveErrorCode.ControllerInitializationFailed, "SerialApiSetup.SetTxStatusReport was not supported");
                 }
 
                 _logger.LogEnableTxStatusReport(setTxStatusReportResponse.Success);
@@ -270,7 +270,7 @@ public sealed class Controller
 
                     if (setSucNodeIdCallback.SetSucNodeIdStatus != SetSucNodeIdStatus.Succeeded)
                     {
-                        throw new ZWaveException(ZWaveErrorCode.ControllerInitializationFailed, "SetSucNodeId failed");
+                        ZWaveException.Throw(ZWaveErrorCode.ControllerInitializationFailed, "SetSucNodeId failed");
                     }
 
                     SucNodeId = NodeId;
@@ -306,7 +306,7 @@ public sealed class Controller
         }
         catch (Exception ex)
         {
-            throw new ZWaveException(ZWaveErrorCode.ControllerInitializationFailed, "Failed to initialize the controller", ex);
+            ZWaveException.Throw(ZWaveErrorCode.ControllerInitializationFailed, "Failed to initialize the controller", ex);
         }
     }
 

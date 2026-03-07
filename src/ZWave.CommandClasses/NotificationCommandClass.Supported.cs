@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -102,7 +102,7 @@ public sealed partial class NotificationCommandClass
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Notification Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Notification Supported Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Notification Supported Report frame is too short");
             }
 
             bool supportsV1Alarm = (frame.CommandParameters.Span[0] & 0b1000_0000) != 0;
@@ -113,7 +113,7 @@ public sealed partial class NotificationCommandClass
             {
                 logger.LogWarning("Notification Supported Report bitmask is truncated (expected {Expected}, got {Actual} bytes)",
                     numBitMasks, frame.CommandParameters.Length - 1);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Notification Supported Report bitmask is truncated");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Notification Supported Report bitmask is truncated");
             }
 
             HashSet<NotificationType> supportedNotificationTypes = BitMaskHelper.ParseBitMask<NotificationType>(frame.CommandParameters.Span.Slice(1, numBitMasks));

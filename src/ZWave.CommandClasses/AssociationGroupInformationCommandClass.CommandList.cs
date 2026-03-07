@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -139,7 +139,7 @@ public sealed partial class AssociationGroupInformationCommandClass
                 logger.LogWarning(
                     "Association Group Command List Report frame is too short ({Length} bytes)",
                     frame.CommandParameters.Length);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Association Group Command List Report frame is too short");
             }
@@ -154,7 +154,7 @@ public sealed partial class AssociationGroupInformationCommandClass
                     "Association Group Command List Report frame is too short for declared list length ({DeclaredLength} bytes, but only {Available} available)",
                     listLength,
                     frame.CommandParameters.Length - 2);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Association Group Command List Report frame is too short for declared list length");
             }

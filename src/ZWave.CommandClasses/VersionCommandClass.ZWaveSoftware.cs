@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -124,7 +124,7 @@ public sealed partial class VersionCommandClass
             if (frame.CommandParameters.Length < 23)
             {
                 logger.LogWarning("Version Z-Wave Software Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Z-Wave Software Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Version Z-Wave Software Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;

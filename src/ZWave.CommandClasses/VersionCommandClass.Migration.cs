@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -165,7 +165,7 @@ public sealed partial class VersionCommandClass
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Version Migration Capabilities Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Migration Capabilities Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Version Migration Capabilities Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -183,7 +183,7 @@ public sealed partial class VersionCommandClass
                         "Version Migration Capabilities Report declares {Count} operations but only has {Length} bytes of payload",
                         count,
                         frame.CommandParameters.Length);
-                    throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Migration Capabilities Report payload is too short for declared operation count");
+                    ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Version Migration Capabilities Report payload is too short for declared operation count");
                 }
 
                 operations = new MigrationOperationId[count];
@@ -258,7 +258,7 @@ public sealed partial class VersionCommandClass
             if (frame.CommandParameters.Length < 4)
             {
                 logger.LogWarning("Version Migration Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Migration Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Version Migration Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;

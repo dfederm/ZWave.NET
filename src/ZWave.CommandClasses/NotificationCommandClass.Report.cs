@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -185,7 +185,7 @@ public sealed partial class NotificationCommandClass
             if (frame.CommandParameters.Length < 2)
             {
                 logger.LogWarning("Notification Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Notification Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Notification Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;

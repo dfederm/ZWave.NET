@@ -45,9 +45,14 @@ internal sealed class CommandClassCollection
     }
 
     internal CommandClass GetCommandClass(CommandClassId commandClassId)
-        => !TryGetCommandClass(commandClassId, out CommandClass? commandClass)
-            ? throw new ZWaveException(ZWaveErrorCode.CommandClassNotImplemented, $"The command class {commandClassId} is not supported.")
-            : commandClass;
+    {
+        if (!TryGetCommandClass(commandClassId, out CommandClass? commandClass))
+        {
+            ZWaveException.Throw(ZWaveErrorCode.CommandClassNotImplemented, $"The command class {commandClassId} is not supported.");
+        }
+
+        return commandClass;
+    }
 
     internal TCommandClass GetCommandClass<TCommandClass>()
         where TCommandClass : CommandClass

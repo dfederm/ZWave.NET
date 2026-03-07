@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -150,7 +150,7 @@ public sealed partial class SupervisionCommandClass
             if (frame.CommandParameters.Length < 3)
             {
                 logger.LogWarning("Supervision Get frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Supervision Get frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Supervision Get frame is too short");
             }
 
             ReadOnlySpan<byte> parameters = frame.CommandParameters.Span;
@@ -164,7 +164,7 @@ public sealed partial class SupervisionCommandClass
                     "Supervision Get frame has invalid encapsulated command length ({EncapLength} bytes, available {Available})",
                     encapsulatedLength,
                     frame.CommandParameters.Length - 2);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Supervision Get frame has invalid encapsulated command length");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Supervision Get frame has invalid encapsulated command length");
             }
 
             CommandClassFrame encapsulatedFrame = new CommandClassFrame(frame.CommandParameters.Slice(2, encapsulatedLength));
@@ -227,7 +227,7 @@ public sealed partial class SupervisionCommandClass
             if (frame.CommandParameters.Length < 3)
             {
                 logger.LogWarning("Supervision Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Supervision Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Supervision Report frame is too short");
             }
 
             ReadOnlySpan<byte> parameters = frame.CommandParameters.Span;
