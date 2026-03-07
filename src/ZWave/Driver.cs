@@ -201,8 +201,9 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
                             // De-encapsulate per spec §4.1.3.5 (reverse order):
                             // Security/CRC-16/Transport Service → Multi Channel → Supervision → Multi Command
-                            // Currently only Multi Channel is implemented; future layers plug in here.
                             byte endpointIndex = 0;
+                            SupervisionCommandClass.SupervisionReportCommand? supervisionReport = null;
+
                             if (commandClassFrame.CommandClassId == CommandClassId.MultiChannel
                                 && commandClassFrame.CommandId == (byte)MultiChannelCommand.CommandEncapsulation)
                             {
@@ -212,6 +213,35 @@ public sealed class Driver : IDriver, IAsyncDisposable
                                 commandClassFrame = encapsulation.EncapsulatedFrame;
                             }
 
+                            // Supervision de-encapsulation (spec §4.2.8).
+                            // A Supervision Get wraps an inner command; de-encapsulate and prepare
+                            // the Report to send after processing the inner command.
+                            // A Supervision Report is a response to a Get we sent; it passes through
+                            // to the node's Supervision CC instance without de-encapsulation.
+                            if (commandClassFrame.CommandClassId == CommandClassId.Supervision
+                                && commandClassFrame.CommandId == (byte)SupervisionCommand.Get)
+                            {
+                                SupervisionGet supervisionGet = SupervisionCommandClass.ParseGet(commandClassFrame, _logger);
+                                _logger.LogSupervisionDeEncapsulating(applicationCommandHandler.NodeId, supervisionGet.SessionId);
+                                commandClassFrame = supervisionGet.EncapsulatedFrame;
+
+                                // Per spec CC:006C.01.01.11.005: Do not respond if received via multicast.
+                                // Per spec CC:006C.01.00.12.003: A controlling node SHOULD return SUCCESS or NO_SUPPORT.
+                                // TODO: Return NO_SUPPORT or FAIL based on whether ProcessCommand actually
+                                // handled the inner command. Currently always assumes SUCCESS.
+                                ReceivedStatus receivedStatus = applicationCommandHandler.ReceivedStatus;
+                                bool isMulticast = (receivedStatus & (ReceivedStatus.BroadcastAddressing | ReceivedStatus.MulticastAddressing)) != 0;
+                                if (!isMulticast)
+                                {
+                                    supervisionReport = SupervisionCommandClass.SupervisionReportCommand.Create(
+                                        moreStatusUpdates: false,
+                                        wakeUpRequest: false,
+                                        supervisionGet.SessionId,
+                                        SupervisionStatus.Success,
+                                        duration: new DurationReport(0));
+                                }
+                            }
+
                             node.ProcessCommand(commandClassFrame, endpointIndex);
 
                             // Route to controller for supporting-side handling (responding to queries
@@ -219,6 +249,16 @@ public sealed class Driver : IDriver, IAsyncDisposable
                             if (applicationCommandHandler.NodeId != Controller.NodeId)
                             {
                                 Controller.HandleCommand(commandClassFrame, applicationCommandHandler.NodeId);
+                            }
+
+                            // Send the Supervision Report after processing the inner command and
+                            // controller routing, so the response reflects that we actually handled it.
+                            if (supervisionReport.HasValue)
+                            {
+                                _ = SendSupervisionReportAsync(
+                                    applicationCommandHandler.NodeId,
+                                    endpointIndex,
+                                    supervisionReport.Value);
                             }
                         }
                         else
@@ -535,6 +575,27 @@ public sealed class Driver : IDriver, IAsyncDisposable
                     _logger.LogCallbackTimeout(CommandId.SendData);
                 }
             });
+    }
+
+    /// <summary>
+    /// Sends a Supervision Report back to a node in response to a Supervision Get.
+    /// </summary>
+    /// <remarks>
+    /// Fire-and-forget; failures are logged but not propagated.
+    /// </remarks>
+    private async Task SendSupervisionReportAsync(
+        ushort nodeId,
+        byte endpointIndex,
+        SupervisionCommandClass.SupervisionReportCommand command)
+    {
+        try
+        {
+            await SendCommandAsync(command, nodeId, endpointIndex, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogSupervisionReportFailed(nodeId, ex);
+        }
     }
 
     /// <summary>

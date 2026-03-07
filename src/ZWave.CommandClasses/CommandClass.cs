@@ -43,7 +43,7 @@ public abstract class CommandClass
         TaskCompletionSource<CommandClassFrame> TaskCompletionSource);
 
     // Almost all CCs depend on knowing their own version.
-    private static readonly CommandClassId[] DefaultDependencies = new[] { CommandClassId.Version };
+    private static readonly CommandClassId[] DefaultDependencies = [CommandClassId.Version];
 
     // We don't expect this to get very large at all, so using a simple list to save on memory instead
     // of Dictionary<CommandId, List<TCS>> which would have faster lookups
