@@ -177,4 +177,16 @@ internal static partial class Logging
         Level = LogLevel.Warning,
         Message = "Failed to send controller response to node {nodeId}")]
     public static partial void LogControllerResponseFailed(this ILogger logger, ushort nodeId, Exception ex);
+
+    [LoggerMessage(
+        EventId = 224,
+        Level = LogLevel.Debug,
+        Message = "De-encapsulating Supervision Get from node {nodeId} session {sessionId}")]
+    public static partial void LogSupervisionDeEncapsulating(this ILogger logger, ushort nodeId, byte sessionId);
+
+    [LoggerMessage(
+        EventId = 225,
+        Level = LogLevel.Warning,
+        Message = "Failed to send Supervision Report to node {nodeId}")]
+    public static partial void LogSupervisionReportFailed(this ILogger logger, ushort nodeId, Exception ex);
 }
