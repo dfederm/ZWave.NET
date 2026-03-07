@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
@@ -125,14 +124,8 @@ public sealed partial class BatteryCommandClass
                 ReadOnlySpan<byte> valueBytes = frame.CommandParameters.Span.Slice(2, valueSize);
 
                 // CC:0080.02.05.11.010: signed big-endian encoding
-                int rawValue = valueSize switch
-                {
-                    1 => (sbyte)valueBytes[0],
-                    2 => BinaryPrimitives.ReadInt16BigEndian(valueBytes),
-                    4 => BinaryPrimitives.ReadInt32BigEndian(valueBytes),
-                    _ => throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Unexpected value size"),
-                };
-                batteryTemperature = rawValue / Math.Pow(10, precision);
+                int rawValue = valueBytes.ReadSignedVariableSizeBE();
+                batteryTemperature = rawValue / BinaryExtensions.PowersOfTen[precision];
             }
 
             return new BatteryHealth(maximumCapacity, batteryTemperatureScale, batteryTemperature);

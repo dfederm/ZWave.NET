@@ -107,7 +107,6 @@ public sealed partial class NotificationCommandClass
 
             bool supportsV1Alarm = (frame.CommandParameters.Span[0] & 0b1000_0000) != 0;
 
-            HashSet<NotificationType> supportedNotificationTypes = [];
             int numBitMasks = frame.CommandParameters.Span[0] & 0b0001_1111;
 
             if (frame.CommandParameters.Length < 1 + numBitMasks)
@@ -117,18 +116,7 @@ public sealed partial class NotificationCommandClass
                 throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Notification Supported Report bitmask is truncated");
             }
 
-            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span.Slice(1, numBitMasks);
-            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                    {
-                        NotificationType notificationType = (NotificationType)((byteNum << 3) + bitNum);
-                        supportedNotificationTypes.Add(notificationType);
-                    }
-                }
-            }
+            HashSet<NotificationType> supportedNotificationTypes = BitMaskHelper.ParseBitMask<NotificationType>(frame.CommandParameters.Span.Slice(1, numBitMasks));
 
             return new SupportedNotifications(supportsV1Alarm, supportedNotificationTypes);
         }

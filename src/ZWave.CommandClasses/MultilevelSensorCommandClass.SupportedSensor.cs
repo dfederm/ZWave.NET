@@ -90,23 +90,8 @@ public sealed partial class MultilevelSensorCommandClass
                 throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Supported Sensor Report frame is too short");
             }
 
-            HashSet<MultilevelSensorType> supportedSensorTypes = new HashSet<MultilevelSensorType>();
-
-            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span;
-            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                    {
-                        // As per the spec, bit 0 corresponds to Sensor Type 0x01, so we need to add 1.
-                        MultilevelSensorType sensorType = (MultilevelSensorType)((byteNum << 3) + bitNum + 1);
-                        supportedSensorTypes.Add(sensorType);
-                    }
-                }
-            }
-
-            return supportedSensorTypes;
+            // As per the spec, bit 0 corresponds to Sensor Type 0x01, so offset by 1.
+            return BitMaskHelper.ParseBitMask<MultilevelSensorType>(frame.CommandParameters.Span, offset: 1);
         }
     }
 }

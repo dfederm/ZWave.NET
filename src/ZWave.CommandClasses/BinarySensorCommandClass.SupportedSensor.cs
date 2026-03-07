@@ -78,22 +78,7 @@ public sealed partial class BinarySensorCommandClass
                 throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Binary Sensor Supported Report frame is too short");
             }
 
-            HashSet<BinarySensorType> supportedSensorTypes = new HashSet<BinarySensorType>();
-
-            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span;
-            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                    {
-                        BinarySensorType sensorType = (BinarySensorType)((byteNum << 3) + bitNum);
-                        supportedSensorTypes.Add(sensorType);
-                    }
-                }
-            }
-
-            return supportedSensorTypes;
+            return BitMaskHelper.ParseBitMask<BinarySensorType>(frame.CommandParameters.Span);
         }
     }
 }
