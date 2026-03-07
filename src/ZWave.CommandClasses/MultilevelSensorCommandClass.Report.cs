@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
@@ -184,18 +183,8 @@ public sealed partial class MultilevelSensorCommandClass
 
             ReadOnlySpan<byte> valueBytes = span.Slice(2, valueSize);
 
-            // The spec (CC:0031.01.05.11.006) says Size MUST be 1, 2, or 4.
-            // Values are signed big-endian (two's complement).
-            int rawValue = valueSize switch
-            {
-                1 => (sbyte)valueBytes[0],
-                2 => BinaryPrimitives.ReadInt16BigEndian(valueBytes),
-                4 => BinaryPrimitives.ReadInt32BigEndian(valueBytes),
-                _ => throw new ZWaveException(
-                    ZWaveErrorCode.InvalidPayload,
-                    $"Invalid sensor value size {valueSize}. Expected 1, 2, or 4."),
-            };
-            double value = rawValue / Math.Pow(10, precision);
+            int rawValue = valueBytes.ReadSignedVariableSizeBE();
+            double value = rawValue / BinaryExtensions.PowersOfTen[precision];
 
             return new MultilevelSensorReport(sensorType, scale, value);
         }

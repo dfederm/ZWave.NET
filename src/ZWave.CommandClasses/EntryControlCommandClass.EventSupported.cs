@@ -121,18 +121,7 @@ public sealed partial class EntryControlCommandClass
             }
 
             // Parse data type supported bitmask
-            HashSet<EntryControlDataType> supportedDataTypes = [];
-            for (int byteNum = 0; byteNum < dataTypeBitmaskLength; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((span[offset + byteNum] & (1 << bitNum)) != 0)
-                    {
-                        EntryControlDataType dataType = (EntryControlDataType)((byteNum << 3) + bitNum);
-                        supportedDataTypes.Add(dataType);
-                    }
-                }
-            }
+            HashSet<EntryControlDataType> supportedDataTypes = BitMaskHelper.ParseBitMask<EntryControlDataType>(span.Slice(offset, dataTypeBitmaskLength));
 
             offset += dataTypeBitmaskLength;
 
@@ -163,18 +152,7 @@ public sealed partial class EntryControlCommandClass
             }
 
             // Parse event type supported bitmask
-            HashSet<EntryControlEventType> supportedEventTypes = [];
-            for (int byteNum = 0; byteNum < eventTypeBitmaskLength; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((span[offset + byteNum] & (1 << bitNum)) != 0)
-                    {
-                        EntryControlEventType eventTypeValue = (EntryControlEventType)((byteNum << 3) + bitNum);
-                        supportedEventTypes.Add(eventTypeValue);
-                    }
-                }
-            }
+            HashSet<EntryControlEventType> supportedEventTypes = BitMaskHelper.ParseBitMask<EntryControlEventType>(span.Slice(offset, eventTypeBitmaskLength));
 
             offset += eventTypeBitmaskLength;
 

@@ -85,22 +85,7 @@ public sealed partial class ColorSwitchCommandClass
                 throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Color Switch Supported Report frame is too short");
             }
 
-            HashSet<ColorSwitchColorComponent> supportedComponents = [];
-
-            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span;
-            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                    {
-                        ColorSwitchColorComponent colorComponent = (ColorSwitchColorComponent)((byteNum << 3) + bitNum);
-                        supportedComponents.Add(colorComponent);
-                    }
-                }
-            }
-
-            return supportedComponents;
+            return BitMaskHelper.ParseBitMask<ColorSwitchColorComponent>(frame.CommandParameters.Span);
         }
     }
 }

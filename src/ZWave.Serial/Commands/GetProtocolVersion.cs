@@ -88,7 +88,7 @@ public readonly struct GetProtocolVersionResponse : ICommand<GetProtocolVersionR
     /// The application framework build number. The value 0 indicates this value is not available.
     /// </summary>
     public ushort ApplicationFrameworkBuildNumber
-        => BinaryPrimitives.ReadUInt16BigEndian(Frame.CommandParameters.Span.Slice(4, 2));
+        => Frame.CommandParameters.Span.Slice(4, 2).ToUInt16BE();
 
     /// <summary>
     /// The git commit hash for the Z-Wave Protocol running in the Z-Wave API Module.

@@ -73,24 +73,7 @@ public sealed partial class BarrierOperatorCommandClass
                     "Barrier Operator Signal Supported Report frame is too short");
             }
 
-            HashSet<BarrierOperatorSignalingSubsystemType> supported = new HashSet<BarrierOperatorSignalingSubsystemType>();
-
-            ReadOnlySpan<byte> bitMask = frame.CommandParameters.Span;
-            for (int byteNum = 0; byteNum < bitMask.Length; byteNum++)
-            {
-                for (int bitNum = 0; bitNum < 8; bitNum++)
-                {
-                    if ((bitMask[byteNum] & (1 << bitNum)) != 0)
-                    {
-                        // Per spec: bit 0 = subsystem type 0x01, bit 1 = type 0x02, etc.
-                        BarrierOperatorSignalingSubsystemType subsystemType =
-                            (BarrierOperatorSignalingSubsystemType)((byteNum << 3) + bitNum + 1);
-                        supported.Add(subsystemType);
-                    }
-                }
-            }
-
-            return supported;
+            return BitMaskHelper.ParseBitMask<BarrierOperatorSignalingSubsystemType>(frame.CommandParameters.Span, offset: 1);
         }
     }
 }

@@ -46,7 +46,7 @@ public static class NodeIdTypeExtensions
     {
         if (nodeIdType == NodeIdType.Long)
         {
-            BinaryPrimitives.WriteUInt16BigEndian(buffer.Slice(offset, 2), nodeId);
+            nodeId.WriteBytesBE(buffer.Slice(offset, 2));
             return offset + 2;
         }
 
@@ -62,7 +62,7 @@ public static class NodeIdTypeExtensions
     {
         if (nodeIdType == NodeIdType.Long)
         {
-            return BinaryPrimitives.ReadUInt16BigEndian(buffer.Slice(offset, 2));
+            return buffer.Slice(offset, 2).ToUInt16BE();
         }
 
         return buffer[offset];
