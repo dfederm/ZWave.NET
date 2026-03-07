@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -87,7 +87,7 @@ public sealed partial class MultilevelSensorCommandClass
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Multilevel Sensor Supported Sensor Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Supported Sensor Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Supported Sensor Report frame is too short");
             }
 
             // As per the spec, bit 0 corresponds to Sensor Type 0x01, so offset by 1.

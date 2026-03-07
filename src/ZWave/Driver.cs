@@ -58,12 +58,10 @@ public sealed class Driver : IDriver, IAsyncDisposable
 
     private Driver(ILogger logger, string portName)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentException.ThrowIfNullOrEmpty(portName);
 
-        if (string.IsNullOrEmpty(portName))
-        {
-            throw new ArgumentNullException(nameof(portName));
-        }
+        _logger = logger;
 
         // We can assume a single reader based on the implementation of the serial port coordinator. The writer is the driver, which may be called by multiple callers.
         Channel<DataFrameTransmission> dataFrameSendChannel = Channel.CreateUnbounded<DataFrameTransmission>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
@@ -339,7 +337,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
         }
         catch (Exception ex)
         {
-            throw new ZWaveException(ZWaveErrorCode.DriverInitializationFailed, "Soft reset failed", ex);
+            ZWaveException.Throw(ZWaveErrorCode.DriverInitializationFailed, "Soft reset failed", ex);
         }
 
         await Controller.IdentifyAsync(cancellationToken).ConfigureAwait(false);
@@ -451,7 +449,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
                 .ConfigureAwait(false);
             if (!response.WasRequestAccepted)
             {
-                throw new ZWaveException(ZWaveErrorCode.CommandFailed, "Response status indicated failure");
+                ZWaveException.Throw(ZWaveErrorCode.CommandFailed, "Response status indicated failure");
             }
         }
         else
@@ -549,7 +547,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
             .ConfigureAwait(false);
         if (!response.WasRequestAccepted)
         {
-            throw new ZWaveException(ZWaveErrorCode.CommandFailed, "Response status indicated failure");
+            ZWaveException.Throw(ZWaveErrorCode.CommandFailed, "Response status indicated failure");
         }
 
         TaskCompletionSource<DataFrame> tcs = new TaskCompletionSource<DataFrame>();
@@ -615,7 +613,8 @@ public sealed class Driver : IDriver, IAsyncDisposable
         catch (TimeoutException)
         {
             RemoveUnresolvedCallback(callbackKey);
-            throw new ZWaveException(ZWaveErrorCode.CallbackTimeout, $"Timed out waiting for callback for {callbackKey.CommandId}");
+            ZWaveException.Throw(ZWaveErrorCode.CallbackTimeout, $"Timed out waiting for callback for {callbackKey.CommandId}");
+            return default!;
         }
         catch
         {
@@ -639,7 +638,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
         IReadOnlySet<CommandId>? supportedCommandIds = Controller.SupportedCommandIds;
         if (supportedCommandIds != null && !supportedCommandIds.Contains(request.CommandId))
         {
-            throw new ZWaveException(
+            ZWaveException.Throw(
                 ZWaveErrorCode.SerialApiCommandNotSupported,
                 $"The serial API command {request.CommandId} is not supported by the controller");
         }

@@ -153,7 +153,7 @@ Validation is performed in the report command's static `Parse` method. The `Pars
 
 1. **Validates** the frame (e.g., minimum payload length, field value ranges)
 2. **Logs a warning** via the `ILogger` parameter describing what's wrong
-3. **Throws `ZWaveException(ZWaveErrorCode.InvalidPayload, ...)`** with a concise message
+3. **Calls `ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, ...)`** with a concise message
 
 The base class handles exception propagation differently depending on the report path:
 
@@ -524,7 +524,7 @@ internal readonly struct {Name}ReportCommand : ICommand
         if (frame.CommandParameters.Length < 1)
         {
             logger.LogWarning("{Name} Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-            throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "{Name} Report frame is too short");
+            ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "{Name} Report frame is too short");
         }
 
         ReadOnlySpan<byte> span = frame.CommandParameters.Span;

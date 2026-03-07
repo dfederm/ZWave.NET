@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -175,7 +175,7 @@ public sealed class TimeParametersCommandClass : CommandClass<TimeParametersComm
             if (frame.CommandParameters.Length < 7)
             {
                 logger.LogWarning("Time Parameters Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Time Parameters Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Time Parameters Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -200,7 +200,8 @@ public sealed class TimeParametersCommandClass : CommandClass<TimeParametersComm
                     hour,
                     minute,
                     second);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Time Parameters Report has invalid date/time values");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Time Parameters Report has invalid date/time values");
+                return default;
             }
         }
     }

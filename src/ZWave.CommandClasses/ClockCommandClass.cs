@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -225,7 +225,7 @@ public sealed class ClockCommandClass : CommandClass<ClockCommand>
             if (frame.CommandParameters.Length < 2)
             {
                 logger.LogWarning("Clock Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Clock Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Clock Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -240,7 +240,8 @@ public sealed class ClockCommandClass : CommandClass<ClockCommand>
             catch (ArgumentOutOfRangeException)
             {
                 logger.LogWarning("Clock Report has invalid time values (hour={Hour}, minute={Minute})", hour, minute);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Clock Report has invalid time values");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Clock Report has invalid time values");
+                return default;
             }
         }
     }

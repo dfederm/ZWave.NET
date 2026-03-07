@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -104,7 +104,7 @@ public sealed partial class HumidityControlSetpointCommandClass
             if (frame.CommandParameters.Length < 3)
             {
                 logger.LogWarning("Humidity Control Setpoint Capabilities Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Capabilities Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Capabilities Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -119,7 +119,7 @@ public sealed partial class HumidityControlSetpointCommandClass
                     "Humidity Control Setpoint Capabilities Report frame is too short for minimum value ({Length} bytes, need {Needed})",
                     frame.CommandParameters.Length,
                     2 + minValueSize + 1);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Capabilities Report frame is too short for minimum value");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Capabilities Report frame is too short for minimum value");
             }
 
             ReadOnlySpan<byte> minValueBytes = span.Slice(2, minValueSize);
@@ -135,7 +135,7 @@ public sealed partial class HumidityControlSetpointCommandClass
                     "Humidity Control Setpoint Capabilities Report frame is too short for maximum value ({Length} bytes, need {Needed})",
                     frame.CommandParameters.Length,
                     maxPssOffset + 1 + maxValueSize);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Capabilities Report frame is too short for maximum value");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Capabilities Report frame is too short for maximum value");
             }
 
             ReadOnlySpan<byte> maxValueBytes = span.Slice(maxPssOffset + 1, maxValueSize);

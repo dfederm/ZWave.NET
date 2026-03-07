@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -162,7 +162,7 @@ public sealed partial class AssociationGroupInformationCommandClass
             Logger.LogWarning(
                 "Association Group Info Report for group {GroupId} contained no group entries",
                 groupingIdentifier);
-            throw new ZWaveException(
+            ZWaveException.Throw(
                 ZWaveErrorCode.InvalidPayload,
                 "Association Group Info Report contained no group entries");
         }
@@ -263,7 +263,7 @@ public sealed partial class AssociationGroupInformationCommandClass
                 logger.LogWarning(
                     "Association Group Info Report frame is too short ({Length} bytes)",
                     frame.CommandParameters.Length);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Association Group Info Report frame is too short");
             }
@@ -286,7 +286,7 @@ public sealed partial class AssociationGroupInformationCommandClass
                     groupCount,
                     requiredLength,
                     frame.CommandParameters.Length);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Association Group Info Report frame is too short for declared group count");
             }

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -26,13 +26,13 @@ public sealed partial class MultilevelSensorCommandClass
             bool? isCommandSupported = IsCommandSupported(MultilevelSensorCommand.SupportedScaleGet);
             if (isCommandSupported == null)
             {
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.CommandNotReady,
                     "The supported sensor types are not yet known.");
             }
             else if (!isCommandSupported.Value)
             {
-                throw new ZWaveException(ZWaveErrorCode.CommandNotSupported, "This command is not supported by this node");
+                ZWaveException.Throw(ZWaveErrorCode.CommandNotSupported, "This command is not supported by this node");
             }
             else
             {
@@ -42,7 +42,7 @@ public sealed partial class MultilevelSensorCommandClass
 
         if (!SupportedSensorTypes.Contains(sensorType))
         {
-            throw new ZWaveException(ZWaveErrorCode.CommandInvalidArgument, $"Sensor type '{sensorType}' is not supported.");
+            ZWaveException.Throw(ZWaveErrorCode.CommandInvalidArgument, $"Sensor type '{sensorType}' is not supported.");
         }
 
         var command = MultilevelSensorSupportedScaleGetCommand.Create(sensorType);
@@ -98,7 +98,7 @@ public sealed partial class MultilevelSensorCommandClass
             if (frame.CommandParameters.Length < 2)
             {
                 logger.LogWarning("Multilevel Sensor Supported Scale Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Supported Scale Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Multilevel Sensor Supported Scale Report frame is too short");
             }
 
             MultilevelSensorType sensorType = (MultilevelSensorType)frame.CommandParameters.Span[0];

@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
@@ -226,7 +226,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
             if (frame.CommandParameters.Length < 6)
             {
                 logger.LogWarning("Manufacturer Specific Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Manufacturer Specific Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Manufacturer Specific Report frame is too short");
             }
 
             ushort manufacturerId = frame.CommandParameters.Span[0..2].ToUInt16BE();
@@ -275,7 +275,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
             if (frame.CommandParameters.Length < 2)
             {
                 logger.LogWarning("Device Specific Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Device Specific Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Device Specific Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -288,7 +288,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
             if (deviceIdDataLength == 0)
             {
                 logger.LogWarning("Device Specific Report has zero Device ID Data Length");
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Device Specific Report has zero Device ID Data Length");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Device Specific Report has zero Device ID Data Length");
             }
 
             if (frame.CommandParameters.Length < 2 + deviceIdDataLength)
@@ -297,7 +297,7 @@ public sealed class ManufacturerSpecificCommandClass : CommandClass<Manufacturer
                     "Device Specific Report frame is too short for declared data length ({Length} bytes, expected at least {Expected})",
                     frame.CommandParameters.Length,
                     2 + deviceIdDataLength);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Device Specific Report frame is too short for declared data length");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Device Specific Report frame is too short for declared data length");
             }
 
             ReadOnlySpan<byte> deviceIdData = span.Slice(2, deviceIdDataLength);

@@ -35,9 +35,12 @@ public sealed class Node : INode
 
     internal Node(ushort id, Driver driver, ILogger logger)
     {
+        ArgumentNullException.ThrowIfNull(driver);
+        ArgumentNullException.ThrowIfNull(logger);
+
         Id = id;
-        _driver = driver ?? throw new ArgumentNullException(nameof(driver));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _driver = driver;
+        _logger = logger;
         _commandClassCollection = new CommandClassCollection(driver, this, logger);
     }
 

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -115,7 +115,7 @@ public sealed partial class BinarySensorCommandClass
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Binary Sensor Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Binary Sensor Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Binary Sensor Report frame is too short");
             }
 
             bool sensorValue = frame.CommandParameters.Span[0] == 0xff;

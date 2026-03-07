@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -82,7 +82,7 @@ public sealed partial class ColorSwitchCommandClass
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Color Switch Supported Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Color Switch Supported Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Color Switch Supported Report frame is too short");
             }
 
             return BitMaskHelper.ParseBitMask<ColorSwitchColorComponent>(frame.CommandParameters.Span);

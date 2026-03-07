@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
@@ -69,7 +69,7 @@ public sealed partial class EntryControlCommandClass
                 logger.LogWarning(
                     "Entry Control Notification frame is too short ({Length} bytes)",
                     frame.CommandParameters.Length);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Entry Control Notification frame is too short");
             }
@@ -86,7 +86,7 @@ public sealed partial class EntryControlCommandClass
                 logger.LogWarning(
                     "Entry Control Notification event data length {Length} exceeds maximum of 32",
                     eventDataLength);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Entry Control Notification event data length exceeds maximum");
             }
@@ -97,7 +97,7 @@ public sealed partial class EntryControlCommandClass
                     "Entry Control Notification frame too short for declared event data ({Length} bytes, need {Expected})",
                     frame.CommandParameters.Length,
                     4 + eventDataLength);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Entry Control Notification frame is too short for event data");
             }

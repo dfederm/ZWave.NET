@@ -1,3 +1,4 @@
+﻿using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +13,7 @@ public abstract class CommandClass<TCommand> : CommandClass
     internal CommandClass(CommandClassInfo info, IDriver driver, IEndpoint endpoint, ILogger logger)
         : base(info, driver, endpoint, logger)
     {
-        if (Unsafe.SizeOf<TCommand>() != Unsafe.SizeOf<byte>())
-        {
-            throw new ArgumentException($"The generic type '{typeof(TCommand).Name}' must be an enum with backing type byte.");
-        }
+        Debug.Assert(Unsafe.SizeOf<TCommand>() == sizeof(byte), $"The generic type '{typeof(TCommand).Name}' must be an enum with backing type byte.");
     }
 
     /// <summary>
@@ -178,7 +176,7 @@ public abstract class CommandClass
     {
         if (!IsCommandSupported(TRequest.CommandId).GetValueOrDefault())
         {
-            throw new ZWaveException(ZWaveErrorCode.CommandNotSupported, "This command is not supported by this node");
+            ZWaveException.Throw(ZWaveErrorCode.CommandNotSupported, "This command is not supported by this node");
         }
 
         await Driver.SendCommandAsync(command, Endpoint.NodeId, Endpoint.EndpointIndex, cancellationToken).ConfigureAwait(false);

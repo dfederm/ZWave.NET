@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -139,7 +139,7 @@ public sealed partial class HumidityControlSetpointCommandClass
             if (frame.CommandParameters.Length < 2)
             {
                 logger.LogWarning("Humidity Control Setpoint Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -152,7 +152,7 @@ public sealed partial class HumidityControlSetpointCommandClass
                     "Humidity Control Setpoint Report frame value size ({ValueSize}) exceeds remaining bytes ({Remaining})",
                     valueSize,
                     frame.CommandParameters.Length - 2);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Report frame is too short for declared value size");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Humidity Control Setpoint Report frame is too short for declared value size");
             }
 
             ReadOnlySpan<byte> valueBytes = span.Slice(2, valueSize);

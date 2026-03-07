@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -161,7 +161,7 @@ public sealed partial class VersionCommandClass
             if (frame.CommandParameters.Length < 5)
             {
                 logger.LogWarning("Version Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Version Report frame is too short");
             }
 
             ReadOnlySpan<byte> span = frame.CommandParameters.Span;
@@ -183,7 +183,7 @@ public sealed partial class VersionCommandClass
                         "Version Report declares {Count} additional firmware targets but payload is too short ({Length} bytes)",
                         declaredAdditionalFirmware,
                         frame.CommandParameters.Length);
-                    throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Version Report payload is too short for declared firmware count");
+                    ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Version Report payload is too short for declared firmware count");
                 }
 
                 numFirmwareVersions += declaredAdditionalFirmware;

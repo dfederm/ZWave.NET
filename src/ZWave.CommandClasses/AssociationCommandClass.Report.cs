@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -144,7 +144,7 @@ public sealed partial class AssociationCommandClass
                 logger.LogWarning(
                     "Association Report frame is too short ({Length} bytes)",
                     frame.CommandParameters.Length);
-                throw new ZWaveException(
+                ZWaveException.Throw(
                     ZWaveErrorCode.InvalidPayload,
                     "Association Report frame is too short");
             }

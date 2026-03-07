@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace ZWave.CommandClasses;
 
@@ -145,7 +145,7 @@ public sealed class HumidityControlOperatingStateCommandClass : CommandClass<Hum
             if (frame.CommandParameters.Length < 1)
             {
                 logger.LogWarning("Humidity Control Operating State Report frame is too short ({Length} bytes)", frame.CommandParameters.Length);
-                throw new ZWaveException(ZWaveErrorCode.InvalidPayload, "Humidity Control Operating State Report frame is too short");
+                ZWaveException.Throw(ZWaveErrorCode.InvalidPayload, "Humidity Control Operating State Report frame is too short");
             }
 
             return (HumidityControlOperatingState)(frame.CommandParameters.Span[0] & 0x0F);
