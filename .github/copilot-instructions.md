@@ -117,6 +117,7 @@ Response structs that contain variable-length collections use count + indexer me
 - Allman-style braces (`csharp_new_line_before_open_brace = all`).
 - NuGet package versions are centrally managed in `Directory.Packages.props`. When adding a package, add the version there and reference it without a version in the `.csproj`.
 - `InternalsVisibleTo` is set: `ZWave.Protocol` → `ZWave.Serial`, `ZWave.Serial` → `ZWave.Serial.Tests`, `ZWave.CommandClasses` → `ZWave` and `ZWave.CommandClasses.Tests`.
+- **Binary literals for bitmasks** — prefer `0b` format (e.g. `0b0000_0010`) over `0x` hex when working with bitmask constants, as it makes the specific bit positions immediately clear.
 
 ## Testing Patterns
 
