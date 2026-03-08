@@ -197,20 +197,34 @@ The inner command struct names should still match the spec ordering for traceabi
 
 Some commands return results across multiple report frames (indicated by a "Reports to Follow" field). These **must be aggregated** so the public API returns a single complete result. The caller should not need to know about the multi-frame nature of the response.
 
+The report command struct should expose a `ParseInto` method that takes the collection to append to (avoiding intermediate list allocations) and returns only the metadata (e.g. `reportsToFollow`). See `AssociationReportCommand.ParseInto` for the reference implementation.
+
 ```csharp
+// In the report command struct:
+public static byte ParseInto(
+    CommandClassFrame frame,
+    List<{Item}> items,
+    ILogger logger)
+{
+    // validate frame...
+    byte reportsToFollow = span[0];
+    // parse items and add to the provided list...
+    items.Add(...);
+    return reportsToFollow;
+}
+
+// In the CC class:
 public async Task<IReadOnlyList<{Item}>> GetAllItemsAsync(CancellationToken cancellationToken)
 {
     var command = {Name}GetCommand.Create();
     await SendCommandAsync(command, cancellationToken).ConfigureAwait(false);
 
-    List<{Item}> allItems = new List<{Item}>();
+    List<{Item}> allItems = [];
     byte reportsToFollow;
     do
     {
         CommandClassFrame reportFrame = await AwaitNextReportAsync<{Name}ReportCommand>(cancellationToken).ConfigureAwait(false);
-        {Name}Report report = {Name}ReportCommand.Parse(reportFrame, Logger);
-        allItems.AddRange(report.Items);
-        reportsToFollow = report.ReportsToFollow;
+        reportsToFollow = {Name}ReportCommand.ParseInto(reportFrame, allItems, Logger);
     }
     while (reportsToFollow > 0);
 
