@@ -289,6 +289,7 @@ Key points:
 - Name the type `{Name}Report` (not `{Name}State`). The CC class property is `LastReport` (not `State`).
 - For fields added in later CC versions, make the type nullable (e.g., `GenericValue?`).
 - XML doc comments go on each positional parameter.
+- **"Next" fields for discovery chaining** (e.g. `NextIndicatorId` in Indicator Supported Report) are interview implementation details and MUST NOT appear in the public report struct. Instead, have the `Parse` method return a value tuple `(TReport Report, TId NextId)`. The public `GetSupportedAsync` discards the next ID with `_`, while the interview loop destructures both values to follow the chain.
 
 ### 3. Implement the CC Class
 
@@ -563,7 +564,7 @@ Key points for report commands:
 - For bitmask fields, use bit manipulation: `(span[N] & 0b0000_1111)`.
 - **Do NOT mask reserved bits.** If a field has reserved bits in one version but they are defined in a later version, parse all bits unconditionally. This ensures forward compatibility.
 - For optional fields added in later versions, check **payload length** to determine if the field is present. Never use version checks for this.
-- Report commands do **not** have a `Create` method — they are only used to identify the command ID for `AwaitNextReportAsync<T>` dispatch.
+- Report commands should also have a **static `Create` method** for **bidirectional** support (constructing outgoing frames, e.g. for controller-side responses and unit testing round-trips).
 
 ## Common Patterns
 
