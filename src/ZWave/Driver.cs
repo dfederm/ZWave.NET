@@ -69,7 +69,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
         // We can assume the single reader/writer based on the implementation of the serial port coordinator and the single frame processing task
         Channel<DataFrame> dataFrameReceiveChannel = Channel.CreateUnbounded<DataFrame>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
 
-        _serialPortCoordinator = new ZWaveSerialPortCoordinator(logger, portName, dataFrameSendChannel.Reader, dataFrameReceiveChannel.Writer);
+        _serialPortCoordinator = new ZWaveSerialPortCoordinator(logger, portName, dataFrameSendChannel.Reader, dataFrameReceiveChannel.Writer, FaultPendingStateAsync);
 
         _dataFrameSendChannelWriter = dataFrameSendChannel.Writer;
 
@@ -145,6 +145,49 @@ public sealed class Driver : IDriver, IAsyncDisposable
         foreach (TaskCompletionSource<DataFrame> tcs in pendingCallbacks)
         {
             tcs.TrySetCanceled();
+        }
+    }
+
+    /// <summary>
+    /// Faults all pending request/response and callback state. Called by the serial port coordinator
+    /// when a hard reset is invoked, so that any in-flight <see cref="SendCommandAsync{TRequest,TResponse}"/>
+    /// or callback wait doesn't hang permanently while the module restarts.
+    /// </summary>
+    private async Task FaultPendingStateAsync()
+    {
+        ZWaveException exception = ZWaveException.Create(ZWaveErrorCode.CommandSendFailed, "Hard reset invoked; pending commands faulted");
+
+        // Fault the pending request/response.
+        AwaitedFrameResponse? awaitedFrameResponse;
+        lock (_requestResponseFrameFlowLock)
+        {
+            awaitedFrameResponse = _awaitedFrameResponse;
+            _awaitedFrameResponse = null;
+        }
+
+        if (awaitedFrameResponse.HasValue)
+        {
+            awaitedFrameResponse.Value.TaskCompletionSource.TrySetException(exception);
+        }
+
+        // Fault all pending callbacks.
+        List<TaskCompletionSource<DataFrame>> pendingCallbacks;
+        lock (_callbackLock)
+        {
+            pendingCallbacks = [.. _unresolvedCallbacks.Values];
+            _unresolvedCallbacks.Clear();
+        }
+
+        foreach (TaskCompletionSource<DataFrame> tcs in pendingCallbacks)
+        {
+            tcs.TrySetException(exception);
+        }
+
+        // Fault the pending SerialApiStarted wait, if any.
+        TaskCompletionSource<SerialApiStartedRequest>? serialApiStartedTcs = _serialApiStartedTaskCompletionSource;
+        if (serialApiStartedTcs != null)
+        {
+            serialApiStartedTcs.TrySetException(exception);
         }
     }
 

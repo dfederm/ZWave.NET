@@ -3,6 +3,7 @@ using System.IO.Pipelines;
 using System.IO.Ports;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
+using ZWave.Serial.Commands;
 
 namespace ZWave.Serial;
 
@@ -26,16 +27,24 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
     private const int MaxConnectionAttempts = 4;
     private const int ConnectionDelay = 1000;
 
+    // INS12350 6.4.2: A hard reset SHOULD be invoked after three consecutive invalid checksums.
+    private const int MaxConsecutiveInvalidChecksums = 3;
+
     // Lock to manage a the current unsolicited or request/response frame flow. If one flow is in progress, a new one may not start.
     private readonly SemaphoreSlim _commLock = new (1, 1);
 
     private readonly ILogger _logger;
 
-    private readonly SerialPort _serialPort;
+    private readonly SerialPort? _serialPort;
+
+    private readonly Stream _stream;
 
     private readonly ChannelReader<DataFrameTransmission> _dataFrameSendChannelReader;
 
     private readonly ChannelWriter<DataFrame> _dataFrameReceiveChannelWriter;
+
+    // Called when a hard reset is invoked to fault the driver's pending request/response and callback state.
+    private readonly Func<Task> _onHardResetInvoked;
 
     private readonly CancellationTokenSource _cancellationTokenSource;
 
@@ -51,23 +60,69 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
     // the chip retransmission priority. The 1600ms ACK timeout acts as a fallback.
     private bool _pendingCanDeliveryFailure;
 
+    // INS12350 6.4.2: Tracks consecutive data frames received with an invalid checksum.
+    // Only the read task touches this field.
+    private int _consecutiveInvalidChecksumCount;
+
+    // Set while a hard reset is in progress. The write task awaits this gate before processing
+    // new transmissions, so ordinary traffic doesn't run while the controller is restarting.
+    private TaskCompletionSource _recoveryGate = new TaskCompletionSource();
+
+    // Set while waiting for SerialApiStarted after a hard reset. Only the read task touches this field.
+    private TaskCompletionSource<SerialApiStartedRequest>? _serialApiStartedTcs;
+
     public ZWaveSerialPortCoordinator(
         ILogger logger,
         string portName,
         ChannelReader<DataFrameTransmission> dataFrameSendChannelReader,
-        ChannelWriter<DataFrame> dataFrameReceiveChannelWriter)
+        ChannelWriter<DataFrame> dataFrameReceiveChannelWriter,
+        Func<Task> onHardResetInvoked)
     {
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(dataFrameSendChannelReader);
         ArgumentNullException.ThrowIfNull(dataFrameReceiveChannelWriter);
+        ArgumentNullException.ThrowIfNull(onHardResetInvoked);
 
         _logger = logger;
         _serialPort = CreateSerialPort(portName);
+        _stream = _serialPort.BaseStream;
         _dataFrameSendChannelReader = dataFrameSendChannelReader;
         _dataFrameReceiveChannelWriter = dataFrameReceiveChannelWriter;
+        _onHardResetInvoked = onHardResetInvoked;
 
         _serialPort.Open();
         _logger.LogSerialApiPortOpened(_serialPort.PortName);
+
+        _cancellationTokenSource = new CancellationTokenSource();
+
+        // Note: Since we're starting our own tasks, we don't need to ConfigureAwait anywhere downstream.
+        _readTask = Task.Run(ReadAsync);
+        _writeTask = Task.Run(WriteAsync);
+
+        // Send a NAK as part of the initialization sequence (INS12350 6.1)
+        SendFrame(Frame.NAK);
+    }
+
+    // Test-only constructor that uses an in-memory stream instead of a real serial port.
+    internal ZWaveSerialPortCoordinator(
+        ILogger logger,
+        Stream stream,
+        ChannelReader<DataFrameTransmission> dataFrameSendChannelReader,
+        ChannelWriter<DataFrame> dataFrameReceiveChannelWriter,
+        Func<Task> onHardResetInvoked)
+    {
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(stream);
+        ArgumentNullException.ThrowIfNull(dataFrameSendChannelReader);
+        ArgumentNullException.ThrowIfNull(dataFrameReceiveChannelWriter);
+        ArgumentNullException.ThrowIfNull(onHardResetInvoked);
+
+        _logger = logger;
+        _serialPort = null;
+        _stream = stream;
+        _dataFrameSendChannelReader = dataFrameSendChannelReader;
+        _dataFrameReceiveChannelWriter = dataFrameReceiveChannelWriter;
+        _onHardResetInvoked = onHardResetInvoked;
 
         _cancellationTokenSource = new CancellationTokenSource();
 
@@ -103,20 +158,40 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
         _dataFrameReceiveChannelWriter.Complete();
         _cancellationTokenSource.Cancel();
 
-        await _readTask;
-        await _writeTask;
+        try
+        {
+            await _readTask;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on cancellation.
+        }
 
-        _serialPort.Close();
-        _logger.LogSerialApiPortClosed(_serialPort.PortName);
+        try
+        {
+            await _writeTask;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on cancellation.
+        }
+
+        if (_serialPort != null)
+        {
+            _serialPort.Close();
+            _logger.LogSerialApiPortClosed(_serialPort.PortName);
+        }
+        else
+        {
+            _stream.Dispose();
+        }
     }
 
     private async Task ReadAsync()
     {
         CancellationToken cancellationToken = _cancellationTokenSource.Token;
 
-        PipeReader CreatePipeReader() => PipeReader.Create(_serialPort.BaseStream, new StreamPipeReaderOptions(leaveOpen: true));
-
-        PipeReader serialPortReader = CreatePipeReader();
+        PipeReader serialPortReader = PipeReader.Create(_stream, new StreamPipeReaderOptions(leaveOpen: true));
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -186,10 +261,18 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
 
                                 if (dataFrame.IsChecksumValid())
                                 {
+                                    _consecutiveInvalidChecksumCount = 0;
                                     _logger.LogSerialApiDataFrameReceived(dataFrame);
 
                                     // Acknowledge any valid request immediately.
                                     SendFrame(Frame.ACK);
+
+                                    // If we're waiting for SerialApiStarted after a hard reset, intercept it.
+                                    if (_serialApiStartedTcs != null && dataFrame.CommandId == CommandId.SerialApiStarted)
+                                    {
+                                        _serialApiStartedTcs.SetResult(SerialApiStartedRequest.Create(dataFrame, new CommandParsingContext(NodeIdType.Short)));
+                                        _serialApiStartedTcs = null;
+                                    }
 
                                     await _dataFrameReceiveChannelWriter.WriteAsync(dataFrame, cancellationToken);
 
@@ -212,10 +295,15 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                                     SendFrame(Frame.NAK);
 
                                     // INS12350 6.4.2:
-                                    //   If a host application detects an invalid checksum three times in a row when receiving data frames, the 
-                                    //   host application SHOULD invoke a hard reset of the device. If a hard reset line is not available, a soft 
+                                    //   If a host application detects an invalid checksum three times in a row when receiving data frames, the
+                                    //   host application SHOULD invoke a hard reset of the device. If a hard reset line is not available, a soft
                                     //   reset indication SHOULD be issued for the device.
-                                    // TODO
+                                    _consecutiveInvalidChecksumCount++;
+                                    if (_consecutiveInvalidChecksumCount >= MaxConsecutiveInvalidChecksums)
+                                    {
+                                        _consecutiveInvalidChecksumCount = 0;
+                                        await InvokeHardResetAsync(cancellationToken);
+                                    }
                                 }
 
                                 break;
@@ -264,7 +352,7 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
 
                 // When re-opening the port the stream gets recreated too, so we need to re-create the reader
                 serialPortReader.CancelPendingRead();
-                serialPortReader = CreatePipeReader();
+                serialPortReader = PipeReader.Create(_stream, new StreamPipeReaderOptions(leaveOpen: true));
             }
         }
     }
@@ -274,6 +362,9 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
         CancellationToken cancellationToken = _cancellationTokenSource.Token;
         await foreach (DataFrameTransmission transmission in _dataFrameSendChannelReader.ReadAllAsync(cancellationToken))
         {
+            // Wait for any in-progress hard reset recovery to complete before processing new traffic.
+            await _recoveryGate.Task;
+
             bool transmissionSuccess = false;
             for (int transmissionAttempt = 0; transmissionAttempt < MaxTransmissionAttempts; transmissionAttempt++)
             {
@@ -292,7 +383,7 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                 try
                 {
                     // Send the command
-                    await _serialPort.BaseStream.WriteAsync(transmission.Frame.Data, cancellationToken);
+                    await _stream.WriteAsync(transmission.Frame.Data, cancellationToken);
                     _logger.LogSerialApiDataFrameSent(transmission.Frame);
                 }
                 catch (Exception ex)
@@ -346,10 +437,13 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
                 await _commLock.WaitAsync();
                 try
                 {
-                    _serialPort.DiscardInBuffer();
-                    _serialPort.DiscardOutBuffer();
-                    _serialPort.Close();
-                    EnsurePortOpened();
+                    if (_serialPort != null)
+                    {
+                        _serialPort.DiscardInBuffer();
+                        _serialPort.DiscardOutBuffer();
+                        _serialPort.Close();
+                        EnsurePortOpened();
+                    }
                 }
                 finally
                 {
@@ -361,11 +455,68 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Invokes a hard reset of the Z-Wave module per INS12350 6.4.2.
+    /// Since a hard reset line is not available, a soft reset indication is issued instead.
+    /// Gates the write task until the module signals SerialApiStarted (or a fallback timeout elapses),
+    /// so ordinary traffic doesn't run while the controller is restarting.
+    /// </summary>
+    private async Task InvokeHardResetAsync(CancellationToken cancellationToken)
+    {
+        _logger.LogSerialApiHardResetInvoked(MaxConsecutiveInvalidChecksums);
+
+        // Gate the write task so ordinary traffic waits until recovery completes.
+        _recoveryGate = new TaskCompletionSource();
+
+        // Fault the driver's pending request/response and callback state. The third invalid frame
+        // may have been a corrupted response, so any in-flight SendCommandAsync would otherwise wait
+        // permanently.
+        await _onHardResetInvoked();
+
+        // The chip is in an unknown state, so discard any pending data before and after the reset.
+        if (_serialPort != null)
+        {
+            _serialPort.DiscardInBuffer();
+            _serialPort.DiscardOutBuffer();
+        }
+
+        // Send the soft reset directly, bypassing the write task (which is gated).
+        var softResetRequest = SoftResetRequest.Create();
+        SendFrame(new Frame(softResetRequest.Frame.Data));
+
+        // Wait for the module to signal SerialApiStarted, or fall back to a timeout.
+        // The chip may not respond if it is in a bad state, so the timeout is the safety net.
+        _serialApiStartedTcs = new TaskCompletionSource<SerialApiStartedRequest>();
+        TimeSpan serialApiStartedWaitTime = TimeSpan.FromMilliseconds(1500);
+
+        try
+        {
+            await _serialApiStartedTcs.Task.WaitAsync(serialApiStartedWaitTime, cancellationToken);
+        }
+        catch (TimeoutException)
+        {
+            // If we don't get the signal, assume the soft reset was successful after the wait time.
+        }
+        finally
+        {
+            _serialApiStartedTcs = null;
+        }
+
+        // Unblock the write task so ordinary traffic can resume.
+        _recoveryGate.SetResult();
+    }
+
     private void EnsurePortOpened()
     {
         if (_commLock.CurrentCount != 0)
         {
             throw new InvalidOperationException("The lock must be held before calling this method");
+        }
+
+        if (_serialPort == null)
+        {
+            // No real serial port in test mode.
+            return;
         }
 
         if (!_serialPort.IsOpen)
@@ -398,7 +549,7 @@ public sealed class ZWaveSerialPortCoordinator : IAsyncDisposable
 
     private void SendFrame(Frame frame)
     {
-        _serialPort.BaseStream.Write(frame.Data.Span);
+        _stream.Write(frame.Data.Span);
         _logger.LogSerialApiFrameSent(frame);
     }
 }

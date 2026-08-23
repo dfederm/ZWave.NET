@@ -36,6 +36,6 @@ public sealed class ZWaveException : Exception
     /// Creates a <see cref="ZWaveException"/> without throwing it.
     /// For use with <see cref="TaskCompletionSource.SetException(Exception)"/> and similar APIs.
     /// </summary>
-    internal static ZWaveException Create(ZWaveErrorCode errorCode, string message)
+    public static ZWaveException Create(ZWaveErrorCode errorCode, string message)
         => new(errorCode, message);
 }

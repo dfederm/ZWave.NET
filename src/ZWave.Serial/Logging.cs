@@ -107,4 +107,10 @@ internal static partial class Logging
         Level = LogLevel.Trace,
         Message = "Received CAN during frame delivery; deferring retransmission until the chip's data frame is processed")]
     public static partial void LogSerialApiCanDuringFrameDelivery(this ILogger logger);
+
+    [LoggerMessage(
+        EventId = 118,
+        Level = LogLevel.Warning,
+        Message = "Detected {count} consecutive invalid checksums; invoking hard reset (soft reset indication) per INS12350 6.4.2")]
+    public static partial void LogSerialApiHardResetInvoked(this ILogger logger, int count);
 }
