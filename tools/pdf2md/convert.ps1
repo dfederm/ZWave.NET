@@ -22,7 +22,10 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
 # source filename -> output folder name.
 $Docs = [ordered]@{
     "INS13954-Instruction-Z-Wave-500-Series-Appl-Programmers-Guide-v6_8x_0x.pdf" = "zwave-500-series-programmers-guide"
-    "SDS13781-4 Z-Wave Application Command Class Specification.pdf"              = "command-class-specification"
+    "SDS13781 Z-Wave Application Command Class Specification.pdf"                = "application-command-class-specification"
+    "SDS13782 Z-Wave Management Command Class Specification.pdf"                 = "management-command-class-specification"
+    "SDS13783 Z-Wave Transport-Encapsulation Command Class Specification.pdf"    = "transport-encapsulation-command-class-specification"
+    "SDS13784 Z-Wave Network-Protocol Command Class Specification.pdf"           = "network-protocol-command-class-specification"
     "Z-Wave Host API Specification.pdf"                                          = "zwave-host-api-specification"
 }
 
