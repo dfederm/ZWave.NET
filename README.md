@@ -40,6 +40,10 @@ var binarySwitch = driver.Controller.Nodes[2].GetCommandClass<BinarySwitchComman
 await binarySwitch.SetAsync(targetValue: true, duration: null, CancellationToken.None);
 ```
 
+## Specification Reference
+
+Markdown versions of the Z-Wave Host API, Command Class, and 500-series programmer's guide specifications live in [`docs/specs/`](docs/specs/README.md).
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development details.
