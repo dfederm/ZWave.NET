@@ -195,68 +195,33 @@ public sealed class Driver : IDriver, IAsyncDisposable
                         var applicationCommandHandler = ApplicationCommandHandler.Create(frame, context);
                         if (Controller.Nodes.TryGetValue(applicationCommandHandler.NodeId, out Node? node))
                         {
-                            var commandClassFrame = new CommandClassFrame(applicationCommandHandler.Payload);
-
-                            // De-encapsulate per spec §4.1.3.5 (reverse order):
-                            // Security/CRC-16/Transport Service → Multi Channel → Supervision → Multi Command
-                            byte endpointIndex = 0;
-                            SupervisionCommandClass.SupervisionReportCommand? supervisionReport = null;
-
-                            if (commandClassFrame.CommandClassId == CommandClassId.MultiChannel
-                                && commandClassFrame.CommandId == (byte)MultiChannelCommand.CommandEncapsulation)
+                            if (TryDeencapsulateApplicationCommand(
+                                applicationCommandHandler,
+                                out DeencapsulatedCommands commands,
+                                out byte endpointIndex,
+                                out SupervisionCommandClass.SupervisionReportCommand? supervisionReport))
                             {
-                                MultiChannelCommandEncapsulation encapsulation = MultiChannelCommandClass.ParseEncapsulation(commandClassFrame, _logger);
-                                _logger.LogMultiChannelDeEncapsulating(applicationCommandHandler.NodeId, encapsulation.SourceEndpoint);
-                                endpointIndex = encapsulation.SourceEndpoint;
-                                commandClassFrame = encapsulation.EncapsulatedFrame;
-                            }
-
-                            // Supervision de-encapsulation (spec §4.2.8).
-                            // A Supervision Get wraps an inner command; de-encapsulate and prepare
-                            // the Report to send after processing the inner command.
-                            // A Supervision Report is a response to a Get we sent; it passes through
-                            // to the node's Supervision CC instance without de-encapsulation.
-                            if (commandClassFrame.CommandClassId == CommandClassId.Supervision
-                                && commandClassFrame.CommandId == (byte)SupervisionCommand.Get)
-                            {
-                                SupervisionGet supervisionGet = SupervisionCommandClass.ParseGet(commandClassFrame, _logger);
-                                _logger.LogSupervisionDeEncapsulating(applicationCommandHandler.NodeId, supervisionGet.SessionId);
-                                commandClassFrame = supervisionGet.EncapsulatedFrame;
-
-                                // Per spec CC:006C.01.01.11.005: Do not respond if received via multicast.
-                                // Per spec CC:006C.01.00.12.003: A controlling node SHOULD return SUCCESS or NO_SUPPORT.
-                                // TODO: Return NO_SUPPORT or FAIL based on whether ProcessCommand actually
-                                // handled the inner command. Currently always assumes SUCCESS.
-                                ReceivedStatus receivedStatus = applicationCommandHandler.ReceivedStatus;
-                                bool isMulticast = (receivedStatus & (ReceivedStatus.BroadcastAddressing | ReceivedStatus.MulticastAddressing)) != 0;
-                                if (!isMulticast)
+                                foreach (CommandClassFrame commandFrame in commands)
                                 {
-                                    supervisionReport = SupervisionCommandClass.SupervisionReportCommand.Create(
-                                        moreStatusUpdates: false,
-                                        wakeUpRequest: false,
-                                        supervisionGet.SessionId,
-                                        SupervisionStatus.Success,
-                                        duration: new DurationReport(0));
+                                    node.ProcessCommand(commandFrame, endpointIndex);
+
+                                    // Route to controller for supporting-side handling (responding to queries
+                                    // from other nodes about the controller's own association groups, etc.).
+                                    if (applicationCommandHandler.NodeId != Controller.NodeId)
+                                    {
+                                        Controller.HandleCommand(commandFrame, applicationCommandHandler.NodeId);
+                                    }
                                 }
-                            }
 
-                            node.ProcessCommand(commandClassFrame, endpointIndex);
-
-                            // Route to controller for supporting-side handling (responding to queries
-                            // from other nodes about the controller's own association groups, etc.).
-                            if (applicationCommandHandler.NodeId != Controller.NodeId)
-                            {
-                                Controller.HandleCommand(commandClassFrame, applicationCommandHandler.NodeId);
-                            }
-
-                            // Send the Supervision Report after processing the inner command and
-                            // controller routing, so the response reflects that we actually handled it.
-                            if (supervisionReport.HasValue)
-                            {
-                                _ = SendSupervisionReportAsync(
-                                    applicationCommandHandler.NodeId,
-                                    endpointIndex,
-                                    supervisionReport.Value);
+                                // Send the Supervision Report after processing the inner command and
+                                // controller routing, so the response reflects that we actually handled it.
+                                if (supervisionReport.HasValue)
+                                {
+                                    _ = SendSupervisionReportAsync(
+                                        applicationCommandHandler.NodeId,
+                                        endpointIndex,
+                                        supervisionReport.Value);
+                                }
                             }
                         }
                         else
@@ -594,6 +559,153 @@ public sealed class Driver : IDriver, IAsyncDisposable
         {
             _logger.LogSupervisionReportFailed(nodeId, ex);
         }
+    }
+
+    /// <summary>
+    /// The de-encapsulated application command: a single command (the common case) or the commands
+    /// of a Multi Command frame. Enumerating is allocation-free and does not box, unlike iterating
+    /// over an <see cref="IReadOnlyList{T}"/>.
+    /// </summary>
+    private readonly struct DeencapsulatedCommands
+    {
+        private readonly CommandClassFrame? _single;
+        private readonly CommandClassFrame[]? _commands;
+
+        private DeencapsulatedCommands(CommandClassFrame? single, CommandClassFrame[]? commands)
+        {
+            _single = single;
+            _commands = commands;
+        }
+
+        public static DeencapsulatedCommands Single(CommandClassFrame command) => new(command, null);
+
+        public static DeencapsulatedCommands Multiple(CommandClassFrame[] commands) => new(null, commands);
+
+        public struct Enumerator
+        {
+            private readonly CommandClassFrame? _single;
+            private readonly CommandClassFrame[]? _commands;
+            private int _index;
+
+            public Enumerator(DeencapsulatedCommands commands)
+            {
+                _single = commands._single;
+                _commands = commands._commands;
+                _index = -1;
+            }
+
+            public CommandClassFrame Current
+            {
+                get
+                {
+                    if (_commands is not null)
+                    {
+                        return _commands[_index];
+                    }
+
+                    return _single!.Value;
+                }
+            }
+
+            public bool MoveNext()
+            {
+                _index++;
+                return _commands is not null ? _index < _commands.Length : _index == 0;
+            }
+        }
+
+        public Enumerator GetEnumerator() => new(this);
+    }
+
+    /// <summary>
+    /// De-encapsulates the command in an Application Command Handler request, peeling off the
+    /// encapsulation layers in reverse order per spec §4.1.3.5:
+    /// Security/CRC-16/Transport Service → Multi Channel → Supervision → Multi Command.
+    /// </summary>
+    /// <returns>
+    /// True if the request de-encapsulated into one or more commands to process, or false if the
+    /// frame should be discarded (a CRC-16 checksum mismatch or malformed frame).
+    /// </returns>
+    private bool TryDeencapsulateApplicationCommand(
+        ApplicationCommandHandler applicationCommandHandler,
+        out DeencapsulatedCommands commands,
+        out byte endpointIndex,
+        out SupervisionCommandClass.SupervisionReportCommand? supervisionReport)
+    {
+        CommandClassFrame commandClassFrame = new CommandClassFrame(applicationCommandHandler.Payload);
+        endpointIndex = 0;
+        supervisionReport = null;
+
+        // CRC-16 (outermost). Per spec §3.1, a checksum mismatch or malformed frame means the
+        // payload is unreliable, so the frame is discarded rather than processed.
+        if (commandClassFrame.CommandClassId == CommandClassId.Crc16Encapsulation
+            && commandClassFrame.CommandId == (byte)Crc16EncapsulationCommand.CommandEncapsulation)
+        {
+            Crc16Encapsulation? crc16 = Crc16EncapsulationCommandClass.ParseEncapsulation(commandClassFrame, _logger);
+            if (crc16 is null)
+            {
+                _logger.LogCrc16ChecksumMismatch(applicationCommandHandler.NodeId);
+                commands = default;
+                return false;
+            }
+
+            _logger.LogCrc16DeEncapsulating(applicationCommandHandler.NodeId);
+            commandClassFrame = crc16.Value.EncapsulatedFrame;
+        }
+
+        if (commandClassFrame.CommandClassId == CommandClassId.MultiChannel
+            && commandClassFrame.CommandId == (byte)MultiChannelCommand.CommandEncapsulation)
+        {
+            MultiChannelCommandEncapsulation encapsulation = MultiChannelCommandClass.ParseEncapsulation(commandClassFrame, _logger);
+            _logger.LogMultiChannelDeEncapsulating(applicationCommandHandler.NodeId, encapsulation.SourceEndpoint);
+            endpointIndex = encapsulation.SourceEndpoint;
+            commandClassFrame = encapsulation.EncapsulatedFrame;
+        }
+
+        // Supervision de-encapsulation (spec §4.2.8).
+        // A Supervision Get wraps an inner command; de-encapsulate and prepare
+        // the Report to send after processing the inner command.
+        // A Supervision Report is a response to a Get we sent; it passes through
+        // to the node's Supervision CC instance without de-encapsulation.
+        if (commandClassFrame.CommandClassId == CommandClassId.Supervision
+            && commandClassFrame.CommandId == (byte)SupervisionCommand.Get)
+        {
+            SupervisionGet supervisionGet = SupervisionCommandClass.ParseGet(commandClassFrame, _logger);
+            _logger.LogSupervisionDeEncapsulating(applicationCommandHandler.NodeId, supervisionGet.SessionId);
+            commandClassFrame = supervisionGet.EncapsulatedFrame;
+
+            // Per spec CC:006C.01.01.11.005: Do not respond if received via multicast.
+            // Per spec CC:006C.01.00.12.003: A controlling node SHOULD return SUCCESS or NO_SUPPORT.
+            // TODO: Return NO_SUPPORT or FAIL based on whether ProcessCommand actually
+            // handled the inner command. Currently always assumes SUCCESS.
+            ReceivedStatus receivedStatus = applicationCommandHandler.ReceivedStatus;
+            bool isMulticast = (receivedStatus & (ReceivedStatus.BroadcastAddressing | ReceivedStatus.MulticastAddressing)) != 0;
+            if (!isMulticast)
+            {
+                supervisionReport = SupervisionCommandClass.SupervisionReportCommand.Create(
+                    moreStatusUpdates: false,
+                    wakeUpRequest: false,
+                    supervisionGet.SessionId,
+                    SupervisionStatus.Success,
+                    duration: new DurationReport(0));
+            }
+        }
+
+        // Multi Command (innermost). Per spec §3.4, the receiver MUST process all encapsulated
+        // commands in order, so expand the frame into its constituent commands.
+        if (commandClassFrame.CommandClassId == CommandClassId.MultiCommand
+            && commandClassFrame.CommandId == (byte)MultiCommandCommand.CommandEncapsulation)
+        {
+            MultiCommandEncapsulation multiCommand = MultiCommandCommandClass.ParseEncapsulation(commandClassFrame, _logger);
+            _logger.LogMultiCommandDeEncapsulating(applicationCommandHandler.NodeId, multiCommand.Commands.Length);
+            commands = DeencapsulatedCommands.Multiple(multiCommand.Commands);
+        }
+        else
+        {
+            commands = DeencapsulatedCommands.Single(commandClassFrame);
+        }
+
+        return true;
     }
 
     /// <summary>

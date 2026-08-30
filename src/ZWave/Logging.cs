@@ -189,4 +189,22 @@ internal static partial class Logging
         Level = LogLevel.Warning,
         Message = "Failed to send Supervision Report to node {nodeId}")]
     public static partial void LogSupervisionReportFailed(this ILogger logger, ushort nodeId, Exception ex);
+
+    [LoggerMessage(
+        EventId = 226,
+        Level = LogLevel.Debug,
+        Message = "De-encapsulating CRC-16 frame from node {nodeId}")]
+    public static partial void LogCrc16DeEncapsulating(this ILogger logger, ushort nodeId);
+
+    [LoggerMessage(
+        EventId = 227,
+        Level = LogLevel.Warning,
+        Message = "Discarding CRC-16 frame from node {nodeId} due to checksum mismatch or malformed frame")]
+    public static partial void LogCrc16ChecksumMismatch(this ILogger logger, ushort nodeId);
+
+    [LoggerMessage(
+        EventId = 228,
+        Level = LogLevel.Debug,
+        Message = "De-encapsulating Multi Command frame from node {nodeId} into {commandCount} commands")]
+    public static partial void LogMultiCommandDeEncapsulating(this ILogger logger, ushort nodeId, int commandCount);
 }
