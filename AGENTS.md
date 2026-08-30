@@ -143,6 +143,11 @@ Response structs that contain variable-length collections use count + indexer me
 
 ## Protocol References
 
+Local Markdown copies of the key specs live in [`docs/specs/`](docs/specs/README.md) — prefer these for quick lookups:
+- `zwave-host-api-specification/` — Serial API frame format, handshake, initialization, commands
+- `command-class-specification/` — Command Class message formats, field definitions, versions
+- `zwave-500-series-programmers-guide/` — 500-series programmer's guide
+
 The official Z-Wave specification package can be downloaded from the [Z-Wave Alliance](https://z-wavealliance.org/development-resources-overview/specification-for-developers/). The two most relevant specs are:
 - **Z-Wave Host API Specification** — Serial API frame format, handshake, initialization, command definitions (replaces the old INS12350 document)
 - **Z-Wave Application Specification** — Command Class message formats, versioning, required fields
