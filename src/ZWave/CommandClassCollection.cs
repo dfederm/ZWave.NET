@@ -20,7 +20,7 @@ internal sealed class CommandClassCollection
 
     // Copy-on-write dictionary for lock-free reads. Writes are protected by _writeLock.
     private volatile Dictionary<CommandClassId, CommandClass> _commandClasses = new Dictionary<CommandClassId, CommandClass>();
-    private readonly object _writeLock = new object();
+    private readonly Lock _writeLock = new();
 
     internal CommandClassCollection(IDriver driver, IEndpoint endpoint, ILogger logger)
     {

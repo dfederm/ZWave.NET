@@ -32,7 +32,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
     private readonly Task _frameProcessingTask;
 
     // Lock anything related to session ids or callbacks
-    private readonly object _callbackLock = new object();
+    private readonly Lock _callbackLock = new();
 
     private readonly Dictionary<UnresolvedCallbackKey, TaskCompletionSource<DataFrame>> _unresolvedCallbacks = new Dictionary<UnresolvedCallbackKey, TaskCompletionSource<DataFrame>>();
 
@@ -49,7 +49,7 @@ public sealed class Driver : IDriver, IAsyncDisposable
     private CommandParsingContext CommandParsingContext => new CommandParsingContext(NodeIdType);
 
     // Lock access to _awaitedFrameResponse
-    private readonly object _requestResponseFrameFlowLock = new object();
+    private readonly Lock _requestResponseFrameFlowLock = new();
 
     private AwaitedFrameResponse? _awaitedFrameResponse;
 

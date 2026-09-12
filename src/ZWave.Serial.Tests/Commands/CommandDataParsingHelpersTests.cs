@@ -80,6 +80,36 @@ public class CommandDataParsingHelpersTests
     }
 
     [TestMethod]
+    public void ParseCommandClasses_ExtendedClassSkipped()
+    {
+        // A 2-byte extended command class (MSB 0xF1, LSB 0x22) is skipped to stay aligned.
+        byte[] data =
+        [
+            (byte)CommandClassId.Basic,
+            0xF1,
+            0x22,
+        ];
+
+        IReadOnlyList<CommandClassInfo> result = CommandClassInfo.ParseList(data);
+
+        Assert.HasCount(1, result);
+        Assert.AreEqual(new CommandClassInfo(CommandClassId.Basic, IsSupported: true, IsControlled: false), result[0]);
+    }
+
+    [TestMethod]
+    public void ParseCommandClasses_TruncatedExtended_Throws()
+    {
+        // A 0xF1 MSB with no following LSB byte is a truncated extended class.
+        byte[] data =
+        [
+            (byte)CommandClassId.Basic,
+            0xF1,
+        ];
+
+        Assert.Throws<ZWaveException>(() => CommandClassInfo.ParseList(data));
+    }
+
+    [TestMethod]
     public void ParseNodeBitmask_EmptyBitmask_ReturnsEmpty()
     {
         IReadOnlySet<ushort> result = CommandDataParsingHelpers.ParseNodeBitmask([], baseNodeId: 1);
