@@ -25,9 +25,9 @@ public sealed class Node : INode
 
     // Child endpoints (1–127). Writes protected by _endpointsWriteLock.
     private volatile Dictionary<byte, Endpoint> _endpoints = [];
-    private readonly object _endpointsWriteLock = new();
+    private readonly Lock _endpointsWriteLock = new();
 
-    private readonly object _interviewStateLock = new object();
+    private readonly Lock _interviewStateLock = new();
 
     private Task? _interviewTask;
 
