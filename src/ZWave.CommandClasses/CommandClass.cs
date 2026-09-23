@@ -38,7 +38,8 @@ public abstract class CommandClass
     private record struct AwaitedReport(
         byte CommandId,
         Predicate<CommandClassFrame>? Predicate,
-        TaskCompletionSource<CommandClassFrame> TaskCompletionSource);
+        TaskCompletionSource<CommandClassFrame> TaskCompletionSource,
+        int Generation);
 
     // Almost all CCs depend on knowing their own version.
     private static readonly CommandClassId[] DefaultDependencies = [CommandClassId.Version];
@@ -46,6 +47,11 @@ public abstract class CommandClass
     // We don't expect this to get very large at all, so using a simple list to save on memory instead
     // of Dictionary<CommandId, List<TCS>> which would have faster lookups
     private readonly List<AwaitedReport> _awaitedReports = new List<AwaitedReport>();
+
+    // Bumped at the start of every ProcessCommand dispatch. An awaiter registered while a frame
+    // is being dispatched (e.g. a follow-up Get started from a report event) must not match that
+    // same frame, only frames dispatched after the registration.
+    private int _dispatchGeneration;
 
     internal CommandClass(
         CommandClassInfo info,
@@ -134,11 +140,13 @@ public abstract class CommandClass
         bool solicited = false;
         lock (_awaitedReports)
         {
+            int dispatchGeneration = ++_dispatchGeneration;
             int i = 0;
             while (i < _awaitedReports.Count)
             {
                 AwaitedReport awaitedReport = _awaitedReports[i];
-                if (awaitedReport.CommandId == frame.CommandId
+                if (awaitedReport.Generation < dispatchGeneration
+                    && awaitedReport.CommandId == frame.CommandId
                     && (awaitedReport.Predicate == null || awaitedReport.Predicate(frame)))
                 {
                     awaitedReport.TaskCompletionSource.TrySetResult(frame);
@@ -197,9 +205,9 @@ public abstract class CommandClass
         }
 
         var tcs = new TaskCompletionSource<CommandClassFrame>();
-        var awaitedReport = new AwaitedReport(TReport.CommandId, predicate, tcs);
         lock (_awaitedReports)
         {
+            var awaitedReport = new AwaitedReport(TReport.CommandId, predicate, tcs, _dispatchGeneration);
             _awaitedReports.Add(awaitedReport);
         }
 
