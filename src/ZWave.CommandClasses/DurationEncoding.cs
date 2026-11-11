@@ -40,9 +40,15 @@ internal static class DurationEncoding
     /// </summary>
     /// <param name="duration">The duration to encode. Must be between <see cref="TimeSpan.Zero"/> and 127 minutes.</param>
     /// <returns>The encoded duration byte.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="duration"/> is negative.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="duration"/> exceeds 127 minutes.</exception>
     internal static byte Encode(TimeSpan duration)
     {
+        if (duration < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(duration), duration, "Duration must not be negative.");
+        }
+
         if (duration == TimeSpan.Zero)
         {
             return 0;

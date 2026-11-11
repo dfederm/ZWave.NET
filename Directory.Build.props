@@ -5,10 +5,6 @@
     <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
-    <!-- Use the preview version of C# which supports static abstracts in interfaces -->
-    <LangVersion>Preview</LangVersion>
-    <EnablePreviewFeatures>true</EnablePreviewFeatures>
-
     <!-- Enable optimized NuGet restore -->
     <RestoreUseStaticGraphEvaluation>true</RestoreUseStaticGraphEvaluation>
 

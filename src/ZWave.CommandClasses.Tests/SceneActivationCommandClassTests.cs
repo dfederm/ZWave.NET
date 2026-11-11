@@ -6,6 +6,13 @@ namespace ZWave.CommandClasses.Tests;
 public class SceneActivationCommandClassTests
 {
     [TestMethod]
+    public void SetCommand_Create_NegativeDuration_Throws()
+    {
+        Assert.ThrowsExactly<ArgumentOutOfRangeException>(
+            () => SceneActivationCommandClass.SceneActivationSetCommand.Create(1, TimeSpan.FromSeconds(-2)));
+    }
+
+    [TestMethod]
     public void SetCommand_Create_HasCorrectFormat()
     {
         SceneActivationCommandClass.SceneActivationSetCommand command =

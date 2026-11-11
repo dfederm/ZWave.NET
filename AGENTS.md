@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-ZWave.NET is a .NET library implementing the Z-Wave serial protocol for communicating with Z-Wave USB controllers (e.g. UZB-7, Aeotec Z-Stick). It uses **C# preview** features (static abstract interface members). Check `global.json` for the required SDK version and the `.csproj` files for target frameworks. The solution has eight projects:
+ZWave.NET is a .NET library implementing the Z-Wave serial protocol for communicating with Z-Wave USB controllers (e.g. UZB-7, Aeotec Z-Stick). Check `global.json` for the required SDK version and the `.csproj` files for target frameworks. The solution has eight projects:
 
 | Project | Path | Purpose |
 |---|---|---|

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
     <!-- Disable analyzer release tracking rule. These are internal to the repo; we don't release them. -->
     <NoWarn>$(NoWarn);RS2008</NoWarn>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
