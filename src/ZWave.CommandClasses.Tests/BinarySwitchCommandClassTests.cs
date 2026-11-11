@@ -6,6 +6,17 @@ namespace ZWave.CommandClasses.Tests;
 public class BinarySwitchCommandClassTests
 {
     [TestMethod]
+    [DataRow(-1L)]
+    [DataRow(-20_000_000L)]
+    public void DurationSet_NegativeDuration_Throws(long ticks)
+    {
+        ArgumentOutOfRangeException exception = Assert.ThrowsExactly<ArgumentOutOfRangeException>(
+            () => new DurationSet(TimeSpan.FromTicks(ticks)));
+
+        Assert.AreEqual("duration", exception.ParamName);
+    }
+
+    [TestMethod]
     public void SetCommand_Create_OnValue_Version1()
     {
         BinarySwitchCommandClass.BinarySwitchSetCommand command =

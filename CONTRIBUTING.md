@@ -5,7 +5,7 @@ Thanks for your interest in contributing! Here's what you need to know.
 ## Getting Started
 
 **Prerequisites:**
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) or later (see `global.json`)
+- [.NET 11 SDK](https://dotnet.microsoft.com/download) or later (see `global.json`)
 - A code editor with C# support (Visual Studio, VS Code with C# Dev Kit, or Rider)
 - Familiarity with the Z-Wave protocol is helpful but not required - see [Protocol References](#protocol-references)
 
